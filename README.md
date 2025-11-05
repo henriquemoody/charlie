@@ -183,7 +183,74 @@ Run `charlie list-agents` for the complete list.
 
 ## Configuration
 
-### YAML Schema
+Charlie supports two configuration approaches:
+
+1. **Monolithic** - Single `charlie.yaml` file (good for small projects)
+2. **Directory-Based** - Modular files in `.charlie/` directories (good for large projects)
+
+### Directory-Based Configuration (Recommended)
+
+For better organization and collaboration, use the directory-based approach:
+
+```
+project/
+├── charlie.yaml              # Project metadata only
+└── .charlie/
+    ├── commands/
+    │   ├── init.yaml        # One file per command
+    │   └── deploy.yaml
+    ├── rules/
+    │   ├── commit-messages.yaml  # One file per rule section
+    │   └── code-style.yaml
+    └── mcp-servers/
+        └── local-tools.yaml
+```
+
+**Benefits:**
+- Clear organization (one file per command/rule)
+- No merge conflicts on single file
+- Easy to add/remove components
+- Better for version control diffs
+
+**Command File** (`.charlie/commands/init.yaml`):
+```yaml
+name: "init"
+description: "Initialize feature"
+
+# Agent-specific fields (optional)
+allowed-tools:  # Claude
+  - Bash(mkdir:*)
+tags: ["init", "setup"]
+category: "project"
+
+prompt: |
+  Initialize: {{user_input}}
+  Run: {{script}}
+
+scripts:
+  sh: "scripts/init.sh"
+```
+
+**Rules File** (`.charlie/rules/code-style.yaml`):
+```yaml
+title: "Code Style"
+order: 1
+
+# Agent-specific fields (optional)
+alwaysApply: true  # Cursor
+globs: ["**/*.py"]  # Cursor
+priority: "high"    # Windsurf
+
+content: |
+  Use Black for formatting.
+  Max line length: 100.
+```
+
+See [`examples/directory-based/`](examples/directory-based/) for a complete example.
+
+### Monolithic YAML Schema
+
+For simpler projects, use a single `charlie.yaml` file:
 
 ```yaml
 version: "1.0"  # Schema version
@@ -230,6 +297,51 @@ Charlie supports these universal placeholders in prompts:
 - `{{user_input}}` → Replaced with agent-specific input placeholder (`$ARGUMENTS` or `{{args}}`)
 - `{{script}}` → Replaced with the appropriate script path based on platform
 - `{{agent_script}}` → Replaced with optional agent-specific script path
+
+### Agent-Specific Fields
+
+Charlie uses **pass-through fields** - add any agent-specific field to your commands or rules, and Charlie will include them in generated output:
+
+**Command Fields:**
+```yaml
+# Claude-specific
+allowed-tools:
+  - Bash(git add:*)
+  - Bash(git commit:*)
+
+# Generic metadata
+tags: ["git", "vcs"]
+category: "source-control"
+```
+
+**Rules Fields:**
+```yaml
+# Cursor-specific
+alwaysApply: true
+globs: ["**/*.py", "!**/test_*.py"]
+
+# Windsurf-specific
+priority: "high"
+categories: ["style", "formatting"]
+```
+
+Charlie extracts these fields and includes them in agent-specific output (YAML frontmatter for Markdown agents, TOML fields for TOML agents). See [`AGENT_FIELDS.md`](AGENT_FIELDS.md) for details on which agents support which fields.
+
+### Rules Generation Modes
+
+Generate rules files in two modes:
+
+**Merged Mode** (default) - Single file with all sections:
+```bash
+charlie generate --agents cursor --rules --rules-mode merged
+```
+
+**Separate Mode** - One file per section:
+```bash
+charlie generate --agents cursor --rules --rules-mode separate
+```
+
+Use merged mode for simple projects, separate mode for better organization in complex projects.
 
 ## Output Examples
 
