@@ -153,6 +153,48 @@ def test_adapters_handle_agent_scripts():
     assert "agent.sh" in result
 
 
+def test_adapters_pass_through_agent_fields():
+    """Test that adapters include pass-through agent-specific fields."""
+    # Test Claude (markdown) with allowed-tools
+    spec = get_agent_spec("claude")
+    adapter = ClaudeAdapter(spec)
+
+    command = Command(
+        name="commit",
+        description="Git commit",
+        prompt="Create commit",
+        scripts=CommandScripts(sh="commit.sh"),
+        allowed_tools=["Bash(git add:*)", "Bash(git commit:*)"],  # Claude-specific
+        tags=["git", "vcs"],
+        category="source-control",
+    )
+
+    result = adapter.generate_command(command, "myapp", "sh")
+    
+    # Check frontmatter includes pass-through fields
+    assert "allowed_tools:" in result or "allowed-tools:" in result
+    assert "Bash(git add:*)" in result
+    assert "tags:" in result
+    assert "- git" in result
+    assert "category:" in result
+    assert "source-control" in result
+
+    # Test Gemini (TOML) with custom fields
+    spec = get_agent_spec("gemini")
+    adapter = GeminiAdapter(spec)
+    
+    command_toml = Command(
+        name="test",
+        description="Test",
+        prompt="Test",
+        scripts=CommandScripts(sh="test.sh"),
+        custom_field="custom_value",
+    )
+    
+    result_toml = adapter.generate_command(command_toml, "myapp", "sh")
+    assert 'custom_field = "custom_value"' in result_toml
+
+
 def test_claude_adapter_generates_files(tmp_path):
     """Test Claude adapter generates command files."""
     spec = get_agent_spec("claude")
