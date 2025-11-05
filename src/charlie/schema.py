@@ -1,7 +1,7 @@
 """YAML schema definitions and validation using Pydantic."""
 
-from typing import Dict, List, Optional
-from pydantic import BaseModel, Field, field_validator
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProjectConfig(BaseModel):
@@ -12,12 +12,30 @@ class ProjectConfig(BaseModel):
 
 
 class MCPServer(BaseModel):
-    """MCP server configuration."""
+    """MCP server configuration with pass-through for agent-specific fields."""
+
+    model_config = ConfigDict(extra="allow")
 
     name: str = Field(..., description="Server name")
     command: str = Field(..., description="Command to run the server")
     args: List[str] = Field(default_factory=list, description="Command arguments")
     env: Dict[str, str] = Field(default_factory=dict, description="Environment variables")
+    commands: Optional[List[str]] = Field(
+        None, description="Command names this server should expose"
+    )
+    config: Optional[Dict[str, Any]] = Field(
+        None, description="Server-specific configuration"
+    )
+
+
+class RulesSection(BaseModel):
+    """Individual rules section from a separate file."""
+
+    model_config = ConfigDict(extra="allow")
+
+    title: str = Field(..., description="Section title")
+    content: str = Field(..., description="Section content (Markdown)")
+    order: Optional[int] = Field(None, description="Display order (lower numbers first)")
 
 
 class RulesConfig(BaseModel):
@@ -30,6 +48,9 @@ class RulesConfig(BaseModel):
     )
     preserve_manual: bool = Field(
         default=True, description="Preserve manual additions between markers"
+    )
+    sections: Optional[List[RulesSection]] = Field(
+        None, description="Custom rule sections (from directory-based config)"
     )
 
 
@@ -47,7 +68,9 @@ class CommandScripts(BaseModel):
 
 
 class Command(BaseModel):
-    """Command definition."""
+    """Command definition with pass-through for agent-specific fields."""
+
+    model_config = ConfigDict(extra="allow")
 
     name: str = Field(..., description="Command name (without prefix)")
     description: str = Field(..., description="Command description")
@@ -69,15 +92,15 @@ class Command(BaseModel):
 class CharlieConfig(BaseModel):
     """Main configuration schema for charlie."""
 
-    version: str = Field(..., description="Schema version")
-    project: ProjectConfig = Field(..., description="Project configuration")
+    version: str = Field(default="1.0", description="Schema version")
+    project: Optional[ProjectConfig] = Field(None, description="Project configuration")
     mcp_servers: List[MCPServer] = Field(
         default_factory=list, description="MCP server definitions"
     )
-    rules: RulesConfig = Field(
+    rules: Optional[RulesConfig] = Field(
         default_factory=RulesConfig, description="Rules configuration"
     )
-    commands: List[Command] = Field(..., min_length=1, description="Command definitions")
+    commands: List[Command] = Field(default_factory=list, description="Command definitions")
 
     @field_validator("version")
     @classmethod

@@ -8,6 +8,7 @@ from charlie.schema import (
     ProjectConfig,
     MCPServer,
     RulesConfig,
+    RulesSection,
     Command,
     CommandScripts,
 )
@@ -39,6 +40,24 @@ def test_mcp_server_defaults():
     server = MCPServer(name="test-server", command="node")
     assert server.args == []
     assert server.env == {}
+    assert server.commands is None
+    assert server.config is None
+
+
+def test_mcp_server_with_extra_fields():
+    """Test MCP server with pass-through extra fields."""
+    server = MCPServer(
+        name="test-server",
+        command="node",
+        commands=["init", "build"],
+        config={"timeout": 30000},
+        custom_field="custom_value",  # Extra field
+    )
+    assert server.commands == ["init", "build"]
+    assert server.config == {"timeout": 30000}
+    # Verify extra field is preserved
+    server_dict = server.model_dump()
+    assert server_dict["custom_field"] == "custom_value"
 
 
 def test_rules_config_defaults():
@@ -48,6 +67,37 @@ def test_rules_config_defaults():
     assert rules.include_commands is True
     assert rules.include_tech_stack is True
     assert rules.preserve_manual is True
+    assert rules.sections is None
+
+
+def test_rules_section_valid():
+    """Test valid rules section."""
+    section = RulesSection(
+        title="Code Style",
+        content="Use Black for formatting",
+        order=1,
+    )
+    assert section.title == "Code Style"
+    assert section.content == "Use Black for formatting"
+    assert section.order == 1
+
+
+def test_rules_section_with_agent_fields():
+    """Test rules section with pass-through agent-specific fields."""
+    section = RulesSection(
+        title="Python Style",
+        content="Type hints required",
+        order=2,
+        alwaysApply=True,  # Cursor-specific
+        globs=["**/*.py"],  # Cursor-specific
+        priority="high",  # Windsurf-specific
+    )
+    assert section.title == "Python Style"
+    # Verify pass-through fields are preserved
+    section_dict = section.model_dump()
+    assert section_dict["alwaysApply"] is True
+    assert section_dict["globs"] == ["**/*.py"]
+    assert section_dict["priority"] == "high"
 
 
 def test_command_scripts_valid():
@@ -69,6 +119,25 @@ def test_command_valid():
     assert cmd.description == "Test command"
     assert cmd.prompt == "Test prompt"
     assert cmd.scripts.sh == "test.sh"
+
+
+def test_command_with_agent_fields():
+    """Test command with pass-through agent-specific fields."""
+    command = Command(
+        name="commit",
+        description="Git commit",
+        prompt="Create commit",
+        scripts=CommandScripts(sh="commit.sh"),
+        allowed_tools=["Bash(git add:*)", "Bash(git commit:*)"],  # Claude-specific
+        tags=["git", "vcs"],
+        category="source-control",
+    )
+    assert command.name == "commit"
+    # Verify pass-through fields are preserved
+    command_dict = command.model_dump()
+    assert command_dict["allowed_tools"] == ["Bash(git add:*)", "Bash(git commit:*)"]
+    assert command_dict["tags"] == ["git", "vcs"]
+    assert command_dict["category"] == "source-control"
 
 
 def test_command_no_scripts_fails():
@@ -169,13 +238,30 @@ def test_charlie_config_duplicate_commands():
     assert "Duplicate command names" in str(exc_info.value)
 
 
-def test_charlie_config_no_commands():
-    """Test configuration without commands fails."""
+def test_charlie_config_minimal():
+    """Test minimal config with defaults (for directory-based configs)."""
+    config = CharlieConfig(
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ]
+    )
+    assert config.version == "1.0"  # Default
+    assert config.project is None  # Optional
+    assert len(config.commands) == 1
+
+
+def test_charlie_config_empty_commands():
+    """Test configuration with empty commands list."""
     config_data = {
         "version": "1.0",
         "project": {"name": "test", "command_prefix": "test"},
         "commands": [],
     }
-    with pytest.raises(ValidationError):
-        CharlieConfig(**config_data)
+    config = CharlieConfig(**config_data)
+    assert config.commands == []
 
