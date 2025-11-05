@@ -1,0 +1,62 @@
+version: "1.0"
+
+# Simple example configuration
+project:
+  name: "my-project"
+  command_prefix: "myapp"
+
+# MCP server definitions
+mcp_servers:
+  - name: "myapp-commands"
+    command: "node"
+    args: ["dist/mcp-server.js"]
+    env:
+      PROJECT_ROOT: "${PROJECT_ROOT}"
+      DEBUG: "false"
+
+# Rules configuration
+rules:
+  title: "Development Guidelines"
+  include_commands: true
+  include_tech_stack: true
+  preserve_manual: true
+
+# Command definitions
+commands:
+  - name: "init"
+    description: "Initialize a new feature"
+    prompt: |
+      ## User Input
+      
+      {{user_input}}
+      
+      ## Instructions
+      
+      1. Parse the feature description
+      2. Create necessary files
+      3. Run initialization script: {{script}}
+      
+      ## Guidelines
+      
+      - Be clear and concise
+      - Focus on what the user needs
+    scripts:
+      sh: "scripts/init.sh --json"
+      ps: "scripts/init.ps1 -Json"
+
+  - name: "plan"
+    description: "Create implementation plan"
+    prompt: |
+      ## Task
+      
+      Create a technical implementation plan for: {{user_input}}
+      
+      ## Steps
+      
+      1. Analyze requirements
+      2. Design architecture
+      3. Execute: {{script}}
+    scripts:
+      sh: "scripts/plan.sh"
+      ps: "scripts/plan.ps1"
+
