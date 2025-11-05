@@ -1,0 +1,264 @@
+"""Command-line interface for charlie."""
+
+import sys
+from pathlib import Path
+from typing import List, Optional
+
+import typer
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+
+from charlie.transpiler import CommandTranspiler
+from charlie.parser import find_config_file, parse_config, ConfigParseError
+from charlie.agents.registry import list_supported_agents, get_agent_info
+
+app = typer.Typer(
+    name="charlie",
+    help="Universal command transpiler for AI agents, MCP servers, and rules",
+    add_completion=False,
+)
+console = Console()
+
+
+def _resolve_config_file(config_path: Optional[str]) -> Path:
+    """Resolve configuration file path.
+
+    Args:
+        config_path: Explicit path or None for auto-detection
+
+    Returns:
+        Resolved path to configuration file
+
+    Raises:
+        FileNotFoundError: If no config file found
+    """
+    if config_path:
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        return path
+
+    # Auto-detect charlie.yaml or .charlie.yaml
+    try:
+        return find_config_file()
+    except FileNotFoundError:
+        console.print(
+            "[red]Error:[/red] No configuration file found. "
+            "Expected charlie.yaml or .charlie.yaml in current directory."
+        )
+        raise typer.Exit(1)
+
+
+@app.command()
+def generate(
+    config_path: Optional[str] = typer.Argument(
+        None, help="Path to configuration file (default: auto-detect charlie.yaml)"
+    ),
+    agents: Optional[str] = typer.Option(
+        None, "--agents", "-a", help="Comma-separated list of agents to generate for"
+    ),
+    mcp: bool = typer.Option(False, "--mcp", help="Generate MCP server configuration"),
+    rules: bool = typer.Option(False, "--rules", help="Generate rules files"),
+    all_targets: bool = typer.Option(False, "--all", help="Generate everything"),
+    output: str = typer.Option(".", "--output", "-o", help="Output directory"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+):
+    """Generate agent-specific configurations from YAML definition.
+
+    Examples:
+
+        # Auto-detect charlie.yaml and generate for Claude
+        charlie generate --agents claude
+
+        # Explicit config file
+        charlie generate my-config.yaml --agents claude,gemini
+
+        # Generate MCP config only
+        charlie generate --mcp
+
+        # Generate everything
+        charlie generate --agents claude,windsurf --mcp --rules
+
+        # Custom output directory
+        charlie generate --agents cursor --output ./build
+    """
+    try:
+        # Resolve config file
+        config_file = _resolve_config_file(config_path)
+
+        console.print(f"[cyan]Using configuration:[/cyan] {config_file}")
+
+        # Initialize transpiler
+        transpiler = CommandTranspiler(str(config_file))
+
+        # Parse agents list
+        agent_list = None
+        if agents:
+            agent_list = [a.strip() for a in agents.split(",")]
+        elif all_targets:
+            # If --all, generate for all configured agents (we'll just pick a default set)
+            agent_list = ["claude", "copilot", "gemini", "cursor"]
+            mcp = True
+            rules = True
+
+        # Check that at least something was requested
+        if not agent_list and not mcp and not rules:
+            console.print(
+                "[yellow]Warning:[/yellow] No targets specified. Use --agents, --mcp, --rules, or --all"
+            )
+            return
+
+        # Generate
+        console.print("\n[bold]Generating outputs...[/bold]")
+
+        results = transpiler.generate(
+            agents=agent_list, mcp=mcp, rules=rules, output_dir=output
+        )
+
+        # Display results
+        console.print("\n[green]✓ Generation complete![/green]\n")
+
+        for target_name, files in results.items():
+            console.print(f"[cyan]{target_name}:[/cyan]")
+            for filepath in files:
+                if verbose:
+                    console.print(f"  • {filepath}")
+                else:
+                    # Show relative path
+                    rel_path = Path(filepath).relative_to(Path(output).resolve(), walk_up=True)
+                    console.print(f"  • {rel_path}")
+
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except ConfigParseError as e:
+        console.print(f"[red]Configuration Error:[/red]\n{e}")
+        raise typer.Exit(1)
+    except ValueError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Unexpected Error:[/red] {e}")
+        if verbose:
+            import traceback
+
+            console.print(traceback.format_exc())
+        raise typer.Exit(1)
+
+
+@app.command()
+def validate(
+    config_path: Optional[str] = typer.Argument(
+        None, help="Path to configuration file (default: auto-detect charlie.yaml)"
+    ),
+):
+    """Validate YAML configuration file.
+
+    Examples:
+
+        # Validate charlie.yaml in current directory
+        charlie validate
+
+        # Validate specific file
+        charlie validate my-config.yaml
+    """
+    try:
+        config_file = _resolve_config_file(config_path)
+
+        console.print(f"[cyan]Validating:[/cyan] {config_file}")
+
+        # Parse will raise error if invalid
+        config = parse_config(config_file)
+
+        console.print(f"\n[green]✓ Configuration is valid![/green]\n")
+        console.print(f"  Project: {config.project.name}")
+        console.print(f"  Command prefix: {config.project.command_prefix}")
+        console.print(f"  Commands: {len(config.commands)}")
+        console.print(f"  MCP servers: {len(config.mcp_servers)}")
+
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except ConfigParseError as e:
+        console.print(f"[red]Validation Failed:[/red]\n{e}")
+        raise typer.Exit(1)
+
+
+@app.command("list-agents")
+def list_agents():
+    """List all supported AI agents.
+
+    Examples:
+
+        charlie list-agents
+    """
+    agents = list_supported_agents()
+
+    console.print("\n[bold]Supported AI Agents:[/bold]\n")
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Agent Name", style="cyan")
+    table.add_column("Display Name")
+    table.add_column("Format")
+    table.add_column("Command Directory")
+
+    for agent_name in agents:
+        info = get_agent_info(agent_name)
+        if info:
+            table.add_row(
+                agent_name, info["name"], info["file_format"], info["command_dir"]
+            )
+
+    console.print(table)
+    console.print(f"\n[dim]Total: {len(agents)} agents[/dim]\n")
+
+
+@app.command()
+def info(
+    agent: str = typer.Argument(..., help="Agent name to show information for"),
+):
+    """Show detailed information about an agent.
+
+    Examples:
+
+        charlie info claude
+        charlie info gemini
+    """
+    agent_info = get_agent_info(agent)
+
+    if not agent_info:
+        console.print(f"[red]Error:[/red] Unknown agent '{agent}'")
+        console.print(
+            f"\n[dim]Use 'charlie list-agents' to see available agents[/dim]"
+        )
+        raise typer.Exit(1)
+
+    # Create info panel
+    info_lines = [
+        f"[bold]Agent:[/bold] {agent_info['name']}",
+        "",
+        f"[cyan]Format:[/cyan] {agent_info['file_format']}",
+        f"[cyan]Command directory:[/cyan] {agent_info['command_dir']}",
+        f"[cyan]File extension:[/cyan] {agent_info['file_extension']}",
+        f"[cyan]Argument placeholder:[/cyan] {agent_info['arg_placeholder']}",
+        f"[cyan]Rules file:[/cyan] {agent_info['rules_file']}",
+    ]
+
+    panel = Panel(
+        "\n".join(info_lines), title=f"[bold]{agent}[/bold]", border_style="cyan"
+    )
+
+    console.print()
+    console.print(panel)
+    console.print()
+
+
+def main():
+    """Main entry point for CLI."""
+    app()
+
+
+if __name__ == "__main__":
+    main()
+
