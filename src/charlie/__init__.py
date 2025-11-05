@@ -2,5 +2,7 @@
 
 __version__ = "0.1.0"
 
-__all__ = ["__version__"]
+from charlie.transpiler import CommandTranspiler
+
+__all__ = ["CommandTranspiler", "__version__"]
 
