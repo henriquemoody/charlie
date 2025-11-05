@@ -75,9 +75,11 @@ def test_generate_rules_file(tmp_path):
 
     agent_spec = get_agent_spec("windsurf")
 
-    rules_path = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
 
     # Check file was created
+    assert len(rules_paths) == 1
+    rules_path = rules_paths[0]
     assert Path(rules_path).exists()
 
     # Check content
@@ -107,7 +109,8 @@ def test_generate_rules_file_preserves_manual_additions(tmp_path):
     agent_spec = get_agent_spec("windsurf")
 
     # First generation
-    rules_path = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     # Add manual content
     content = Path(rules_path).read_text()
@@ -118,7 +121,8 @@ def test_generate_rules_file_preserves_manual_additions(tmp_path):
     Path(rules_path).write_text(content)
 
     # Regenerate
-    rules_path = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "windsurf", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     # Check manual additions are preserved
     new_content = Path(rules_path).read_text()
@@ -143,7 +147,8 @@ def test_generate_rules_file_custom_title(tmp_path):
     )
 
     agent_spec = get_agent_spec("claude")
-    rules_path = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     content = Path(rules_path).read_text()
     assert "# Custom Title" in content
@@ -166,7 +171,8 @@ def test_generate_rules_file_without_commands(tmp_path):
     )
 
     agent_spec = get_agent_spec("claude")
-    rules_path = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     content = Path(rules_path).read_text()
     assert "## Available Commands" not in content
@@ -190,7 +196,8 @@ def test_generate_rules_file_without_preserve(tmp_path):
     )
 
     agent_spec = get_agent_spec("claude")
-    rules_path = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     content = Path(rules_path).read_text()
     assert "MANUAL ADDITIONS START" not in content
@@ -224,9 +231,11 @@ def test_generate_rules_for_agents(tmp_path):
     assert "claude" in results
     assert "windsurf" in results
 
-    # Check both files exist
-    assert Path(results["claude"]).exists()
-    assert Path(results["windsurf"]).exists()
+    # Check both files exist (results now returns lists of paths)
+    assert len(results["claude"]) >= 1
+    assert Path(results["claude"][0]).exists()
+    assert len(results["windsurf"]) >= 1
+    assert Path(results["windsurf"][0]).exists()
 
 
 def test_generate_rules_for_agents_skips_missing_rules_file(tmp_path):
@@ -269,11 +278,115 @@ def test_rules_file_date_format(tmp_path):
     )
 
     agent_spec = get_agent_spec("claude")
-    rules_path = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_paths = generate_rules_file(config, "claude", agent_spec, str(tmp_path))
+    rules_path = rules_paths[0]
 
     content = Path(rules_path).read_text()
     # Check date format YYYY-MM-DD
     import re
 
     assert re.search(r"Last updated: \d{4}-\d{2}-\d{2}", content)
+
+
+def test_generate_rules_merged_mode_with_sections(tmp_path):
+    """Test generating rules in merged mode with custom sections."""
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                    alwaysApply=True,  # Cursor-specific
+                    globs=["**/*.py"],  # Cursor-specific
+                ),
+                RulesSection(
+                    title="Commit Messages",
+                    content="Use conventional commits",
+                    order=2,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_file(config, "cursor", agent_spec, str(tmp_path), mode="merged")
+    
+    assert len(rules_paths) == 1
+    content = Path(rules_paths[0]).read_text()
+    
+    # Check frontmatter (from first section)
+    assert "alwaysApply: true" in content
+    assert "globs:" in content
+    assert "**/*.py" in content
+    
+    # Check both sections are present
+    assert "## Code Style" in content
+    assert "Use Black for formatting" in content
+    assert "## Commit Messages" in content
+    assert "Use conventional commits" in content
+
+
+def test_generate_rules_separate_mode(tmp_path):
+    """Test generating rules in separate mode (one file per section)."""
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                    alwaysApply=True,
+                ),
+                RulesSection(
+                    title="Commit Messages",
+                    content="Use conventional commits",
+                    order=2,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_file(config, "cursor", agent_spec, str(tmp_path), mode="separate")
+    
+    # Should generate 2 separate files
+    assert len(rules_paths) == 2
+    
+    # Check first file (code-style.md)
+    style_file = [p for p in rules_paths if "code-style" in p][0]
+    style_content = Path(style_file).read_text()
+    assert "# Code Style" in style_content
+    assert "Use Black for formatting" in style_content
+    assert "alwaysApply: true" in style_content
+    
+    # Check second file (commit-messages.md)
+    commit_file = [p for p in rules_paths if "commit-messages" in p][0]
+    commit_content = Path(commit_file).read_text()
+    assert "# Commit Messages" in commit_content
+    assert "Use conventional commits" in commit_content
 
