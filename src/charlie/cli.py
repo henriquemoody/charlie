@@ -60,6 +60,11 @@ def generate(
     ),
     mcp: bool = typer.Option(False, "--mcp", help="Generate MCP server configuration"),
     rules: bool = typer.Option(False, "--rules", help="Generate rules files"),
+    rules_mode: str = typer.Option(
+        "merged",
+        "--rules-mode",
+        help="Rules generation mode: 'merged' (single file) or 'separate' (one file per section)",
+    ),
     all_targets: bool = typer.Option(False, "--all", help="Generate everything"),
     output: str = typer.Option(".", "--output", "-o", help="Output directory"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
@@ -113,7 +118,11 @@ def generate(
         console.print("\n[bold]Generating outputs...[/bold]")
 
         results = transpiler.generate(
-            agents=agent_list, mcp=mcp, rules=rules, output_dir=output
+            agents=agent_list,
+            mcp=mcp,
+            rules=rules,
+            rules_mode=rules_mode,
+            output_dir=output,
         )
 
         # Display results

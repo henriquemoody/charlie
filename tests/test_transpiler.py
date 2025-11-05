@@ -292,8 +292,10 @@ commands:
 
     assert "claude" in rules_files
     assert "windsurf" in rules_files
-    assert Path(rules_files["claude"]).exists()
-    assert Path(rules_files["windsurf"]).exists()
+    assert len(rules_files["claude"]) >= 1
+    assert Path(rules_files["claude"][0]).exists()
+    assert len(rules_files["windsurf"]) >= 1
+    assert Path(rules_files["windsurf"][0]).exists()
 
 
 def test_transpiler_unknown_agent(tmp_path):

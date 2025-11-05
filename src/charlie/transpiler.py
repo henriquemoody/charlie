@@ -46,6 +46,7 @@ class CommandTranspiler:
         agents: Optional[List[str]] = None,
         mcp: bool = False,
         rules: bool = False,
+        rules_mode: str = "merged",
         output_dir: str = ".",
     ) -> Dict[str, List[str]]:
         """Generate outputs based on runtime preferences.
@@ -54,6 +55,7 @@ class CommandTranspiler:
             agents: List of agent names to generate for (None = no agents)
             mcp: Whether to generate MCP server configs
             rules: Whether to generate rules files
+            rules_mode: Rules generation mode ("merged" or "separate")
             output_dir: Base output directory
 
         Returns:
@@ -87,10 +89,10 @@ class CommandTranspiler:
             # Get specs for all agents
             agent_specs = {name: get_agent_spec(name) for name in agents}
             rules_files = generate_rules_for_agents(
-                self.config, agents, agent_specs, output_dir
+                self.config, agents, agent_specs, output_dir, mode=rules_mode
             )
-            for agent_name, rules_path in rules_files.items():
-                results[f"{agent_name}_rules"] = [rules_path]
+            for agent_name, rules_paths in rules_files.items():
+                results[f"{agent_name}_rules"] = rules_paths
 
         return results
 
@@ -108,18 +110,23 @@ class CommandTranspiler:
         """
         return generate_mcp_config(self.config, output_dir)
 
-    def generate_rules(self, agents: List[str], output_dir: str = ".") -> Dict[str, str]:
+    def generate_rules(
+        self, agents: List[str], output_dir: str = ".", mode: str = "merged"
+    ) -> Dict[str, List[str]]:
         """Generate only rules files for specified agents.
 
         Args:
             agents: List of agent names
             output_dir: Output directory
+            mode: Rules generation mode ("merged" or "separate")
 
         Returns:
-            Dictionary mapping agent names to rules file paths
+            Dictionary mapping agent names to list of rules file paths
         """
         agent_specs = {name: get_agent_spec(name) for name in agents}
-        return generate_rules_for_agents(self.config, agents, agent_specs, output_dir)
+        return generate_rules_for_agents(
+            self.config, agents, agent_specs, output_dir, mode=mode
+        )
 
     def _get_adapter(self, agent_name: str, agent_spec: dict):
         """Get adapter instance for an agent.
