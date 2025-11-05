@@ -48,11 +48,11 @@ commands:
     description: "Initialize a new feature"
     prompt: |
       ## User Input
-      
+
       {{user_input}}
-      
+
       ## Instructions
-      
+
       1. Parse the description
       2. Run: {{script}}
     scripts:
@@ -162,22 +162,22 @@ rules_files = transpiler.generate_rules(
 
 Charlie supports 15+ AI agents with built-in knowledge of their requirements:
 
-| Agent | Format | Directory | Notes |
-|-------|--------|-----------|-------|
-| Claude Code | Markdown | `.claude/commands/` | ✅ Full support |
-| GitHub Copilot | Markdown | `.github/prompts/` | ✅ Full support |
-| Cursor | Markdown | `.cursor/commands/` | ✅ Full support |
-| Gemini CLI | TOML | `.gemini/commands/` | ✅ Full support |
-| Qwen Code | TOML | `.qwen/commands/` | ✅ Full support |
-| Windsurf | Markdown | `.windsurf/workflows/` | ✅ Full support |
-| Kilo Code | Markdown | `.kilocode/workflows/` | ✅ Full support |
-| opencode | Markdown | `.opencode/command/` | ✅ Full support |
-| Codex CLI | Markdown | `.codex/prompts/` | ✅ Full support |
-| Auggie CLI | Markdown | `.augment/commands/` | ✅ Full support |
-| Roo Code | Markdown | `.roo/commands/` | ✅ Full support |
-| CodeBuddy CLI | Markdown | `.codebuddy/commands/` | ✅ Full support |
-| Amp | Markdown | `.agents/commands/` | ✅ Full support |
-| Amazon Q Developer | Markdown | `.amazonq/prompts/` | ✅ Full support |
+| Agent              | Format   | Directory              | Notes           |
+| ------------------ | -------- | ---------------------- | --------------- |
+| Claude Code        | Markdown | `.claude/commands/`    | ✅ Full support |
+| GitHub Copilot     | Markdown | `.github/prompts/`     | ✅ Full support |
+| Cursor             | Markdown | `.cursor/commands/`    | ✅ Full support |
+| Gemini CLI         | TOML     | `.gemini/commands/`    | ✅ Full support |
+| Qwen Code          | TOML     | `.qwen/commands/`      | ✅ Full support |
+| Windsurf           | Markdown | `.windsurf/workflows/` | ✅ Full support |
+| Kilo Code          | Markdown | `.kilocode/workflows/` | ✅ Full support |
+| opencode           | Markdown | `.opencode/command/`   | ✅ Full support |
+| Codex CLI          | Markdown | `.codex/prompts/`      | ✅ Full support |
+| Auggie CLI         | Markdown | `.augment/commands/`   | ✅ Full support |
+| Roo Code           | Markdown | `.roo/commands/`       | ✅ Full support |
+| CodeBuddy CLI      | Markdown | `.codebuddy/commands/` | ✅ Full support |
+| Amp                | Markdown | `.agents/commands/`    | ✅ Full support |
+| Amazon Q Developer | Markdown | `.amazonq/prompts/`    | ✅ Full support |
 
 Run `charlie list-agents` for the complete list.
 
@@ -207,18 +207,20 @@ project/
 ```
 
 **Benefits:**
+
 - Clear organization (one file per command/rule)
 - No merge conflicts on single file
 - Easy to add/remove components
 - Better for version control diffs
 
 **Command File** (`.charlie/commands/init.yaml`):
+
 ```yaml
 name: "init"
 description: "Initialize feature"
 
 # Agent-specific fields (optional)
-allowed-tools:  # Claude
+allowed-tools: # Claude
   - Bash(mkdir:*)
 tags: ["init", "setup"]
 category: "project"
@@ -232,14 +234,15 @@ scripts:
 ```
 
 **Rules File** (`.charlie/rules/code-style.yaml`):
+
 ```yaml
 title: "Code Style"
 order: 1
 
 # Agent-specific fields (optional)
-alwaysApply: true  # Cursor
-globs: ["**/*.py"]  # Cursor
-priority: "high"    # Windsurf
+alwaysApply: true # Cursor
+globs: ["**/*.py"] # Cursor
+priority: "high" # Windsurf
 
 content: |
   Use Black for formatting.
@@ -253,11 +256,11 @@ See [`examples/directory-based/`](examples/directory-based/) for a complete exam
 For simpler projects, use a single `charlie.yaml` file:
 
 ```yaml
-version: "1.0"  # Schema version
+version: "1.0" # Schema version
 
 project:
   name: "project-name"
-  command_prefix: "prefix"  # Used in /prefix.command-name
+  command_prefix: "prefix" # Used in /prefix.command-name
 
 # MCP server definitions (optional)
 mcp_servers:
@@ -280,13 +283,13 @@ commands:
     description: "Command description"
     prompt: |
       Command prompt template
-      
+
       User input: {{user_input}}
       Run: {{script}}
     scripts:
       sh: "path/to/script.sh"
       ps: "path/to/script.ps1"
-    agent_scripts:  # Optional agent-specific scripts
+    agent_scripts: # Optional agent-specific scripts
       sh: "path/to/agent-script.sh"
 ```
 
@@ -303,6 +306,7 @@ Charlie supports these universal placeholders in prompts:
 Charlie uses **pass-through fields** - add any agent-specific field to your commands or rules, and Charlie will include them in generated output:
 
 **Command Fields:**
+
 ```yaml
 # Claude-specific
 allowed-tools:
@@ -315,6 +319,7 @@ category: "source-control"
 ```
 
 **Rules Fields:**
+
 ```yaml
 # Cursor-specific
 alwaysApply: true
@@ -332,11 +337,13 @@ Charlie extracts these fields and includes them in agent-specific output (YAML f
 Generate rules files in two modes:
 
 **Merged Mode** (default) - Single file with all sections:
+
 ```bash
 charlie generate --agents cursor --rules --rules-mode merged
 ```
 
 **Separate Mode** - One file per section:
+
 ```bash
 charlie generate --agents cursor --rules --rules-mode separate
 ```
@@ -349,7 +356,7 @@ Use merged mode for simple projects, separate mode for better organization in co
 
 Generated `.claude/commands/myapp.init.md`:
 
-```markdown
+````markdown
 ---
 description: Initialize a new feature
 ---
@@ -359,12 +366,14 @@ description: Initialize a new feature
 ```text
 $ARGUMENTS
 ```
+````
 
 ## Instructions
 
 1. Parse the description
 2. Run: scripts/init.sh
-```
+
+````
 
 ### Agent Command (TOML)
 
@@ -383,7 +392,7 @@ prompt = """
 1. Parse the description
 2. Run: scripts/init.sh
 """
-```
+````
 
 ### MCP Server Config
 
@@ -405,7 +414,7 @@ Generated `mcp-config.json`:
               "inputSchema": {
                 "type": "object",
                 "properties": {
-                  "input": {"type": "string"}
+                  "input": { "type": "string" }
                 },
                 "required": ["input"]
               }
@@ -441,6 +450,7 @@ Last updated: 2025-01-15
 **Usage**: `/myapp.init <input>`
 
 **Scripts**:
+
 - Bash: `scripts/init.sh`
 - PowerShell: `scripts/init.ps1`
 
@@ -545,4 +555,3 @@ MIT
 ## Acknowledgments
 
 Charlie was inspired by the need to maintain consistent command definitions across multiple AI agents in the [Spec Kit](https://github.com/github/spec-kit) project.
-
