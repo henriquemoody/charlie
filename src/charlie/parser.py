@@ -316,6 +316,9 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     for command_file in discovered["commands"]:
         try:
             command = parse_single_file(command_file, Command)
+            # Infer name from filename if not specified
+            if not command.name:
+                command.name = command_file.stem  # filename without extension
             config_data["commands"].append(command.model_dump())
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading command from {command_file}: {e}")

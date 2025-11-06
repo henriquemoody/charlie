@@ -73,19 +73,19 @@ class Command(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    name: str = Field(..., description="Command name (without prefix)")
+    name: str | None = Field(None, description="Command name (without prefix)")
     description: str = Field(..., description="Command description")
-    prompt: str = Field(..., description="Command prompt template")
-    scripts: CommandScripts = Field(..., description="Platform-specific scripts")
+    prompt: str = Field(default="", description="Command prompt template")
+    scripts: CommandScripts | None = Field(None, description="Platform-specific scripts")
     agent_scripts: CommandScripts | None = Field(
         None, description="Optional agent-specific scripts"
     )
 
     @field_validator("scripts")
     @classmethod
-    def validate_scripts(cls, v: CommandScripts) -> CommandScripts:
-        """Ensure at least one script is provided."""
-        if not v.sh and not v.ps:
+    def validate_scripts(cls, v: CommandScripts | None) -> CommandScripts | None:
+        """Ensure at least one script is provided if scripts are defined."""
+        if v is not None and not v.sh and not v.ps:
             raise ValueError("At least one script (sh or ps) must be defined")
         return v
 

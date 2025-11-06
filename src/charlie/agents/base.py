@@ -55,9 +55,9 @@ class BaseAgentAdapter(ABC):
 
         for command in commands:
             # Check if command has the preferred script type
-            if command.scripts.sh:
+            if command.scripts and command.scripts.sh:
                 script_type = "sh"
-            elif command.scripts.ps:
+            elif command.scripts and command.scripts.ps:
                 script_type = "ps"
 
             filename = f"{namespace}.{command.name}{self.spec['file_extension']}"
@@ -139,6 +139,9 @@ class BaseAgentAdapter(ABC):
         Returns:
             Script path
         """
+        if not command.scripts:
+            return ""
+        
         if script_type == "sh" and command.scripts.sh:
             return command.scripts.sh
         elif script_type == "ps" and command.scripts.ps:

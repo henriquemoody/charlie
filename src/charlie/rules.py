@@ -30,10 +30,13 @@ def _format_command_reference(command: Command, command_prefix: str) -> str:
         "**Scripts**:",
     ]
 
-    if command.scripts.sh:
-        lines.append(f"- Bash: `{command.scripts.sh}`")
-    if command.scripts.ps:
-        lines.append(f"- PowerShell: `{command.scripts.ps}`")
+    if command.scripts:
+        if command.scripts.sh:
+            lines.append(f"- Bash: `{command.scripts.sh}`")
+        if command.scripts.ps:
+            lines.append(f"- PowerShell: `{command.scripts.ps}`")
+    else:
+        lines.append("- No scripts (prompt only)")
 
     lines.append("")  # Empty line after each command
 
