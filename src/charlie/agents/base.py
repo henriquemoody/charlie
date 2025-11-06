@@ -118,7 +118,8 @@ class BaseAgentAdapter(ABC):
         agent_dir = Path(self.spec.get("command_dir", "")).parent
 
         # Replace agent directory placeholder
-        text = text.replace("{{agent_dir}}", str(agent_dir))
+        # Use as_posix() for consistent forward slashes across platforms
+        text = text.replace("{{agent_dir}}", agent_dir.as_posix())
 
         # Replace commands directory placeholder
         commands_dir = self.spec.get("command_dir", "")
@@ -126,11 +127,12 @@ class BaseAgentAdapter(ABC):
 
         # Replace rules directory placeholder (if rules_file is defined)
         if "rules_file" in self.spec:
-            rules_dir = str(Path(self.spec["rules_file"]).parent)
+            rules_dir = Path(self.spec["rules_file"]).parent.as_posix()
             text = text.replace("{{rules_dir}}", rules_dir)
         else:
             # Fallback: use common pattern
-            text = text.replace("{{rules_dir}}", str(agent_dir / "rules"))
+            # Use as_posix() for consistent forward slashes across platforms
+            text = text.replace("{{rules_dir}}", (agent_dir / "rules").as_posix())
 
         return text
 

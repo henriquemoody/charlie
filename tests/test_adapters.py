@@ -211,7 +211,9 @@ def test_claude_adapter_generates_files(tmp_path) -> None:
     files = adapter.generate_commands(commands, "myapp", str(tmp_path))
 
     assert len(files) == 1
-    assert ".claude/commands/myapp.init.md" in files[0]
+    # Normalize path separators for cross-platform comparison
+    normalized_path = files[0].replace("\\", "/")
+    assert ".claude/commands/myapp.init.md" in normalized_path
 
     # Check file exists and has content
     filepath = Path(files[0])
@@ -237,7 +239,9 @@ def test_gemini_adapter_generates_toml_files(tmp_path) -> None:
     files = adapter.generate_commands(commands, "myapp", str(tmp_path))
 
     assert len(files) == 1
-    assert ".gemini/commands/myapp.test.toml" in files[0]
+    # Normalize path separators for cross-platform comparison
+    normalized_path = files[0].replace("\\", "/")
+    assert ".gemini/commands/myapp.test.toml" in normalized_path
 
     # Check file has TOML content
     filepath = Path(files[0])

@@ -197,6 +197,7 @@ def test_transform_path_placeholders() -> None:
     text = "Root: {{root}}, Commands: {{commands_dir}}, Rules: {{rules_dir}}, Agent: {{agent_dir}}"
     result = adapter.transform_path_placeholders(text)
 
+    # Paths should use forward slashes consistently across platforms
     assert "/project/root" in result
     assert ".cursor/commands" in result
     assert ".cursor/rules" in result
@@ -247,5 +248,6 @@ def test_transform_path_placeholders_agent_without_rules() -> None:
     text = "Rules: {{rules_dir}}"
     result = adapter.transform_path_placeholders(text)
 
+    # Paths should use forward slashes consistently across platforms
     # Should fallback to agent_dir/rules
     assert ".custom/rules" in result
