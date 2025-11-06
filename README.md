@@ -24,8 +24,7 @@ Charlie is a universal command definition system that transpiles YAML configurat
 ### Installation
 
 ```bash
-# From source (until PyPI release)
-pip install -e /path/to/charlie
+pip install charlie-agents
 ```
 
 ### Create Configuration (Optional)
