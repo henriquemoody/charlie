@@ -197,13 +197,13 @@ project/
 ├── charlie.yaml              # Project metadata only
 └── .charlie/
     ├── commands/
-    │   ├── init.yaml        # One file per command
-    │   └── deploy.yaml
+    │   ├── init.md          # One file per command (markdown with frontmatter)
+    │   └── deploy.md
     ├── rules/
-    │   ├── commit-messages.yaml  # One file per rule section
-    │   └── code-style.yaml
+    │   ├── commit-messages.md  # One file per rule section (markdown with frontmatter)
+    │   └── code-style.md
     └── mcp-servers/
-        └── local-tools.yaml
+        └── local-tools.yaml    # MCP servers still use YAML
 ```
 
 **Benefits:**
@@ -212,41 +212,45 @@ project/
 - No merge conflicts on single file
 - Easy to add/remove components
 - Better for version control diffs
+- Native markdown support for rich documentation
 
-**Command File** (`.charlie/commands/init.yaml`):
+**Command File** (`.charlie/commands/init.md`):
 
-```yaml
+```markdown
+---
 name: "init"
 description: "Initialize feature"
-
-# Agent-specific fields (optional)
-allowed-tools: # Claude
+allowed-tools:  # Claude-specific
   - Bash(mkdir:*)
 tags: ["init", "setup"]
 category: "project"
-
-prompt: |
-  Initialize: {{user_input}}
-  Run: {{script}}
-
 scripts:
   sh: "scripts/init.sh"
+---
+
+## User Input
+
+{{user_input}}
+
+## Instructions
+
+Initialize the feature and run: {{script}}
 ```
 
-**Rules File** (`.charlie/rules/code-style.yaml`):
+**Rules File** (`.charlie/rules/code-style.md`):
 
-```yaml
+```markdown
+---
 title: "Code Style"
 order: 1
+alwaysApply: true  # Cursor-specific
+globs: ["**/*.py"]  # Cursor-specific
+priority: "high"    # Windsurf-specific
+---
 
-# Agent-specific fields (optional)
-alwaysApply: true # Cursor
-globs: ["**/*.py"] # Cursor
-priority: "high" # Windsurf
+## Formatting
 
-content: |
-  Use Black for formatting.
-  Max line length: 100.
+Use Black for formatting with max line length: 100.
 ```
 
 See [`examples/directory-based/`](examples/directory-based/) for a complete example.
@@ -295,11 +299,21 @@ commands:
 
 ### Placeholders
 
-Charlie supports these universal placeholders in prompts:
+Charlie supports these universal placeholders in commands and rules:
+
+**Content Placeholders:**
 
 - `{{user_input}}` → Replaced with agent-specific input placeholder (`$ARGUMENTS` or `{{args}}`)
 - `{{script}}` → Replaced with the appropriate script path based on platform
 - `{{agent_script}}` → Replaced with optional agent-specific script path
+
+**Path Placeholders:**
+
+- `{{agent_dir}}` → Resolves to agent's base directory (e.g., `.claude`, `.cursor`)
+- `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
+- `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
+
+These path placeholders are especially useful in rules content when referencing agent-specific locations.
 
 ### Agent-Specific Fields
 
