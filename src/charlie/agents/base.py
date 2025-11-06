@@ -91,6 +91,38 @@ class BaseAgentAdapter(ABC):
             agent_script_path = self._get_agent_script_path(command, script_type)
             text = text.replace("{{agent_script}}", agent_script_path)
 
+        # Replace path placeholders
+        text = self.transform_path_placeholders(text)
+
+        return text
+
+    def transform_path_placeholders(self, text: str) -> str:
+        """Replace path placeholders with agent-specific directory paths.
+
+        Args:
+            text: Text with path placeholders
+
+        Returns:
+            Text with resolved paths
+        """
+        # Get the base agent directory (e.g., ".claude", ".cursor")
+        agent_dir = Path(self.spec.get("command_dir", "")).parent
+        
+        # Replace agent directory placeholder
+        text = text.replace("{{agent_dir}}", str(agent_dir))
+        
+        # Replace commands directory placeholder
+        commands_dir = self.spec.get("command_dir", "")
+        text = text.replace("{{commands_dir}}", commands_dir)
+        
+        # Replace rules directory placeholder (if rules_file is defined)
+        if "rules_file" in self.spec:
+            rules_dir = str(Path(self.spec["rules_file"]).parent)
+            text = text.replace("{{rules_dir}}", rules_dir)
+        else:
+            # Fallback: use common pattern
+            text = text.replace("{{rules_dir}}", str(agent_dir / "rules"))
+        
         return text
 
     def _get_script_path(self, command: Command, script_type: str) -> str:

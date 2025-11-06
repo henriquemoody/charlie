@@ -16,6 +16,54 @@ class ConfigParseError(Exception):
     pass
 
 
+def parse_frontmatter(content: str) -> tuple[Dict, str]:
+    """Parse YAML frontmatter from markdown content.
+
+    Extracts YAML frontmatter between --- delimiters and returns
+    both the parsed frontmatter and the remaining content.
+
+    Args:
+        content: Markdown content with optional frontmatter
+
+    Returns:
+        Tuple of (frontmatter_dict, content_body)
+        If no frontmatter, returns ({}, original_content)
+
+    Raises:
+        ConfigParseError: If frontmatter YAML is invalid
+    """
+    content = content.lstrip()
+    
+    # Check if content starts with frontmatter delimiter
+    if not content.startswith("---"):
+        return {}, content
+    
+    # Find the closing delimiter
+    try:
+        # Split on --- but skip the first empty match
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            raise ConfigParseError("Frontmatter closing delimiter '---' not found")
+        
+        frontmatter_str = parts[1].strip()
+        body = parts[2].lstrip()
+        
+        # Parse YAML frontmatter
+        if not frontmatter_str:
+            return {}, body
+        
+        frontmatter = yaml.safe_load(frontmatter_str)
+        if frontmatter is None:
+            frontmatter = {}
+        
+        return frontmatter, body
+        
+    except yaml.YAMLError as e:
+        raise ConfigParseError(f"Invalid YAML in frontmatter: {e}")
+    except Exception as e:
+        raise ConfigParseError(f"Error parsing frontmatter: {e}")
+
+
 def parse_config(config_path: Union[str, Path]) -> CharlieConfig:
     """Parse and validate a charlie configuration file.
 
@@ -111,10 +159,10 @@ def find_config_file(start_dir: Union[str, Path] = ".") -> Path:
 
 
 def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
-    """Parse a single YAML file into a Pydantic model.
+    """Parse a single file (YAML or Markdown with frontmatter) into a Pydantic model.
 
     Args:
-        file_path: Path to YAML file
+        file_path: Path to file (YAML or Markdown)
         model_class: Pydantic model class to parse into
 
     Returns:
@@ -125,14 +173,40 @@ def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            raw_data = yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        raise ConfigParseError(f"Invalid YAML in {file_path}: {e}")
+            file_content = f.read()
     except Exception as e:
         raise ConfigParseError(f"Error reading {file_path}: {e}")
 
-    if not raw_data:
+    if not file_content.strip():
         raise ConfigParseError(f"File is empty: {file_path}")
+
+    # Determine file type and parse accordingly
+    if file_path.suffix == ".md":
+        # Parse markdown with frontmatter
+        try:
+            frontmatter, body = parse_frontmatter(file_content)
+        except ConfigParseError as e:
+            raise ConfigParseError(f"Error parsing frontmatter in {file_path}: {e}")
+        
+        # Merge frontmatter and body based on model type
+        if model_class.__name__ == "Command":
+            # For commands: frontmatter = metadata, body = prompt
+            raw_data = {**frontmatter, "prompt": body.strip()}
+        elif model_class.__name__ == "RulesSection":
+            # For rules: frontmatter = metadata (title, order, etc.), body = content
+            raw_data = {**frontmatter, "content": body.strip()}
+        else:
+            # Generic: just use frontmatter
+            raw_data = frontmatter
+    else:
+        # Parse YAML file
+        try:
+            raw_data = yaml.safe_load(file_content)
+        except yaml.YAMLError as e:
+            raise ConfigParseError(f"Invalid YAML in {file_path}: {e}")
+        
+        if not raw_data:
+            raise ConfigParseError(f"File is empty: {file_path}")
 
     try:
         return model_class(**raw_data)
@@ -171,17 +245,17 @@ def discover_config_files(base_dir: Path) -> Dict[str, List[Path]]:
     if not charlie_dir.exists():
         return result
 
-    # Discover commands
+    # Discover commands (markdown files with frontmatter)
     commands_dir = charlie_dir / "commands"
     if commands_dir.exists():
-        result["commands"] = sorted(commands_dir.glob("*.yaml"))
+        result["commands"] = sorted(commands_dir.glob("*.md"))
 
-    # Discover rules
+    # Discover rules (markdown files with frontmatter)
     rules_dir = charlie_dir / "rules"
     if rules_dir.exists():
-        result["rules"] = sorted(rules_dir.glob("*.yaml"))
+        result["rules"] = sorted(rules_dir.glob("*.md"))
 
-    # Discover MCP servers
+    # Discover MCP servers (still YAML)
     mcp_dir = charlie_dir / "mcp-servers"
     if mcp_dir.exists():
         result["mcp_servers"] = sorted(mcp_dir.glob("*.yaml"))
