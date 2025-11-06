@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "charlie"
+name = "charlie-agents"
 version = "0.1.0"
 description = "Universal command transpiler for AI agents, MCP servers, and rules"
 readme = "README.md"
@@ -41,10 +41,10 @@ dev = [
 charlie = "charlie.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/charlie"
-Documentation = "https://github.com/yourusername/charlie#readme"
-Repository = "https://github.com/yourusername/charlie"
-Issues = "https://github.com/yourusername/charlie/issues"
+Homepage = "https://github.com/henriquemoody/charlie"
+Documentation = "https://github.com/henriquemoody/charlie#readme"
+Repository = "https://github.com/henriquemoody/charlie"
+Issues = "https://github.com/henriquemoody/charlie/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/charlie"]
