@@ -188,3 +188,64 @@ def test_generate_commands_creates_files(tmp_path):
     for filepath in files:
         assert Path(filepath).exists()
 
+
+def test_transform_path_placeholders():
+    """Test path placeholder transformation."""
+    spec = get_agent_spec("cursor")
+    adapter = SampleAdapter(spec)
+
+    text = "Commands: {{commands_dir}}, Rules: {{rules_dir}}, Agent: {{agent_dir}}"
+    result = adapter.transform_path_placeholders(text)
+
+    assert ".cursor/commands" in result
+    assert ".cursor/rules" in result
+    assert ".cursor" in result
+
+
+def test_transform_path_placeholders_cursor():
+    """Test path placeholders for Cursor agent."""
+    spec = get_agent_spec("cursor")
+    adapter = SampleAdapter(spec)
+
+    text = "Use {{commands_dir}} for commands"
+    result = adapter.transform_path_placeholders(text)
+
+    assert ".cursor/commands" in result
+
+
+def test_transform_path_placeholders_in_transform_placeholders():
+    """Test that path placeholders are resolved in transform_placeholders."""
+    spec = get_agent_spec("claude")
+    adapter = SampleAdapter(spec)
+    
+    command = Command(
+        name="test",
+        description="Test",
+        prompt="User wants: {{user_input}}\nCheck {{commands_dir}} for commands",
+        scripts=CommandScripts(sh="test.sh"),
+    )
+
+    result = adapter.transform_placeholders(command.prompt, command, "sh")
+
+    # Path placeholder should be resolved
+    assert ".claude/commands" in result
+    # User input placeholder should also be resolved
+    assert "$ARGUMENTS" in result
+
+
+def test_transform_path_placeholders_agent_without_rules():
+    """Test path placeholders for agent without rules_file."""
+    spec = {
+        "command_dir": ".custom/commands",
+        "arg_placeholder": "$ARGS",
+        "file_format": "markdown",
+        "file_extension": ".md",
+    }
+    adapter = SampleAdapter(spec)
+
+    text = "Rules: {{rules_dir}}"
+    result = adapter.transform_path_placeholders(text)
+
+    # Should fallback to agent_dir/rules
+    assert ".custom/rules" in result
+

@@ -11,6 +11,7 @@ from charlie.parser import (
     parse_single_file,
     discover_config_files,
     load_directory_config,
+    parse_frontmatter,
     ConfigParseError,
 )
 from charlie.schema import Command, RulesSection, MCPServer
@@ -220,10 +221,10 @@ def test_discover_config_files_complete(tmp_path):
     rules_dir.mkdir(parents=True)
     mcp_dir.mkdir(parents=True)
 
-    # Create files
-    (commands_dir / "init.yaml").write_text("test")
-    (commands_dir / "build.yaml").write_text("test")
-    (rules_dir / "style.yaml").write_text("test")
+    # Create files (commands and rules use .md now, MCP servers still use .yaml)
+    (commands_dir / "init.md").write_text("test")
+    (commands_dir / "build.md").write_text("test")
+    (rules_dir / "style.md").write_text("test")
     (mcp_dir / "server.yaml").write_text("test")
 
     result = discover_config_files(tmp_path)
@@ -239,14 +240,16 @@ def test_load_directory_config_minimal(tmp_path):
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
 
-    # Create one command
-    (commands_dir / "test.yaml").write_text(
-        """
+    # Create one command (markdown format with frontmatter)
+    (commands_dir / "test.md").write_text(
+        """---
 name: "test"
 description: "Test command"
-prompt: "Test"
 scripts:
   sh: "test.sh"
+---
+
+Test prompt content
 """
     )
 
@@ -269,17 +272,19 @@ project:
 """
     )
 
-    # Create command
+    # Create command (markdown format with frontmatter)
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
-    (commands_dir / "init.yaml").write_text(
-        """
+    (commands_dir / "init.md").write_text(
+        """---
 name: "init"
 description: "Init"
-prompt: "Init"
 scripts:
   sh: "init.sh"
+---
+
+Init prompt content
 """
     )
 
@@ -292,37 +297,43 @@ scripts:
 
 def test_load_directory_config_with_rules(tmp_path):
     """Test loading directory config with rules sections."""
-    # Create rules
+    # Create rules (markdown format with frontmatter)
     charlie_dir = tmp_path / ".charlie"
     rules_dir = charlie_dir / "rules"
     commands_dir = charlie_dir / "commands"
     rules_dir.mkdir(parents=True)
     commands_dir.mkdir(parents=True)
 
-    (rules_dir / "style.yaml").write_text(
-        """
+    (rules_dir / "style.md").write_text(
+        """---
 title: "Code Style"
-content: "Use Black"
 order: 1
+---
+
+Use Black
 """
     )
 
-    (rules_dir / "commits.yaml").write_text(
-        """
+    (rules_dir / "commits.md").write_text(
+        """---
 title: "Commit Messages"
-content: "Use conventional commits"
 order: 2
+---
+
+Use conventional commits
 """
     )
 
-    # Need at least one command for valid config
-    (commands_dir / "test.yaml").write_text(
-        """
+    # Need at least one command for valid config (markdown format)
+    (commands_dir / "test.md").write_text(
+        """---
 name: "test"
 description: "Test"
-prompt: "Test"
 scripts:
   sh: "test.sh"
+---
+
+Test prompt content
 """
     )
 
@@ -377,13 +388,15 @@ def test_parse_config_detects_directory_format(tmp_path):
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
 
-    (commands_dir / "test.yaml").write_text(
-        """
+    (commands_dir / "test.md").write_text(
+        """---
 name: "test"
 description: "Test"
-prompt: "Test"
 scripts:
   sh: "test.sh"
+---
+
+Test prompt content
 """
     )
 
@@ -424,4 +437,127 @@ commands:
     config = parse_config(config_file)
     assert config.project.name == "test"
     assert len(config.commands) == 1
+
+
+def test_parse_frontmatter_valid():
+    """Test parsing valid frontmatter."""
+    content = """---
+name: "test"
+description: "Test command"
+---
+
+Content body here
+"""
+    frontmatter, body = parse_frontmatter(content)
+    assert frontmatter["name"] == "test"
+    assert frontmatter["description"] == "Test command"
+    assert body.strip() == "Content body here"
+
+
+def test_parse_frontmatter_no_frontmatter():
+    """Test parsing content without frontmatter."""
+    content = "Just plain content"
+    frontmatter, body = parse_frontmatter(content)
+    assert frontmatter == {}
+    assert body == "Just plain content"
+
+
+def test_parse_frontmatter_empty_frontmatter():
+    """Test parsing empty frontmatter."""
+    content = """---
+---
+
+Content body
+"""
+    frontmatter, body = parse_frontmatter(content)
+    assert frontmatter == {}
+    assert body.strip() == "Content body"
+
+
+def test_parse_frontmatter_complex_yaml():
+    """Test parsing complex YAML in frontmatter."""
+    content = """---
+name: "test"
+tags:
+  - tag1
+  - tag2
+scripts:
+  sh: "test.sh"
+  ps: "test.ps1"
+---
+
+# Content
+
+With markdown formatting
+"""
+    frontmatter, body = parse_frontmatter(content)
+    assert frontmatter["name"] == "test"
+    assert frontmatter["tags"] == ["tag1", "tag2"]
+    assert frontmatter["scripts"]["sh"] == "test.sh"
+    assert "# Content" in body
+
+
+def test_parse_frontmatter_invalid_yaml():
+    """Test parsing invalid YAML in frontmatter."""
+    content = """---
+name: "test
+invalid yaml: [unclosed
+---
+
+Content
+"""
+    with pytest.raises(ConfigParseError, match="Invalid YAML in frontmatter"):
+        parse_frontmatter(content)
+
+
+def test_parse_frontmatter_missing_closing_delimiter():
+    """Test parsing frontmatter without closing delimiter."""
+    content = """---
+name: "test"
+
+No closing delimiter
+"""
+    with pytest.raises(ConfigParseError, match="closing delimiter"):
+        parse_frontmatter(content)
+
+
+def test_parse_single_file_markdown_command(tmp_path):
+    """Test parsing markdown file with frontmatter as Command."""
+    md_file = tmp_path / "test.md"
+    md_file.write_text(
+        """---
+name: "test"
+description: "Test command"
+scripts:
+  sh: "test.sh"
+---
+
+Test prompt content
+"""
+    )
+
+    command = parse_single_file(md_file, Command)
+    assert command.name == "test"
+    assert command.description == "Test command"
+    assert command.prompt == "Test prompt content"
+    assert command.scripts.sh == "test.sh"
+
+
+def test_parse_single_file_markdown_rules(tmp_path):
+    """Test parsing markdown file with frontmatter as RulesSection."""
+    md_file = tmp_path / "test.md"
+    md_file.write_text(
+        """---
+title: "Test Rule"
+order: 1
+---
+
+Rule content here
+"""
+    )
+
+    rules = parse_single_file(md_file, RulesSection)
+    assert rules.title == "Test Rule"
+    assert rules.order == 1
+    assert rules.content == "Rule content here"
 
