@@ -73,8 +73,9 @@ class CommandTranspiler:
                 adapter = self._get_adapter(agent_name, spec)
 
                 # Generate command files
+                command_prefix = self.config.project.command_prefix if self.config.project else None
                 files = adapter.generate_commands(
-                    self.config.commands, self.config.project.command_prefix, output_dir
+                    self.config.commands, command_prefix, output_dir
                 )
                 results[f"{agent_name}_commands"] = files
 

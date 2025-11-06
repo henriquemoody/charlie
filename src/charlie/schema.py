@@ -9,7 +9,7 @@ class ProjectConfig(BaseModel):
     """Project metadata configuration."""
 
     name: str = Field(..., description="Project name")
-    command_prefix: str = Field(..., description="Command prefix for slash commands")
+    command_prefix: str | None = Field(None, description="Command prefix for slash commands")
 
 
 class MCPServer(BaseModel):

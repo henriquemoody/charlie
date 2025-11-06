@@ -10,12 +10,12 @@ from charlie.schema import Command
 class ClaudeAdapter(BaseAgentAdapter):
     """Adapter for Claude Code commands (Markdown format)."""
 
-    def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
+    def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
         """Generate Claude Code command file in Markdown format.
 
         Args:
             command: Command definition
-            namespace: Command namespace/prefix
+            namespace: Command namespace/prefix (optional)
             script_type: Script type (sh or ps)
 
         Returns:

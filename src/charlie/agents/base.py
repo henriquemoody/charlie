@@ -20,12 +20,12 @@ class BaseAgentAdapter(ABC):
         self.root_dir = root_dir
 
     @abstractmethod
-    def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
+    def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
         """Generate agent-specific command file content.
 
         Args:
             command: Command definition
-            namespace: Command namespace/prefix
+            namespace: Command namespace/prefix (optional)
             script_type: Script type (sh or ps)
 
         Returns:
@@ -34,13 +34,13 @@ class BaseAgentAdapter(ABC):
         pass
 
     def generate_commands(
-        self, commands: list[Command], namespace: str, output_dir: str
+        self, commands: list[Command], namespace: str | None, output_dir: str
     ) -> list[str]:
         """Generate all command files for this agent.
 
         Args:
             commands: List of command definitions
-            namespace: Command namespace/prefix
+            namespace: Command namespace/prefix (optional)
             output_dir: Base output directory
 
         Returns:
@@ -60,7 +60,11 @@ class BaseAgentAdapter(ABC):
             elif command.scripts and command.scripts.ps:
                 script_type = "ps"
 
-            filename = f"{namespace}.{command.name}{self.spec['file_extension']}"
+            # Build filename with or without namespace
+            if namespace:
+                filename = f"{namespace}.{command.name}{self.spec['file_extension']}"
+            else:
+                filename = f"{command.name}{self.spec['file_extension']}"
             filepath = command_dir / filename
 
             content = self.generate_command(command, namespace, script_type)

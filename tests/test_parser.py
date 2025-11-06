@@ -70,8 +70,8 @@ def test_parse_invalid_schema(tmp_path):
         """
 version: "1.0"
 project:
-  name: "test"
-# Missing command_prefix and commands
+  # Missing required 'name' field
+  command_prefix: "test"
 """
     )
 

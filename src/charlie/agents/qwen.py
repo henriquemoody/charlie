@@ -7,12 +7,12 @@ from charlie.schema import Command
 class QwenAdapter(BaseAgentAdapter):
     """Adapter for Qwen Code commands (TOML format)."""
 
-    def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
+    def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
         """Generate Qwen Code command file in TOML format.
 
         Args:
             command: Command definition
-            namespace: Command namespace/prefix
+            namespace: Command namespace/prefix (optional)
             script_type: Script type (sh or ps)
 
         Returns:

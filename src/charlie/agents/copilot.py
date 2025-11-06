@@ -10,12 +10,12 @@ from charlie.schema import Command
 class CopilotAdapter(BaseAgentAdapter):
     """Adapter for GitHub Copilot prompts (Markdown format)."""
 
-    def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
+    def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
         """Generate GitHub Copilot prompt file in Markdown format.
 
         Args:
             command: Command definition
-            namespace: Command namespace/prefix
+            namespace: Command namespace/prefix (optional)
             script_type: Script type (sh or ps)
 
         Returns:
