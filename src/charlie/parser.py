@@ -10,6 +10,7 @@ from charlie.schema import (
     CharlieConfig,
     Command,
     MCPServer,
+    ProjectConfig,
     RulesSection,
 )
 
@@ -20,6 +21,57 @@ class ConfigParseError(Exception):
     """Error parsing configuration file."""
 
     pass
+
+
+def _infer_project_name(base_dir: Path) -> str:
+    """Infer project name from directory name.
+
+    Args:
+        base_dir: Base directory path
+
+    Returns:
+        Project name inferred from directory
+    """
+    return base_dir.resolve().name
+
+
+def _create_default_config(base_dir: Path) -> CharlieConfig:
+    """Create a minimal default configuration with inferred project name.
+
+    Args:
+        base_dir: Base directory path
+
+    Returns:
+        Default CharlieConfig with inferred project name
+    """
+    project_name = _infer_project_name(base_dir)
+    return CharlieConfig(
+        version="1.0",
+        project={"name": project_name},
+        commands=[],
+        mcp_servers=[],
+    )
+
+
+def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig:
+    """Ensure config has a project name, inferring from directory if needed.
+
+    Args:
+        config: Configuration object
+        base_dir: Base directory path
+
+    Returns:
+        Configuration with project name set
+    """
+    if config.project is None:
+        # No project config - create one with inferred name
+        project_name = _infer_project_name(base_dir)
+        config.project = ProjectConfig(name=project_name)
+    elif config.project.name is None:
+        # Project config exists but name is missing - infer it
+        config.project.name = _infer_project_name(base_dir)
+    
+    return config
 
 
 def parse_frontmatter(content: str) -> tuple[dict, str]:
@@ -76,6 +128,7 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
     Automatically detects format:
     - If .charlie/ directory exists: load from directory-based structure
     - Otherwise: load from monolithic charlie.yaml file
+    - If no config exists: create minimal default config
 
     Args:
         config_path: Path to the YAML configuration file or base directory
@@ -85,14 +138,23 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
 
     Raises:
         ConfigParseError: If file cannot be read or validation fails
-        FileNotFoundError: If config file doesn't exist
     """
     config_path = Path(config_path)
 
     # Determine base directory
+    # If it's an existing file, use its parent
+    # If it's an existing directory, use it
+    # If it doesn't exist but has a file extension, assume it's a file path and use parent
+    # Otherwise, treat it as a directory
     if config_path.is_file():
         base_dir = config_path.parent
+    elif config_path.is_dir():
+        base_dir = config_path
+    elif config_path.suffix in ['.yaml', '.yml']:
+        # Looks like a file path (even if it doesn't exist)
+        base_dir = config_path.parent
     else:
+        # Treat as directory path
         base_dir = config_path
 
     # Check if directory-based structure exists
@@ -101,10 +163,16 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
         # Use directory-based loading
         return load_directory_config(base_dir)
 
-    # Fall back to monolithic file loading
-    if not config_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+    # If config_path is a directory, create default config
+    if config_path.is_dir():
+        return _create_default_config(base_dir)
 
+    # Check if config file exists
+    if not config_path.exists():
+        # If no config file exists, create minimal default config
+        return _create_default_config(base_dir)
+
+    # Fall back to monolithic file loading
     try:
         with open(config_path, encoding="utf-8") as f:
             raw_config = yaml.safe_load(f)
@@ -114,10 +182,13 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
         raise ConfigParseError(f"Error reading configuration file: {e}")
 
     if not raw_config:
-        raise ConfigParseError("Configuration file is empty")
+        # Empty file - create default config
+        return _create_default_config(base_dir)
 
     try:
         config = CharlieConfig(**raw_config)
+        # Ensure project name is set
+        config = _ensure_project_name(config, base_dir)
     except ValidationError as e:
         error_messages = []
         for error in e.errors():
@@ -130,21 +201,19 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
     return config
 
 
-def find_config_file(start_dir: str | Path = ".") -> Path:
+def find_config_file(start_dir: str | Path = ".") -> Path | None:
     """Find charlie configuration file in order of preference.
 
     Resolution order:
     1. charlie.yaml in current directory
     2. .charlie.yaml in current directory
+    3. .charlie/ directory (returns directory path)
 
     Args:
         start_dir: Directory to search from (default: current directory)
 
     Returns:
-        Path to configuration file
-
-    Raises:
-        FileNotFoundError: If no configuration file is found
+        Path to configuration file or directory, or None if not found
     """
     start_dir = Path(start_dir).resolve()
 
@@ -158,10 +227,12 @@ def find_config_file(start_dir: str | Path = ".") -> Path:
     if hidden_charlie.exists():
         return hidden_charlie
 
-    raise FileNotFoundError(
-        "No configuration file found. Expected charlie.yaml or .charlie.yaml "
-        f"in {start_dir}"
-    )
+    # Check for .charlie/ directory
+    charlie_dir = start_dir / ".charlie"
+    if charlie_dir.exists() and charlie_dir.is_dir():
+        return charlie_dir
+
+    return None
 
 
 def parse_single_file(file_path: Path, model_class: type[T]) -> T:
@@ -347,7 +418,10 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
 
     # Create final config
     try:
-        return CharlieConfig(**config_data)
+        config = CharlieConfig(**config_data)
+        # Ensure project name is set
+        config = _ensure_project_name(config, base_dir)
+        return config
     except ValidationError as e:
         error_messages = []
         for error in e.errors():

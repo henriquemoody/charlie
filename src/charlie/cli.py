@@ -26,10 +26,10 @@ def _resolve_config_file(config_path: str | None) -> Path:
         config_path: Explicit path or None for auto-detection
 
     Returns:
-        Resolved path to configuration file
+        Resolved path to configuration file or directory
 
     Raises:
-        FileNotFoundError: If no config file found
+        FileNotFoundError: If explicitly provided config file doesn't exist
     """
     if config_path:
         path = Path(config_path)
@@ -37,15 +37,13 @@ def _resolve_config_file(config_path: str | None) -> Path:
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
         return path
 
-    # Auto-detect charlie.yaml or .charlie.yaml
-    try:
-        return find_config_file()
-    except FileNotFoundError:
-        console.print(
-            "[red]Error:[/red] No configuration file found. "
-            "Expected charlie.yaml or .charlie.yaml in current directory."
-        )
-        raise typer.Exit(1)
+    # Auto-detect charlie.yaml, .charlie.yaml, or .charlie/
+    found = find_config_file()
+    if found:
+        return found
+    
+    # No config found - use current directory (will create default config)
+    return Path.cwd()
 
 
 @app.command()
@@ -184,8 +182,10 @@ def validate(
         config = parse_config(config_file)
 
         console.print("\n[green]✓ Configuration is valid![/green]\n")
-        console.print(f"  Project: {config.project.name}")
-        console.print(f"  Command prefix: {config.project.command_prefix}")
+        project_name = config.project.name if config.project else "unknown"
+        command_prefix = config.project.command_prefix if config.project else None
+        console.print(f"  Project: {project_name}")
+        console.print(f"  Command prefix: {command_prefix or '(none)'}")
         console.print(f"  Commands: {len(config.commands)}")
         console.print(f"  MCP servers: {len(config.mcp_servers)}")
 

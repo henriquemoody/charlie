@@ -39,19 +39,27 @@ commands:
     assert len(config.commands) == 1
 
 
-def test_parse_nonexistent_file():
-    """Test parsing a non-existent file raises FileNotFoundError."""
-    with pytest.raises(FileNotFoundError):
-        parse_config("/nonexistent/config.yaml")
+def test_parse_nonexistent_file(tmp_path):
+    """Test parsing a non-existent file creates default config."""
+    config = parse_config(tmp_path / "nonexistent.yaml")
+    # Should create default config with inferred name from directory
+    assert config.project is not None
+    assert config.project.name == tmp_path.name
+    assert config.version == "1.0"
+    assert config.commands == []
 
 
 def test_parse_empty_file(tmp_path):
-    """Test parsing an empty file raises ConfigParseError."""
+    """Test parsing an empty file creates default config."""
     config_file = tmp_path / "empty.yaml"
     config_file.write_text("")
 
-    with pytest.raises(ConfigParseError, match="empty"):
-        parse_config(config_file)
+    config = parse_config(config_file)
+    # Should create default config with inferred name from directory
+    assert config.project is not None
+    assert config.project.name == tmp_path.name
+    assert config.version == "1.0"
+    assert config.commands == []
 
 
 def test_parse_invalid_yaml(tmp_path):
@@ -68,10 +76,9 @@ def test_parse_invalid_schema(tmp_path):
     config_file = tmp_path / "invalid_schema.yaml"
     config_file.write_text(
         """
-version: "1.0"
+version: "2.0"  # Invalid version
 project:
-  # Missing required 'name' field
-  command_prefix: "test"
+  name: "test"
 """
     )
 
@@ -109,9 +116,9 @@ def test_find_config_prefers_non_hidden(tmp_path):
 
 
 def test_find_config_not_found(tmp_path):
-    """Test that missing config file raises FileNotFoundError."""
-    with pytest.raises(FileNotFoundError, match="No configuration file found"):
-        find_config_file(tmp_path)
+    """Test that missing config file returns None."""
+    found = find_config_file(tmp_path)
+    assert found is None
 
 
 def test_parse_config_with_mcp_servers(tmp_path):
@@ -253,7 +260,9 @@ Test prompt content
 
     config = load_directory_config(tmp_path)
     assert config.version == "1.0"
-    assert config.project is None  # No project config
+    # Project config created with inferred name
+    assert config.project is not None
+    assert config.project.name == tmp_path.name
     assert len(config.commands) == 1
     assert config.commands[0].name == "test"
 

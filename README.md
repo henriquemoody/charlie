@@ -14,7 +14,8 @@ Charlie is a universal command definition system that transpiles YAML configurat
 - 🤖 **Multi-Agent Support**: Generate for 15+ AI agents (Claude, Copilot, Cursor, Gemini, Windsurf, and more)
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
-- 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` in current directory
+- 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` or `.charlie/` directory
+- 🚀 **Zero Config**: Works without any configuration file - infers project name from directory
 - ⚡ **Runtime Targeting**: Choose which agents to generate for at runtime
 - 📦 **Library & CLI**: Use as CLI tool or import as Python library
 
@@ -27,16 +28,18 @@ Charlie is a universal command definition system that transpiles YAML configurat
 pip install -e /path/to/charlie
 ```
 
-### Create Configuration
+### Create Configuration (Optional)
 
-Create `charlie.yaml` in your project:
+Charlie works without any configuration file! It will infer your project name from the directory name. 
+
+For advanced features, create `charlie.yaml` in your project:
 
 ```yaml
-version: "1.0"
+version: "1.0"  # Optional, defaults to "1.0"
 
 project:
-  name: "my-project"
-  command_prefix: "myapp"
+  name: "my-project"      # Optional, inferred from directory name
+  command_prefix: "myapp" # Optional, omit for simple command names
 
 mcp_servers:
   - name: "myapp-commands"
@@ -59,6 +62,11 @@ commands:
       sh: "scripts/init.sh"
       ps: "scripts/init.ps1"
 ```
+
+**What's Optional?**
+- The entire `charlie.yaml` file (project name inferred from directory)
+- `project.name` field (inferred from directory name)
+- `project.command_prefix` (commands use simple names like `init.md` instead of `myapp.init.md`)
 
 ### Generate Outputs
 
@@ -183,18 +191,20 @@ Run `charlie list-agents` for the complete list.
 
 ## Configuration
 
-Charlie supports two configuration approaches:
+Charlie is **zero-config by default** - it works without any configuration file and infers the project name from your directory name.
+
+For advanced features, Charlie supports two configuration approaches:
 
 1. **Monolithic** - Single `charlie.yaml` file (good for small projects)
 2. **Directory-Based** - Modular files in `.charlie/` directories (good for large projects)
 
 ### Directory-Based Configuration (Recommended)
 
-For better organization and collaboration, use the directory-based approach:
+For better organization and collaboration, use the directory-based approach. The `charlie.yaml` file is **optional** - if you only have a `.charlie/` directory, Charlie will infer the project name from the directory:
 
 ```
 project/
-├── charlie.yaml              # Project metadata only
+├── charlie.yaml              # Optional: Project metadata (name inferred if omitted)
 └── .charlie/
     ├── commands/
     │   ├── init.md          # One file per command (markdown with frontmatter)
@@ -256,14 +266,14 @@ See [`examples/directory-based/`](examples/directory-based/) for a complete exam
 
 ### Monolithic YAML Schema
 
-For simpler projects, use a single `charlie.yaml` file:
+For simpler projects, use a single `charlie.yaml` file. All fields are optional:
 
 ```yaml
-version: "1.0" # Schema version
+version: "1.0" # Optional: Schema version (defaults to "1.0")
 
 project:
-  name: "project-name"
-  command_prefix: "prefix" # Used in /prefix.command-name
+  name: "project-name"     # Optional: Inferred from directory name if omitted
+  command_prefix: "prefix" # Optional: Used in /prefix.command-name, omit for simple names
 
 # MCP server definitions (optional)
 mcp_servers:
