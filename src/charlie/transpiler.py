@@ -1,10 +1,7 @@
 """Core transpiler engine for command generation."""
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
-from charlie.parser import parse_config
-from charlie.schema import CharlieConfig
 from charlie.agents import get_agent_spec
 from charlie.agents.claude import ClaudeAdapter
 from charlie.agents.copilot import CopilotAdapter
@@ -12,8 +9,8 @@ from charlie.agents.cursor import CursorAdapter
 from charlie.agents.gemini import GeminiAdapter
 from charlie.agents.qwen import QwenAdapter
 from charlie.mcp import generate_mcp_config
+from charlie.parser import parse_config
 from charlie.rules import generate_rules_for_agents
-
 
 # Map agent names to adapter classes
 ADAPTER_CLASSES = {
@@ -40,15 +37,17 @@ class CommandTranspiler:
         """
         self.config_path = config_path
         self.config = parse_config(config_path)
+        # Store the root directory (where charlie.yaml is located)
+        self.root_dir = str(Path(config_path).parent.resolve())
 
     def generate(
         self,
-        agents: Optional[List[str]] = None,
+        agents: list[str] | None = None,
         mcp: bool = False,
         rules: bool = False,
         rules_mode: str = "merged",
         output_dir: str = ".",
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
         """Generate outputs based on runtime preferences.
 
         Args:
@@ -89,7 +88,12 @@ class CommandTranspiler:
             # Get specs for all agents
             agent_specs = {name: get_agent_spec(name) for name in agents}
             rules_files = generate_rules_for_agents(
-                self.config, agents, agent_specs, output_dir, mode=rules_mode
+                self.config,
+                agents,
+                agent_specs,
+                output_dir,
+                mode=rules_mode,
+                root_dir=self.root_dir,
             )
             for agent_name, rules_paths in rules_files.items():
                 results[f"{agent_name}_rules"] = rules_paths
@@ -111,8 +115,8 @@ class CommandTranspiler:
         return generate_mcp_config(self.config, output_dir)
 
     def generate_rules(
-        self, agents: List[str], output_dir: str = ".", mode: str = "merged"
-    ) -> Dict[str, List[str]]:
+        self, agents: list[str], output_dir: str = ".", mode: str = "merged"
+    ) -> dict[str, list[str]]:
         """Generate only rules files for specified agents.
 
         Args:
@@ -125,7 +129,7 @@ class CommandTranspiler:
         """
         agent_specs = {name: get_agent_spec(name) for name in agents}
         return generate_rules_for_agents(
-            self.config, agents, agent_specs, output_dir, mode=mode
+            self.config, agents, agent_specs, output_dir, mode=mode, root_dir=self.root_dir
         )
 
     def _get_adapter(self, agent_name: str, agent_spec: dict):
@@ -144,10 +148,10 @@ class CommandTranspiler:
         if agent_name not in ADAPTER_CLASSES:
             # For agents without specific adapters yet, use a generic one based on format
             if agent_spec["file_format"] == "markdown":
-                return ClaudeAdapter(agent_spec)  # Reuse Claude adapter for markdown
+                return ClaudeAdapter(agent_spec, self.root_dir)  # Reuse Claude adapter for markdown
             else:
                 raise ValueError(f"No adapter registered for agent: {agent_name}")
 
         adapter_class = ADAPTER_CLASSES[agent_name]
-        return adapter_class(agent_spec)
+        return adapter_class(agent_spec, self.root_dir)
 

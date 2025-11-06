@@ -1,11 +1,12 @@
 """Tests for MCP server configuration generator."""
 
 import json
-import pytest
 from pathlib import Path
 
-from charlie.mcp import generate_mcp_config, _command_to_tool_schema, _server_to_mcp_config
-from charlie.schema import CharlieConfig, ProjectConfig, MCPServer, Command, CommandScripts
+import pytest
+
+from charlie.mcp import _command_to_tool_schema, _server_to_mcp_config, generate_mcp_config
+from charlie.schema import CharlieConfig, Command, CommandScripts, MCPServer, ProjectConfig
 
 
 def test_command_to_tool_schema():
@@ -91,7 +92,7 @@ def test_generate_mcp_config(tmp_path):
     assert Path(output_file).exists()
 
     # Check file content
-    with open(output_file, "r") as f:
+    with open(output_file) as f:
         mcp_config = json.load(f)
 
     assert "mcpServers" in mcp_config
@@ -154,7 +155,7 @@ def test_generate_mcp_config_multiple_commands(tmp_path):
 
     output_file = generate_mcp_config(config, str(tmp_path))
 
-    with open(output_file, "r") as f:
+    with open(output_file) as f:
         mcp_config = json.load(f)
 
     tools = mcp_config["mcpServers"]["server"]["capabilities"]["tools"]["list"]

@@ -26,10 +26,10 @@ class GeminiAdapter(BaseAgentAdapter):
 
         # Start with description
         toml_lines = [f'description = "{command.description}"']
-        
+
         # Extract all fields including pass-through fields
         command_dict = command.model_dump()
-        
+
         # Add pass-through fields (exclude core Charlie fields)
         core_fields = {"name", "description", "prompt", "scripts", "agent_scripts"}
         for key, value in command_dict.items():
@@ -39,18 +39,24 @@ class GeminiAdapter(BaseAgentAdapter):
                     toml_lines.append(f'{key} = "{value}"')
                 elif isinstance(value, list):
                     # Format list as TOML array
-                    items = ', '.join(f'"{item}"' if isinstance(item, str) else str(item) for item in value)
+                    items = ', '.join(
+                        f'"{item}"' if isinstance(item, str) else str(item)
+                        for item in value
+                    )
                     toml_lines.append(f'{key} = [{items}]')
                 elif isinstance(value, dict):
                     # Format dict as inline table
-                    items = ', '.join(f'{k} = "{v}"' if isinstance(v, str) else f'{k} = {v}' for k, v in value.items())
+                    items = ', '.join(
+                        f'{k} = "{v}"' if isinstance(v, str) else f'{k} = {v}'
+                        for k, v in value.items()
+                    )
                     toml_lines.append(f'{key} = {{ {items} }}')
                 else:
                     toml_lines.append(f'{key} = {value}')
-        
+
         # Add prompt at the end
         toml_lines.append('')
         toml_lines.append(f'prompt = """\n{prompt_escaped}\n"""')
-        
+
         return '\n'.join(toml_lines) + '\n'
 

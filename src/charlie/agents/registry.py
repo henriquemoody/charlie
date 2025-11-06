@@ -1,9 +1,8 @@
 """Agent registry with built-in knowledge of all supported agents."""
 
-from typing import Dict, List, Optional
 
 # Built-in agent specifications
-AGENT_SPECS: Dict[str, Dict[str, str]] = {
+AGENT_SPECS: dict[str, dict[str, str]] = {
     "claude": {
         "name": "Claude Code",
         "command_dir": ".claude/commands",
@@ -119,7 +118,7 @@ AGENT_SPECS: Dict[str, Dict[str, str]] = {
 }
 
 
-def get_agent_spec(agent_name: str) -> Dict[str, str]:
+def get_agent_spec(agent_name: str) -> dict[str, str]:
     """Get built-in specification for an agent.
 
     Args:
@@ -139,7 +138,7 @@ def get_agent_spec(agent_name: str) -> Dict[str, str]:
     return AGENT_SPECS[agent_name]
 
 
-def list_supported_agents() -> List[str]:
+def list_supported_agents() -> list[str]:
     """List all supported agent names.
 
     Returns:
@@ -148,7 +147,7 @@ def list_supported_agents() -> List[str]:
     return sorted(AGENT_SPECS.keys())
 
 
-def get_agent_info(agent_name: str) -> Optional[Dict[str, str]]:
+def get_agent_info(agent_name: str) -> dict[str, str] | None:
     """Get detailed information about an agent.
 
     Args:

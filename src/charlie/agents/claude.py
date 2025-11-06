@@ -1,7 +1,7 @@
 """Claude Code agent adapter."""
 
+
 import yaml
-from typing import Any, Dict
 
 from charlie.agents.base import BaseAgentAdapter
 from charlie.schema import Command
@@ -26,16 +26,16 @@ class ClaudeAdapter(BaseAgentAdapter):
 
         # Extract all fields including pass-through fields
         command_dict = command.model_dump()
-        
+
         # Build frontmatter with description and any extra fields
         frontmatter_data = {"description": command.description}
-        
+
         # Add pass-through fields (exclude core Charlie fields)
         core_fields = {"name", "description", "prompt", "scripts", "agent_scripts"}
         for key, value in command_dict.items():
             if key not in core_fields and value is not None:
                 frontmatter_data[key] = value
-        
+
         # Format as YAML frontmatter
         yaml_str = yaml.dump(frontmatter_data, default_flow_style=False, sort_keys=False)
         frontmatter = f"---\n{yaml_str}---\n\n"

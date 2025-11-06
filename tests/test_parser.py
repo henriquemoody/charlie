@@ -1,20 +1,18 @@
 """Tests for parser module."""
 
+
 import pytest
-from pathlib import Path
-import tempfile
-import os
 
 from charlie.parser import (
-    parse_config,
-    find_config_file,
-    parse_single_file,
-    discover_config_files,
-    load_directory_config,
-    parse_frontmatter,
     ConfigParseError,
+    discover_config_files,
+    find_config_file,
+    load_directory_config,
+    parse_config,
+    parse_frontmatter,
+    parse_single_file,
 )
-from charlie.schema import Command, RulesSection, MCPServer
+from charlie.schema import Command, RulesSection
 
 
 def test_parse_valid_config(tmp_path):

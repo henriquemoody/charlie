@@ -2,12 +2,11 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List
 
 from charlie.schema import CharlieConfig, Command, MCPServer
 
 
-def _command_to_tool_schema(command: Command, command_prefix: str) -> Dict:
+def _command_to_tool_schema(command: Command, command_prefix: str) -> dict:
     """Convert a command to MCP tool schema format.
 
     Args:
@@ -28,7 +27,7 @@ def _command_to_tool_schema(command: Command, command_prefix: str) -> Dict:
     }
 
 
-def _server_to_mcp_config(server: MCPServer, commands: List[Command], command_prefix: str) -> Dict:
+def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str) -> dict:
     """Convert server definition to MCP config format.
 
     Args:

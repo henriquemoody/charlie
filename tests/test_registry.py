@@ -3,10 +3,10 @@
 import pytest
 
 from charlie.agents.registry import (
+    AGENT_SPECS,
+    get_agent_info,
     get_agent_spec,
     list_supported_agents,
-    get_agent_info,
-    AGENT_SPECS,
 )
 
 

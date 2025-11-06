@@ -1,16 +1,15 @@
 """Tests for rules file generator."""
 
-import pytest
 from pathlib import Path
 
+from charlie.agents.registry import get_agent_spec
 from charlie.rules import (
+    _extract_manual_additions,
+    _format_command_reference,
     generate_rules_file,
     generate_rules_for_agents,
-    _format_command_reference,
-    _extract_manual_additions,
 )
-from charlie.schema import CharlieConfig, ProjectConfig, Command, CommandScripts, RulesConfig
-from charlie.agents.registry import get_agent_spec
+from charlie.schema import CharlieConfig, Command, CommandScripts, ProjectConfig, RulesConfig
 
 
 def test_format_command_reference():
@@ -323,15 +322,15 @@ def test_generate_rules_merged_mode_with_sections(tmp_path):
 
     agent_spec = get_agent_spec("cursor")
     rules_paths = generate_rules_file(config, "cursor", agent_spec, str(tmp_path), mode="merged")
-    
+
     assert len(rules_paths) == 1
     content = Path(rules_paths[0]).read_text()
-    
+
     # Check frontmatter (from first section)
     assert "alwaysApply: true" in content
     assert "globs:" in content
     assert "**/*.py" in content
-    
+
     # Check both sections are present
     assert "## Code Style" in content
     assert "Use Black for formatting" in content
@@ -373,17 +372,17 @@ def test_generate_rules_separate_mode(tmp_path):
 
     agent_spec = get_agent_spec("cursor")
     rules_paths = generate_rules_file(config, "cursor", agent_spec, str(tmp_path), mode="separate")
-    
+
     # Should generate 2 separate files
     assert len(rules_paths) == 2
-    
+
     # Check first file (code-style.md)
     style_file = [p for p in rules_paths if "code-style" in p][0]
     style_content = Path(style_file).read_text()
     assert "# Code Style" in style_content
     assert "Use Black for formatting" in style_content
     assert "alwaysApply: true" in style_content
-    
+
     # Check second file (commit-messages.md)
     commit_file = [p for p in rules_paths if "commit-messages" in p][0]
     commit_content = Path(commit_file).read_text()

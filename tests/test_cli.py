@@ -1,7 +1,5 @@
 """Tests for CLI interface."""
 
-import pytest
-from pathlib import Path
 from typer.testing import CliRunner
 
 from charlie.cli import app
@@ -210,7 +208,7 @@ def test_validate_invalid_config(tmp_path):
 
 def test_validate_auto_detect(tmp_path):
     """Test validate with auto-detected config."""
-    config_file = create_test_config(tmp_path)
+    create_test_config(tmp_path)
 
     import os
 

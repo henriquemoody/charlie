@@ -1,6 +1,7 @@
 """YAML schema definitions and validation using Pydantic."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -18,12 +19,12 @@ class MCPServer(BaseModel):
 
     name: str = Field(..., description="Server name")
     command: str = Field(..., description="Command to run the server")
-    args: List[str] = Field(default_factory=list, description="Command arguments")
-    env: Dict[str, str] = Field(default_factory=dict, description="Environment variables")
-    commands: Optional[List[str]] = Field(
+    args: list[str] = Field(default_factory=list, description="Command arguments")
+    env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
+    commands: list[str] | None = Field(
         None, description="Command names this server should expose"
     )
-    config: Optional[Dict[str, Any]] = Field(
+    config: dict[str, Any] | None = Field(
         None, description="Server-specific configuration"
     )
 
@@ -35,7 +36,7 @@ class RulesSection(BaseModel):
 
     title: str = Field(..., description="Section title")
     content: str = Field(..., description="Section content (Markdown)")
-    order: Optional[int] = Field(None, description="Display order (lower numbers first)")
+    order: int | None = Field(None, description="Display order (lower numbers first)")
 
 
 class RulesConfig(BaseModel):
@@ -49,7 +50,7 @@ class RulesConfig(BaseModel):
     preserve_manual: bool = Field(
         default=True, description="Preserve manual additions between markers"
     )
-    sections: Optional[List[RulesSection]] = Field(
+    sections: list[RulesSection] | None = Field(
         None, description="Custom rule sections (from directory-based config)"
     )
 
@@ -57,12 +58,12 @@ class RulesConfig(BaseModel):
 class CommandScripts(BaseModel):
     """Script definitions for different platforms."""
 
-    sh: Optional[str] = Field(None, description="Bash script path")
-    ps: Optional[str] = Field(None, description="PowerShell script path")
+    sh: str | None = Field(None, description="Bash script path")
+    ps: str | None = Field(None, description="PowerShell script path")
 
     @field_validator("sh", "ps")
     @classmethod
-    def validate_at_least_one(cls, v: Optional[str], info) -> Optional[str]:
+    def validate_at_least_one(cls, v: str | None, info) -> str | None:
         """Ensure at least one script is defined."""
         return v
 
@@ -76,7 +77,7 @@ class Command(BaseModel):
     description: str = Field(..., description="Command description")
     prompt: str = Field(..., description="Command prompt template")
     scripts: CommandScripts = Field(..., description="Platform-specific scripts")
-    agent_scripts: Optional[CommandScripts] = Field(
+    agent_scripts: CommandScripts | None = Field(
         None, description="Optional agent-specific scripts"
     )
 
@@ -93,14 +94,14 @@ class CharlieConfig(BaseModel):
     """Main configuration schema for charlie."""
 
     version: str = Field(default="1.0", description="Schema version")
-    project: Optional[ProjectConfig] = Field(None, description="Project configuration")
-    mcp_servers: List[MCPServer] = Field(
+    project: ProjectConfig | None = Field(None, description="Project configuration")
+    mcp_servers: list[MCPServer] = Field(
         default_factory=list, description="MCP server definitions"
     )
-    rules: Optional[RulesConfig] = Field(
+    rules: RulesConfig | None = Field(
         default_factory=RulesConfig, description="Rules configuration"
     )
-    commands: List[Command] = Field(default_factory=list, description="Command definitions")
+    commands: list[Command] = Field(default_factory=list, description="Command definitions")
 
     @field_validator("version")
     @classmethod
@@ -112,7 +113,7 @@ class CharlieConfig(BaseModel):
 
     @field_validator("commands")
     @classmethod
-    def validate_unique_command_names(cls, v: List[Command]) -> List[Command]:
+    def validate_unique_command_names(cls, v: list[Command]) -> list[Command]:
         """Ensure command names are unique."""
         names = [cmd.name for cmd in v]
         if len(names) != len(set(names)):

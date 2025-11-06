@@ -1,11 +1,12 @@
 """Tests for core transpiler engine."""
 
-import pytest
-from pathlib import Path
 import json
+from pathlib import Path
 
-from charlie.transpiler import CommandTranspiler
+import pytest
+
 from charlie.parser import ConfigParseError
+from charlie.transpiler import CommandTranspiler
 
 
 def create_test_config(tmp_path, config_content: str) -> Path:
@@ -144,7 +145,7 @@ commands:
     assert mcp_file.name == "mcp-config.json"
 
     # Check content
-    with open(mcp_file, "r") as f:
+    with open(mcp_file) as f:
         mcp_config = json.load(f)
     assert "mcpServers" in mcp_config
     assert "test-server" in mcp_config["mcpServers"]

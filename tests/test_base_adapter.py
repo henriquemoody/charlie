@@ -1,6 +1,5 @@
 """Tests for base agent adapter."""
 
-import pytest
 from pathlib import Path
 
 from charlie.agents.base import BaseAgentAdapter
@@ -19,8 +18,9 @@ class SampleAdapter(BaseAgentAdapter):
 def test_adapter_initialization():
     """Test adapter initialization with agent spec."""
     spec = get_agent_spec("claude")
-    adapter = SampleAdapter(spec)
+    adapter = SampleAdapter(spec, root_dir="/test/root")
     assert adapter.spec == spec
+    assert adapter.root_dir == "/test/root"
 
 
 def test_transform_placeholders_user_input():
@@ -150,7 +150,7 @@ def test_generate_commands_creates_directory(tmp_path):
         )
     ]
 
-    files = adapter.generate_commands(commands, "myapp", str(tmp_path))
+    adapter.generate_commands(commands, "myapp", str(tmp_path))
 
     # Check directory was created
     expected_dir = tmp_path / ".claude" / "commands"
@@ -192,11 +192,12 @@ def test_generate_commands_creates_files(tmp_path):
 def test_transform_path_placeholders():
     """Test path placeholder transformation."""
     spec = get_agent_spec("cursor")
-    adapter = SampleAdapter(spec)
+    adapter = SampleAdapter(spec, root_dir="/project/root")
 
-    text = "Commands: {{commands_dir}}, Rules: {{rules_dir}}, Agent: {{agent_dir}}"
+    text = "Root: {{root}}, Commands: {{commands_dir}}, Rules: {{rules_dir}}, Agent: {{agent_dir}}"
     result = adapter.transform_path_placeholders(text)
 
+    assert "/project/root" in result
     assert ".cursor/commands" in result
     assert ".cursor/rules" in result
     assert ".cursor" in result
@@ -217,7 +218,7 @@ def test_transform_path_placeholders_in_transform_placeholders():
     """Test that path placeholders are resolved in transform_placeholders."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
-    
+
     command = Command(
         name="test",
         description="Test",

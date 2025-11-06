@@ -1,17 +1,15 @@
 """Command-line interface for charlie."""
 
-import sys
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
+from charlie.agents.registry import get_agent_info, list_supported_agents
+from charlie.parser import ConfigParseError, find_config_file, parse_config
 from charlie.transpiler import CommandTranspiler
-from charlie.parser import find_config_file, parse_config, ConfigParseError
-from charlie.agents.registry import list_supported_agents, get_agent_info
 
 app = typer.Typer(
     name="charlie",
@@ -21,7 +19,7 @@ app = typer.Typer(
 console = Console()
 
 
-def _resolve_config_file(config_path: Optional[str]) -> Path:
+def _resolve_config_file(config_path: str | None) -> Path:
     """Resolve configuration file path.
 
     Args:
@@ -52,10 +50,10 @@ def _resolve_config_file(config_path: Optional[str]) -> Path:
 
 @app.command()
 def generate(
-    config_path: Optional[str] = typer.Argument(
+    config_path: str | None = typer.Argument(
         None, help="Path to configuration file (default: auto-detect charlie.yaml)"
     ),
-    agents: Optional[str] = typer.Option(
+    agents: str | None = typer.Option(
         None, "--agents", "-a", help="Comma-separated list of agents to generate for"
     ),
     mcp: bool = typer.Option(False, "--mcp", help="Generate MCP server configuration"),
@@ -110,7 +108,8 @@ def generate(
         # Check that at least something was requested
         if not agent_list and not mcp and not rules:
             console.print(
-                "[yellow]Warning:[/yellow] No targets specified. Use --agents, --mcp, --rules, or --all"
+                "[yellow]Warning:[/yellow] No targets specified. "
+                "Use --agents, --mcp, --rules, or --all"
             )
             return
 
@@ -162,7 +161,7 @@ def generate(
 
 @app.command()
 def validate(
-    config_path: Optional[str] = typer.Argument(
+    config_path: str | None = typer.Argument(
         None, help="Path to configuration file (default: auto-detect charlie.yaml)"
     ),
 ):
@@ -184,7 +183,7 @@ def validate(
         # Parse will raise error if invalid
         config = parse_config(config_file)
 
-        console.print(f"\n[green]✓ Configuration is valid![/green]\n")
+        console.print("\n[green]✓ Configuration is valid![/green]\n")
         console.print(f"  Project: {config.project.name}")
         console.print(f"  Command prefix: {config.project.command_prefix}")
         console.print(f"  Commands: {len(config.commands)}")
@@ -243,7 +242,7 @@ def info(
     if not agent_info:
         console.print(f"[red]Error:[/red] Unknown agent '{agent}'")
         console.print(
-            f"\n[dim]Use 'charlie list-agents' to see available agents[/dim]"
+            "\n[dim]Use 'charlie list-agents' to see available agents[/dim]"
         )
         raise typer.Exit(1)
 

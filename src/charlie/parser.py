@@ -1,11 +1,17 @@
 """YAML parser with validation."""
 
-import yaml
 from pathlib import Path
-from typing import Dict, List, Type, TypeVar, Union
+from typing import TypeVar
+
+import yaml
 from pydantic import BaseModel, ValidationError
 
-from charlie.schema import CharlieConfig, Command, MCPServer, RulesSection, ProjectConfig, RulesConfig
+from charlie.schema import (
+    CharlieConfig,
+    Command,
+    MCPServer,
+    RulesSection,
+)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -16,7 +22,7 @@ class ConfigParseError(Exception):
     pass
 
 
-def parse_frontmatter(content: str) -> tuple[Dict, str]:
+def parse_frontmatter(content: str) -> tuple[dict, str]:
     """Parse YAML frontmatter from markdown content.
 
     Extracts YAML frontmatter between --- delimiters and returns
@@ -33,38 +39,38 @@ def parse_frontmatter(content: str) -> tuple[Dict, str]:
         ConfigParseError: If frontmatter YAML is invalid
     """
     content = content.lstrip()
-    
+
     # Check if content starts with frontmatter delimiter
     if not content.startswith("---"):
         return {}, content
-    
+
     # Find the closing delimiter
     try:
         # Split on --- but skip the first empty match
         parts = content.split("---", 2)
         if len(parts) < 3:
             raise ConfigParseError("Frontmatter closing delimiter '---' not found")
-        
+
         frontmatter_str = parts[1].strip()
         body = parts[2].lstrip()
-        
+
         # Parse YAML frontmatter
         if not frontmatter_str:
             return {}, body
-        
+
         frontmatter = yaml.safe_load(frontmatter_str)
         if frontmatter is None:
             frontmatter = {}
-        
+
         return frontmatter, body
-        
+
     except yaml.YAMLError as e:
         raise ConfigParseError(f"Invalid YAML in frontmatter: {e}")
     except Exception as e:
         raise ConfigParseError(f"Error parsing frontmatter: {e}")
 
 
-def parse_config(config_path: Union[str, Path]) -> CharlieConfig:
+def parse_config(config_path: str | Path) -> CharlieConfig:
     """Parse and validate a charlie configuration file.
 
     Automatically detects format:
@@ -100,7 +106,7 @@ def parse_config(config_path: Union[str, Path]) -> CharlieConfig:
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             raw_config = yaml.safe_load(f)
     except yaml.YAMLError as e:
         raise ConfigParseError(f"Invalid YAML syntax: {e}")
@@ -118,13 +124,13 @@ def parse_config(config_path: Union[str, Path]) -> CharlieConfig:
             loc = " -> ".join(str(x) for x in error["loc"])
             error_messages.append(f"  {loc}: {error['msg']}")
         raise ConfigParseError(
-            f"Configuration validation failed:\n" + "\n".join(error_messages)
+            "Configuration validation failed:\n" + "\n".join(error_messages)
         )
 
     return config
 
 
-def find_config_file(start_dir: Union[str, Path] = ".") -> Path:
+def find_config_file(start_dir: str | Path = ".") -> Path:
     """Find charlie configuration file in order of preference.
 
     Resolution order:
@@ -158,7 +164,7 @@ def find_config_file(start_dir: Union[str, Path] = ".") -> Path:
     )
 
 
-def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
+def parse_single_file(file_path: Path, model_class: type[T]) -> T:
     """Parse a single file (YAML or Markdown with frontmatter) into a Pydantic model.
 
     Args:
@@ -172,7 +178,7 @@ def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
         ConfigParseError: If parsing or validation fails
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             file_content = f.read()
     except Exception as e:
         raise ConfigParseError(f"Error reading {file_path}: {e}")
@@ -187,7 +193,7 @@ def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
             frontmatter, body = parse_frontmatter(file_content)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error parsing frontmatter in {file_path}: {e}")
-        
+
         # Merge frontmatter and body based on model type
         if model_class.__name__ == "Command":
             # For commands: frontmatter = metadata, body = prompt
@@ -204,7 +210,7 @@ def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
             raw_data = yaml.safe_load(file_content)
         except yaml.YAMLError as e:
             raise ConfigParseError(f"Invalid YAML in {file_path}: {e}")
-        
+
         if not raw_data:
             raise ConfigParseError(f"File is empty: {file_path}")
 
@@ -220,7 +226,7 @@ def parse_single_file(file_path: Path, model_class: Type[T]) -> T:
         )
 
 
-def discover_config_files(base_dir: Path) -> Dict[str, List[Path]]:
+def discover_config_files(base_dir: Path) -> dict[str, list[Path]]:
     """Discover config files in .charlie/ directory structure.
 
     Args:
@@ -292,7 +298,7 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     main_config_path = base_dir / "charlie.yaml"
     if main_config_path.exists():
         try:
-            with open(main_config_path, "r", encoding="utf-8") as f:
+            with open(main_config_path, encoding="utf-8") as f:
                 main_data = yaml.safe_load(f)
                 if main_data:
                     # Extract project config if present
@@ -345,6 +351,6 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
             loc = " -> ".join(str(x) for x in error["loc"])
             error_messages.append(f"  {loc}: {error['msg']}")
         raise ConfigParseError(
-            f"Configuration validation failed:\n" + "\n".join(error_messages)
+            "Configuration validation failed:\n" + "\n".join(error_messages)
         )
 

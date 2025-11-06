@@ -308,6 +308,7 @@ Charlie supports these universal placeholders in commands and rules:
 
 **Path Placeholders:**
 
+- `{{root}}` → Resolves to the project root directory
 - `{{agent_dir}}` → Resolves to agent's base directory (e.g., `.claude`, `.cursor`)
 - `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)

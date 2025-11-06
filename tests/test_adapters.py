@@ -1,6 +1,5 @@
 """Tests for concrete agent adapters."""
 
-import pytest
 from pathlib import Path
 
 from charlie.agents.claude import ClaudeAdapter
@@ -170,7 +169,7 @@ def test_adapters_pass_through_agent_fields():
     )
 
     result = adapter.generate_command(command, "myapp", "sh")
-    
+
     # Check frontmatter includes pass-through fields
     assert "allowed_tools:" in result or "allowed-tools:" in result
     assert "Bash(git add:*)" in result
@@ -182,7 +181,7 @@ def test_adapters_pass_through_agent_fields():
     # Test Gemini (TOML) with custom fields
     spec = get_agent_spec("gemini")
     adapter = GeminiAdapter(spec)
-    
+
     command_toml = Command(
         name="test",
         description="Test",
@@ -190,7 +189,7 @@ def test_adapters_pass_through_agent_fields():
         scripts=CommandScripts(sh="test.sh"),
         custom_field="custom_value",
     )
-    
+
     result_toml = adapter.generate_command(command_toml, "myapp", "sh")
     assert 'custom_field = "custom_value"' in result_toml
 

@@ -39,7 +39,7 @@ commands:
     scripts:
       sh: "init.sh"
       ps: "init.ps1"
-      
+
   - name: "build"
     description: "Build project"
     prompt: "Build with {{script}}"
@@ -137,10 +137,10 @@ commands:
 
 def test_spec_kit_example_workflow(tmp_path):
     """Test workflow similar to spec-kit usage."""
-    from charlie import CommandTranspiler
-
     # Use the spec-kit example config (copy it)
     import shutil
+
+    from charlie import CommandTranspiler
 
     example_config = Path(__file__).parent.parent / "examples" / "speckit.yaml"
     config_file = tmp_path / "speckit.yaml"

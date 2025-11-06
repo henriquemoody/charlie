@@ -1,7 +1,6 @@
 """Base agent adapter class."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List
 from pathlib import Path
 
 from charlie.schema import Command
@@ -10,13 +9,15 @@ from charlie.schema import Command
 class BaseAgentAdapter(ABC):
     """Base class for all agent adapters."""
 
-    def __init__(self, agent_spec: Dict[str, str]):
+    def __init__(self, agent_spec: dict[str, str], root_dir: str = "."):
         """Initialize adapter with agent specification.
 
         Args:
             agent_spec: Agent specification from registry
+            root_dir: Root directory where charlie.yaml is located
         """
         self.spec = agent_spec
+        self.root_dir = root_dir
 
     @abstractmethod
     def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
@@ -33,8 +34,8 @@ class BaseAgentAdapter(ABC):
         pass
 
     def generate_commands(
-        self, commands: List[Command], namespace: str, output_dir: str
-    ) -> List[str]:
+        self, commands: list[Command], namespace: str, output_dir: str
+    ) -> list[str]:
         """Generate all command files for this agent.
 
         Args:
@@ -105,16 +106,19 @@ class BaseAgentAdapter(ABC):
         Returns:
             Text with resolved paths
         """
+        # Replace root directory placeholder
+        text = text.replace("{{root}}", self.root_dir)
+
         # Get the base agent directory (e.g., ".claude", ".cursor")
         agent_dir = Path(self.spec.get("command_dir", "")).parent
-        
+
         # Replace agent directory placeholder
         text = text.replace("{{agent_dir}}", str(agent_dir))
-        
+
         # Replace commands directory placeholder
         commands_dir = self.spec.get("command_dir", "")
         text = text.replace("{{commands_dir}}", commands_dir)
-        
+
         # Replace rules directory placeholder (if rules_file is defined)
         if "rules_file" in self.spec:
             rules_dir = str(Path(self.spec["rules_file"]).parent)
@@ -122,7 +126,7 @@ class BaseAgentAdapter(ABC):
         else:
             # Fallback: use common pattern
             text = text.replace("{{rules_dir}}", str(agent_dir / "rules"))
-        
+
         return text
 
     def _get_script_path(self, command: Command, script_type: str) -> str:

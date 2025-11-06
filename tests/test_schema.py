@@ -5,12 +5,12 @@ from pydantic import ValidationError
 
 from charlie.schema import (
     CharlieConfig,
-    ProjectConfig,
-    MCPServer,
-    RulesConfig,
-    RulesSection,
     Command,
     CommandScripts,
+    MCPServer,
+    ProjectConfig,
+    RulesConfig,
+    RulesSection,
 )
 
 
