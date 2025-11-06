@@ -36,30 +36,30 @@ commands:
     return config_file
 
 
-def test_generate_with_explicit_config(tmp_path):
-    """Test generate command with explicit config file."""
+def test_setup_with_explicit_config(tmp_path):
+    """Test setup command with explicit config file."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
         app,
-        ["generate", str(config_file), "--agents", "claude", "--output", str(output_dir)],
+        ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)],
     )
 
     assert result.exit_code == 0
-    assert "Generation complete" in result.stdout
-    assert "claude_commands" in result.stdout
+    assert "Setup complete" in result.stdout
+    assert "commands" in result.stdout
 
 
-def test_generate_auto_detect_config(tmp_path):
-    """Test generate command with auto-detected config."""
+def test_setup_auto_detect_config(tmp_path):
+    """Test setup command with auto-detected config."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     # Use mix=False to run in isolated environment but with cwd set
     result = runner.invoke(
         app,
-        ["generate", "--agents", "claude", "--output", str(output_dir)],
+        ["setup", "claude", "--output", str(output_dir)],
         env={"PWD": str(tmp_path)},
         catch_exceptions=False,
     )
@@ -69,43 +69,50 @@ def test_generate_auto_detect_config(tmp_path):
     # For true auto-detection, we'd need integration tests
     # Let's just test with explicit config for now
     result = runner.invoke(
-        app, ["generate", str(config_file), "--agents", "claude", "--output", str(output_dir)]
+        app, ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)]
     )
 
     assert result.exit_code == 0
-    assert "Generation complete" in result.stdout
+    assert "Setup complete" in result.stdout
 
 
-def test_generate_multiple_agents(tmp_path):
-    """Test generating for multiple agents."""
+def test_setup_different_agents(tmp_path):
+    """Test setting up different agents individually."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
+    # Setup claude
     result = runner.invoke(
         app,
-        [
-            "generate",
-            str(config_file),
-            "--agents",
-            "claude,gemini,cursor",
-            "--output",
-            str(output_dir),
-        ],
+        ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)],
     )
-
     assert result.exit_code == 0
-    assert "claude_commands" in result.stdout
-    assert "gemini_commands" in result.stdout
-    assert "cursor_commands" in result.stdout
+    assert "commands" in result.stdout
+
+    # Setup gemini
+    result = runner.invoke(
+        app,
+        ["setup", "gemini", "--config", str(config_file), "--output", str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert "commands" in result.stdout
+
+    # Setup cursor
+    result = runner.invoke(
+        app,
+        ["setup", "cursor", "--config", str(config_file), "--output", str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert "commands" in result.stdout
 
 
-def test_generate_mcp_only(tmp_path):
-    """Test generating MCP config only."""
+def test_setup_with_mcp(tmp_path):
+    """Test setting up agent with MCP config."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
-        app, ["generate", str(config_file), "--mcp", "--output", str(output_dir)]
+        app, ["setup", "claude", "--config", str(config_file), "--mcp", "--output", str(output_dir)]
     )
 
     assert result.exit_code == 0
@@ -116,18 +123,18 @@ def test_generate_mcp_only(tmp_path):
     assert mcp_file.exists()
 
 
-def test_generate_with_rules(tmp_path):
-    """Test generating with rules files."""
+def test_setup_with_rules(tmp_path):
+    """Test setting up with rules files."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
         app,
         [
-            "generate",
+            "setup",
+            "claude",
+            "--config",
             str(config_file),
-            "--agents",
-            "claude,windsurf",
             "--rules",
             "--output",
             str(output_dir),
@@ -135,17 +142,43 @@ def test_generate_with_rules(tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "claude_rules" in result.stdout
-    assert "windsurf_rules" in result.stdout
+    assert "rules" in result.stdout
+
+    # Test windsurf too
+    result = runner.invoke(
+        app,
+        [
+            "setup",
+            "windsurf",
+            "--config",
+            str(config_file),
+            "--rules",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "rules" in result.stdout
 
 
-def test_generate_all_flag(tmp_path):
-    """Test generating with --all flag."""
+def test_setup_with_all_options(tmp_path):
+    """Test setting up with all options (mcp and rules)."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
-        app, ["generate", str(config_file), "--all", "--output", str(output_dir)]
+        app,
+        [
+            "setup",
+            "claude",
+            "--config",
+            str(config_file),
+            "--mcp",
+            "--rules",
+            "--output",
+            str(output_dir),
+        ],
     )
 
     assert result.exit_code == 0
@@ -154,30 +187,28 @@ def test_generate_all_flag(tmp_path):
     assert "mcp" in result.stdout
 
 
-def test_generate_no_targets(tmp_path):
-    """Test generate without specifying any targets."""
-    config_file = create_test_config(tmp_path)
+def test_setup_missing_agent():
+    """Test setup command without agent argument."""
+    result = runner.invoke(app, ["setup"])
 
-    result = runner.invoke(app, ["generate", str(config_file)])
-
-    assert result.exit_code == 0
-    assert "No targets specified" in result.stdout
+    assert result.exit_code == 2  # Typer returns 2 for missing arguments
+    assert "Missing argument" in result.stdout or "required" in result.stdout.lower()
 
 
-def test_generate_nonexistent_config():
-    """Test generate with non-existent config file."""
-    result = runner.invoke(app, ["generate", "/nonexistent/config.yaml", "--agents", "claude"])
+def test_setup_nonexistent_config():
+    """Test setup with non-existent config file."""
+    result = runner.invoke(app, ["setup", "claude", "--config", "/nonexistent/config.yaml"])
 
     assert result.exit_code == 1
     assert "not found" in result.stdout.lower()
 
 
-def test_generate_invalid_agent(tmp_path):
-    """Test generate with invalid agent name."""
+def test_setup_invalid_agent(tmp_path):
+    """Test setup with invalid agent name."""
     config_file = create_test_config(tmp_path)
 
     result = runner.invoke(
-        app, ["generate", str(config_file), "--agents", "nonexistent"]
+        app, ["setup", "nonexistent", "--config", str(config_file)]
     )
 
     assert result.exit_code == 1
@@ -253,18 +284,18 @@ def test_info_invalid_agent():
     assert "Unknown agent" in result.stdout
 
 
-def test_generate_verbose_output(tmp_path):
-    """Test generate with verbose flag."""
+def test_setup_verbose_output(tmp_path):
+    """Test setup with verbose flag."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
         app,
         [
-            "generate",
-            str(config_file),
-            "--agents",
+            "setup",
             "claude",
+            "--config",
+            str(config_file),
             "--output",
             str(output_dir),
             "--verbose",

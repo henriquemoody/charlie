@@ -71,14 +71,14 @@ commands:
 ### Generate Outputs
 
 ```bash
-# Generate for specific agents
-charlie generate --agents claude,copilot,gemini
+# Setup for specific agent
+charlie setup claude
 
-# Generate everything (commands + MCP + rules)
-charlie generate --agents claude --mcp --rules
+# Setup with rules
+charlie setup cursor --rules
 
-# Generate MCP config only
-charlie generate --mcp
+# Setup with MCP and rules
+charlie setup claude --mcp --rules
 
 # Validate configuration
 charlie validate
@@ -88,25 +88,22 @@ charlie validate
 
 ### CLI Commands
 
-#### generate
+#### setup
 
-Generate agent-specific configurations:
+Setup agent-specific configurations:
 
 ```bash
 # Auto-detect charlie.yaml
-charlie generate --agents claude,gemini
+charlie setup claude
 
 # Explicit config file
-charlie generate my-config.yaml --agents cursor
+charlie setup gemini --config my-config.yaml
 
-# Multiple targets
-charlie generate --agents claude,windsurf --mcp --rules
+# Setup with MCP and rules
+charlie setup claude --mcp --rules
 
 # Custom output directory
-charlie generate --agents cursor --output ./build
-
-# Generate all defaults
-charlie generate --all
+charlie setup cursor --output ./build
 ```
 
 #### validate
@@ -148,10 +145,17 @@ from charlie import CommandTranspiler
 # Initialize with config
 transpiler = CommandTranspiler("charlie.yaml")
 
-# Generate for specific agents
+# Setup for Claude with MCP and rules
 results = transpiler.generate(
-    agents=["claude", "copilot"],
+    agent="claude",
     mcp=True,
+    rules=True,
+    output_dir="./output"
+)
+
+# Setup for Gemini with rules
+results = transpiler.generate(
+    agent="gemini",
     rules=True,
     output_dir="./output"
 )
@@ -159,9 +163,9 @@ results = transpiler.generate(
 # Generate only MCP config
 mcp_file = transpiler.generate_mcp("./output")
 
-# Generate only rules
+# Generate only rules for an agent
 rules_files = transpiler.generate_rules(
-    agents=["windsurf", "cursor"],
+    agent="cursor",
     output_dir="./output"
 )
 ```
@@ -361,13 +365,13 @@ Generate rules files in two modes:
 **Merged Mode** (default) - Single file with all sections:
 
 ```bash
-charlie generate --agents cursor --rules --rules-mode merged
+charlie setup cursor --rules --rules-mode merged
 ```
 
 **Separate Mode** - One file per section:
 
 ```bash
-charlie generate --agents cursor --rules --rules-mode separate
+charlie setup cursor --rules --rules-mode separate
 ```
 
 Use merged mode for simple projects, separate mode for better organization in complex projects.
@@ -524,38 +528,50 @@ charlie/
 
 ### 1. Unified Command Interface
 
-Define commands once, use across all your AI assistants:
+Define commands once, setup for any AI assistant:
 
 ```bash
-charlie generate --agents claude,copilot,cursor,gemini
+charlie setup claude
+charlie setup copilot
+charlie setup cursor
 ```
 
 ### 2. MCP Server Setup
 
-Generate MCP server configurations with tool schemas:
+Setup agent with MCP server configurations:
 
 ```bash
-charlie generate --mcp
+charlie setup claude --mcp
 ```
 
 ### 3. IDE Rules Management
 
-Generate and maintain agent rules files with manual preservation:
+Setup agent with rules files:
 
 ```bash
-charlie generate --agents windsurf,cursor --rules
+charlie setup windsurf --rules
+charlie setup cursor --rules
 ```
 
 ### 4. CI/CD Integration
 
-Generate agent-specific configs during build:
+Setup agent-specific configs during build:
 
 ```python
 from charlie import CommandTranspiler
 
 transpiler = CommandTranspiler("charlie.yaml")
+
+# Setup for Claude
 transpiler.generate(
-    agents=["claude", "copilot"],
+    agent="claude",
+    mcp=True,
+    output_dir="./dist"
+)
+
+# Setup for Copilot
+transpiler.generate(
+    agent="copilot",
     mcp=True,
     output_dir="./dist"
 )

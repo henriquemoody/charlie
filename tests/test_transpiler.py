@@ -68,19 +68,19 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    results = transpiler.generate(agents=["claude"], output_dir=str(output_dir))
+    results = transpiler.generate(agent="claude", output_dir=str(output_dir))
 
-    assert "claude_commands" in results
-    assert len(results["claude_commands"]) == 1
+    assert "commands" in results
+    assert len(results["commands"]) == 1
 
     # Check file was created
-    command_file = Path(results["claude_commands"][0])
+    command_file = Path(results["commands"][0])
     assert command_file.exists()
     assert "test.init.md" in str(command_file)
 
 
-def test_transpiler_generate_multiple_agents(tmp_path):
-    """Test generating for multiple agents."""
+def test_transpiler_generate_different_agents(tmp_path):
+    """Test generating for different agents separately."""
     config_file = create_test_config(
         tmp_path,
         """
@@ -100,13 +100,17 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    results = transpiler.generate(
-        agents=["claude", "gemini", "cursor"], output_dir=str(output_dir)
-    )
+    # Generate for Claude
+    results = transpiler.generate(agent="claude", output_dir=str(output_dir))
+    assert "commands" in results
 
-    assert "claude_commands" in results
-    assert "gemini_commands" in results
-    assert "cursor_commands" in results
+    # Generate for Gemini
+    results = transpiler.generate(agent="gemini", output_dir=str(output_dir))
+    assert "commands" in results
+
+    # Generate for Cursor
+    results = transpiler.generate(agent="cursor", output_dir=str(output_dir))
+    assert "commands" in results
 
 
 def test_transpiler_generate_mcp(tmp_path):
@@ -172,24 +176,30 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
+    # Generate for Claude with rules
     results = transpiler.generate(
-        agents=["claude", "windsurf"], rules=True, output_dir=str(output_dir)
+        agent="claude", rules=True, output_dir=str(output_dir)
     )
 
-    assert "claude_rules" in results
-    assert "windsurf_rules" in results
+    assert "rules" in results
 
-    # Check rules files were created
-    claude_rules = Path(results["claude_rules"][0])
-    windsurf_rules = Path(results["windsurf_rules"][0])
-
+    # Check rules file was created
+    claude_rules = Path(results["rules"][0])
     assert claude_rules.exists()
-    assert windsurf_rules.exists()
 
     # Check content
     content = claude_rules.read_text()
     assert "# Development Guidelines" in content
     assert "/test.test" in content
+
+    # Generate for Windsurf with rules
+    results = transpiler.generate(
+        agent="windsurf", rules=True, output_dir=str(output_dir)
+    )
+
+    assert "rules" in results
+    windsurf_rules = Path(results["rules"][0])
+    assert windsurf_rules.exists()
 
 
 def test_transpiler_generate_all(tmp_path):
@@ -222,20 +232,27 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
+    # Generate everything for Claude
     results = transpiler.generate(
-        agents=["claude", "gemini"], mcp=True, rules=True, output_dir=str(output_dir)
+        agent="claude", mcp=True, rules=True, output_dir=str(output_dir)
     )
 
     # Check all outputs were generated
-    assert "claude_commands" in results
-    assert "gemini_commands" in results
+    assert "commands" in results
     assert "mcp" in results
-    assert "claude_rules" in results
-    assert "gemini_rules" in results
+    assert "rules" in results
 
     # Check command counts
-    assert len(results["claude_commands"]) == 2  # init + plan
-    assert len(results["gemini_commands"]) == 2
+    assert len(results["commands"]) == 2  # init + plan
+
+    # Generate for Gemini
+    results = transpiler.generate(
+        agent="gemini", rules=True, output_dir=str(output_dir)
+    )
+
+    assert "commands" in results
+    assert "rules" in results
+    assert len(results["commands"]) == 2
 
 
 def test_transpiler_generate_mcp_only(tmp_path):
@@ -289,14 +306,19 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    rules_files = transpiler.generate_rules(["claude", "windsurf"], str(output_dir))
+    # Generate rules for Claude
+    rules_files = transpiler.generate_rules("claude", str(output_dir))
 
-    assert "claude" in rules_files
-    assert "windsurf" in rules_files
-    assert len(rules_files["claude"]) >= 1
-    assert Path(rules_files["claude"][0]).exists()
-    assert len(rules_files["windsurf"]) >= 1
-    assert Path(rules_files["windsurf"][0]).exists()
+    assert isinstance(rules_files, list)
+    assert len(rules_files) >= 1
+    assert Path(rules_files[0]).exists()
+
+    # Generate rules for Windsurf
+    rules_files = transpiler.generate_rules("windsurf", str(output_dir))
+
+    assert isinstance(rules_files, list)
+    assert len(rules_files) >= 1
+    assert Path(rules_files[0]).exists()
 
 
 def test_transpiler_unknown_agent(tmp_path):
@@ -320,7 +342,7 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
 
     with pytest.raises(ValueError, match="Unknown agent"):
-        transpiler.generate(agents=["nonexistent"], output_dir="/tmp")
+        transpiler.generate(agent="nonexistent", output_dir="/tmp")
 
 
 def test_transpiler_creates_nested_directories(tmp_path):
@@ -344,11 +366,11 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "nested" / "deep" / "output"
 
-    results = transpiler.generate(agents=["claude"], output_dir=str(output_dir))
+    results = transpiler.generate(agent="claude", output_dir=str(output_dir))
 
     # Check that nested directory was created
     assert output_dir.exists()
-    command_file = Path(results["claude_commands"][0])
+    command_file = Path(results["commands"][0])
     assert command_file.exists()
 
 
@@ -389,11 +411,11 @@ Test prompt content
 
     # Generate commands
     output_dir = tmp_path / "output"
-    results = transpiler.generate(agents=["cursor"], output_dir=str(output_dir))
+    results = transpiler.generate(agent="cursor", output_dir=str(output_dir))
 
     # Verify command was generated
-    assert "cursor_commands" in results
-    assert len(results["cursor_commands"]) == 1
+    assert "commands" in results
+    assert len(results["commands"]) == 1
 
     # Verify file exists
     generated_file = output_dir / ".cursor" / "commands" / "test.md"

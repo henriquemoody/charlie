@@ -35,12 +35,12 @@ Rules include agent-specific metadata:
 
 Generate with **merged** mode (single rules file):
 ```bash
-charlie generate --agents cursor --rules --rules-mode merged
+charlie setup cursor --rules --rules-mode merged
 ```
 
 Generate with **separate** mode (one file per section):
 ```bash
-charlie generate --agents cursor --rules --rules-mode separate
+charlie setup cursor --rules --rules-mode separate
 ```
 
 ## Benefits
@@ -56,13 +56,14 @@ charlie generate --agents cursor --rules --rules-mode separate
 # Navigate to this directory
 cd examples/directory-based
 
-# Generate for Claude with allowed-tools support
-charlie generate --agents claude --mcp
+# Setup for Claude with MCP
+charlie setup claude --mcp
 
-# Generate for Cursor with globs and alwaysApply support
-charlie generate --agents cursor --rules --rules-mode merged
+# Setup for Cursor with globs and alwaysApply support
+charlie setup cursor --rules --rules-mode merged
 
-# Generate everything
-charlie generate --agents claude,cursor --mcp --rules
+# Setup multiple agents
+charlie setup claude --mcp --rules
+charlie setup cursor --rules
 ```
 

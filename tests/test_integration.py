@@ -51,23 +51,18 @@ commands:
     # Initialize transpiler
     transpiler = CommandTranspiler(str(config_file))
 
-    # Generate everything
+    # Generate for Claude with everything
     output_dir = tmp_path / "output"
     results = transpiler.generate(
-        agents=["claude", "gemini", "windsurf"],
+        agent="claude",
         mcp=True,
         rules=True,
         output_dir=str(output_dir),
     )
 
-    # Verify agent commands were generated
-    assert "claude_commands" in results
-    assert "gemini_commands" in results
-    assert "windsurf_commands" in results
-
-    # Verify correct number of commands
-    assert len(results["claude_commands"]) == 2  # init + build
-    assert len(results["gemini_commands"]) == 2
+    # Verify Claude commands were generated
+    assert "commands" in results
+    assert len(results["commands"]) == 2  # init + build
 
     # Verify MCP config was generated
     assert "mcp" in results
@@ -79,11 +74,9 @@ commands:
     assert "test-server" in mcp_config["mcpServers"]
     assert len(mcp_config["mcpServers"]["test-server"]["capabilities"]["tools"]["list"]) == 2
 
-    # Verify rules files were generated
-    assert "claude_rules" in results
-    assert "windsurf_rules" in results
-
-    claude_rules = Path(results["claude_rules"][0])
+    # Verify rules file was generated
+    assert "rules" in results
+    claude_rules = Path(results["rules"][0])
     assert claude_rules.exists()
 
     rules_content = claude_rules.read_text()
@@ -91,6 +84,16 @@ commands:
     assert "/test.init" in rules_content
     assert "/test.build" in rules_content
     assert "MANUAL ADDITIONS START" in rules_content
+
+    # Generate for Gemini
+    results = transpiler.generate(agent="gemini", output_dir=str(output_dir))
+    assert "commands" in results
+    assert len(results["commands"]) == 2
+
+    # Generate for Windsurf with rules
+    results = transpiler.generate(agent="windsurf", rules=True, output_dir=str(output_dir))
+    assert "commands" in results
+    assert "rules" in results
 
     # Verify file structure
     assert (output_dir / ".claude" / "commands").exists()
@@ -123,13 +126,13 @@ commands:
 
     # Generate for single agent
     output_dir = tmp_path / "output"
-    results = transpiler.generate(agents=["claude"], output_dir=str(output_dir))
+    results = transpiler.generate(agent="claude", output_dir=str(output_dir))
 
-    assert "claude_commands" in results
-    assert len(results["claude_commands"]) == 1
+    assert "commands" in results
+    assert len(results["commands"]) == 1
 
     # Verify file content
-    command_file = Path(results["claude_commands"][0])
+    command_file = Path(results["commands"][0])
     content = command_file.read_text()
     assert "description: Test" in content
     assert "$ARGUMENTS" in content
@@ -148,10 +151,10 @@ def test_spec_kit_example_workflow(tmp_path):
 
     transpiler = CommandTranspiler(str(config_file))
 
-    # Generate for multiple agents commonly used with spec-kit
+    # Generate for Claude with MCP and rules
     output_dir = tmp_path / "output"
     results = transpiler.generate(
-        agents=["claude", "copilot", "cursor"],
+        agent="claude",
         mcp=True,
         rules=True,
         output_dir=str(output_dir),
@@ -161,11 +164,18 @@ def test_spec_kit_example_workflow(tmp_path):
     assert len(results) > 0
 
     # Check that speckit commands were generated
-    claude_commands = [Path(f) for f in results["claude_commands"]]
+    claude_commands = [Path(f) for f in results["commands"]]
     command_names = [f.stem for f in claude_commands]
 
     # Should have spec-kit commands
     assert any("specify" in name for name in command_names)
     assert any("plan" in name for name in command_names)
     assert any("constitution" in name for name in command_names)
+
+    # Generate for Copilot and Cursor
+    results = transpiler.generate(agent="copilot", output_dir=str(output_dir))
+    assert "commands" in results
+
+    results = transpiler.generate(agent="cursor", output_dir=str(output_dir))
+    assert "commands" in results
 

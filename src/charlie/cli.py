@@ -47,12 +47,13 @@ def _resolve_config_file(config_path: str | None) -> Path:
 
 
 @app.command()
-def generate(
-    config_path: str | None = typer.Argument(
-        None, help="Path to configuration file (default: auto-detect charlie.yaml)"
-    ),
-    agents: str | None = typer.Option(
-        None, "--agents", "-a", help="Comma-separated list of agents to generate for"
+def setup(
+    agent: str = typer.Argument(..., help="Agent name to generate configuration for"),
+    config_path: str | None = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to configuration file (default: auto-detect charlie.yaml)",
     ),
     mcp: bool = typer.Option(False, "--mcp", help="Generate MCP server configuration"),
     rules: bool = typer.Option(False, "--rules", help="Generate rules files"),
@@ -61,28 +62,27 @@ def generate(
         "--rules-mode",
         help="Rules generation mode: 'merged' (single file) or 'separate' (one file per section)",
     ),
-    all_targets: bool = typer.Option(False, "--all", help="Generate everything"),
     output: str = typer.Option(".", "--output", "-o", help="Output directory"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
 ):
-    """Generate agent-specific configurations from YAML definition.
+    """Setup agent-specific configurations from YAML definition.
 
     Examples:
 
-        # Auto-detect charlie.yaml and generate for Claude
-        charlie generate --agents claude
+        # Auto-detect charlie.yaml and setup for Claude
+        charlie setup claude
 
         # Explicit config file
-        charlie generate my-config.yaml --agents claude,gemini
+        charlie setup gemini --config my-config.yaml
 
-        # Generate MCP config only
-        charlie generate --mcp
+        # Setup with rules
+        charlie setup cursor --rules
 
-        # Generate everything
-        charlie generate --agents claude,windsurf --mcp --rules
+        # Setup with MCP and rules
+        charlie setup claude --mcp --rules
 
         # Custom output directory
-        charlie generate --agents cursor --output ./build
+        charlie setup cursor --output ./build
     """
     try:
         # Resolve config file
@@ -93,29 +93,11 @@ def generate(
         # Initialize transpiler
         transpiler = CommandTranspiler(str(config_file))
 
-        # Parse agents list
-        agent_list = None
-        if agents:
-            agent_list = [a.strip() for a in agents.split(",")]
-        elif all_targets:
-            # If --all, generate for all configured agents (we'll just pick a default set)
-            agent_list = ["claude", "copilot", "gemini", "cursor"]
-            mcp = True
-            rules = True
-
-        # Check that at least something was requested
-        if not agent_list and not mcp and not rules:
-            console.print(
-                "[yellow]Warning:[/yellow] No targets specified. "
-                "Use --agents, --mcp, --rules, or --all"
-            )
-            return
-
         # Generate
-        console.print("\n[bold]Generating outputs...[/bold]")
+        console.print(f"\n[bold]Setting up {agent}...[/bold]")
 
         results = transpiler.generate(
-            agents=agent_list,
+            agent=agent,
             mcp=mcp,
             rules=rules,
             rules_mode=rules_mode,
@@ -123,7 +105,7 @@ def generate(
         )
 
         # Display results
-        console.print("\n[green]✓ Generation complete![/green]\n")
+        console.print(f"\n[green]✓ Setup complete for {agent}![/green]\n")
 
         for target_name, files in results.items():
             console.print(f"[cyan]{target_name}:[/cyan]")

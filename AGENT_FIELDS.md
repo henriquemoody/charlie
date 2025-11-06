@@ -173,7 +173,7 @@ Charlie doesn't validate or restrict agent-specific fields - if an agent support
 
 1. Check agent's documentation for supported fields
 2. Add field to your command/rule YAML
-3. Generate output: `charlie generate --agents <agent>`
+3. Generate output: `charlie setup <agent>`
 4. Verify field appears in generated output
 
 ### Example: Adding New Field
