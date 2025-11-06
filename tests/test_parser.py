@@ -15,7 +15,7 @@ from charlie.parser import (
 from charlie.schema import Command, RulesSection
 
 
-def test_parse_valid_config(tmp_path):
+def test_parse_valid_config(tmp_path) -> None:
     """Test parsing a valid configuration file."""
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
@@ -39,7 +39,7 @@ commands:
     assert len(config.commands) == 1
 
 
-def test_parse_nonexistent_file(tmp_path):
+def test_parse_nonexistent_file(tmp_path) -> None:
     """Test parsing a non-existent file creates default config."""
     config = parse_config(tmp_path / "nonexistent.yaml")
     # Should create default config with inferred name from directory
@@ -49,7 +49,7 @@ def test_parse_nonexistent_file(tmp_path):
     assert config.commands == []
 
 
-def test_parse_empty_file(tmp_path):
+def test_parse_empty_file(tmp_path) -> None:
     """Test parsing an empty file creates default config."""
     config_file = tmp_path / "empty.yaml"
     config_file.write_text("")
@@ -62,7 +62,7 @@ def test_parse_empty_file(tmp_path):
     assert config.commands == []
 
 
-def test_parse_invalid_yaml(tmp_path):
+def test_parse_invalid_yaml(tmp_path) -> None:
     """Test parsing invalid YAML raises ConfigParseError."""
     config_file = tmp_path / "invalid.yaml"
     config_file.write_text("invalid: yaml: syntax:")
@@ -71,7 +71,7 @@ def test_parse_invalid_yaml(tmp_path):
         parse_config(config_file)
 
 
-def test_parse_invalid_schema(tmp_path):
+def test_parse_invalid_schema(tmp_path) -> None:
     """Test parsing YAML with invalid schema raises ConfigParseError."""
     config_file = tmp_path / "invalid_schema.yaml"
     config_file.write_text(
@@ -86,7 +86,7 @@ project:
         parse_config(config_file)
 
 
-def test_find_config_charlie_yaml(tmp_path):
+def test_find_config_charlie_yaml(tmp_path) -> None:
     """Test finding charlie.yaml file."""
     config_file = tmp_path / "charlie.yaml"
     config_file.write_text("test")
@@ -95,7 +95,7 @@ def test_find_config_charlie_yaml(tmp_path):
     assert found == config_file
 
 
-def test_find_config_hidden_charlie(tmp_path):
+def test_find_config_hidden_charlie(tmp_path) -> None:
     """Test finding .charlie.yaml file."""
     config_file = tmp_path / ".charlie.yaml"
     config_file.write_text("test")
@@ -104,7 +104,7 @@ def test_find_config_hidden_charlie(tmp_path):
     assert found == config_file
 
 
-def test_find_config_prefers_non_hidden(tmp_path):
+def test_find_config_prefers_non_hidden(tmp_path) -> None:
     """Test that charlie.yaml is preferred over .charlie.yaml."""
     visible = tmp_path / "charlie.yaml"
     hidden = tmp_path / ".charlie.yaml"
@@ -115,13 +115,13 @@ def test_find_config_prefers_non_hidden(tmp_path):
     assert found == visible
 
 
-def test_find_config_not_found(tmp_path):
+def test_find_config_not_found(tmp_path) -> None:
     """Test that missing config file returns None."""
     found = find_config_file(tmp_path)
     assert found is None
 
 
-def test_parse_config_with_mcp_servers(tmp_path):
+def test_parse_config_with_mcp_servers(tmp_path) -> None:
     """Test parsing configuration with MCP servers."""
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
@@ -151,7 +151,7 @@ commands:
     assert config.mcp_servers[0].env["DEBUG"] == "true"
 
 
-def test_parse_single_file_command(tmp_path):
+def test_parse_single_file_command(tmp_path) -> None:
     """Test parsing a single command file."""
     command_file = tmp_path / "init.yaml"
     command_file.write_text(
@@ -171,7 +171,7 @@ scripts:
     assert command.scripts.sh == "init.sh"
 
 
-def test_parse_single_file_rules_section(tmp_path):
+def test_parse_single_file_rules_section(tmp_path) -> None:
     """Test parsing a single rules section file."""
     rules_file = tmp_path / "code-style.yaml"
     rules_file.write_text(
@@ -197,7 +197,7 @@ globs:
     assert section_dict["globs"] == ["**/*.py"]
 
 
-def test_parse_single_file_invalid(tmp_path):
+def test_parse_single_file_invalid(tmp_path) -> None:
     """Test parsing invalid file raises ConfigParseError."""
     invalid_file = tmp_path / "invalid.yaml"
     invalid_file.write_text("name: test\n# missing required fields")
@@ -206,7 +206,7 @@ def test_parse_single_file_invalid(tmp_path):
         parse_single_file(invalid_file, Command)
 
 
-def test_discover_config_files_empty(tmp_path):
+def test_discover_config_files_empty(tmp_path) -> None:
     """Test discovering config files when .charlie/ doesn't exist."""
     result = discover_config_files(tmp_path)
     assert result["commands"] == []
@@ -214,7 +214,7 @@ def test_discover_config_files_empty(tmp_path):
     assert result["mcp_servers"] == []
 
 
-def test_discover_config_files_complete(tmp_path):
+def test_discover_config_files_complete(tmp_path) -> None:
     """Test discovering config files in complete directory structure."""
     # Create directory structure
     charlie_dir = tmp_path / ".charlie"
@@ -238,7 +238,7 @@ def test_discover_config_files_complete(tmp_path):
     assert len(result["mcp_servers"]) == 1
 
 
-def test_load_directory_config_minimal(tmp_path):
+def test_load_directory_config_minimal(tmp_path) -> None:
     """Test loading minimal directory-based config."""
     # Create structure
     charlie_dir = tmp_path / ".charlie"
@@ -267,7 +267,7 @@ Test prompt content
     assert config.commands[0].name == "test"
 
 
-def test_load_directory_config_with_project(tmp_path):
+def test_load_directory_config_with_project(tmp_path) -> None:
     """Test loading directory config with project metadata."""
     # Create charlie.yaml with project info
     (tmp_path / "charlie.yaml").write_text(
@@ -302,7 +302,7 @@ Init prompt content
     assert len(config.commands) == 1
 
 
-def test_load_directory_config_with_rules(tmp_path):
+def test_load_directory_config_with_rules(tmp_path) -> None:
     """Test loading directory config with rules sections."""
     # Create rules (markdown format with frontmatter)
     charlie_dir = tmp_path / ".charlie"
@@ -354,7 +354,7 @@ Test prompt content
     assert "Commit Messages" in titles
 
 
-def test_load_directory_config_with_mcp(tmp_path):
+def test_load_directory_config_with_mcp(tmp_path) -> None:
     """Test loading directory config with MCP servers."""
     charlie_dir = tmp_path / ".charlie"
     mcp_dir = charlie_dir / "mcp-servers"
@@ -388,7 +388,7 @@ scripts:
     assert config.mcp_servers[0].commands == ["init", "build"]
 
 
-def test_parse_config_detects_directory_format(tmp_path):
+def test_parse_config_detects_directory_format(tmp_path) -> None:
     """Test that parse_config detects directory-based format."""
     # Create directory structure
     charlie_dir = tmp_path / ".charlie"
@@ -423,7 +423,7 @@ project:
     assert config.commands[0].name == "test"
 
 
-def test_parse_config_fallback_to_monolithic(tmp_path):
+def test_parse_config_fallback_to_monolithic(tmp_path) -> None:
     """Test that parse_config falls back to monolithic when no .charlie/ exists."""
     config_file = tmp_path / "charlie.yaml"
     config_file.write_text(
@@ -446,7 +446,7 @@ commands:
     assert len(config.commands) == 1
 
 
-def test_parse_frontmatter_valid():
+def test_parse_frontmatter_valid() -> None:
     """Test parsing valid frontmatter."""
     content = """---
 name: "test"
@@ -461,7 +461,7 @@ Content body here
     assert body.strip() == "Content body here"
 
 
-def test_parse_frontmatter_no_frontmatter():
+def test_parse_frontmatter_no_frontmatter() -> None:
     """Test parsing content without frontmatter."""
     content = "Just plain content"
     frontmatter, body = parse_frontmatter(content)
@@ -469,7 +469,7 @@ def test_parse_frontmatter_no_frontmatter():
     assert body == "Just plain content"
 
 
-def test_parse_frontmatter_empty_frontmatter():
+def test_parse_frontmatter_empty_frontmatter() -> None:
     """Test parsing empty frontmatter."""
     content = """---
 ---
@@ -481,7 +481,7 @@ Content body
     assert body.strip() == "Content body"
 
 
-def test_parse_frontmatter_complex_yaml():
+def test_parse_frontmatter_complex_yaml() -> None:
     """Test parsing complex YAML in frontmatter."""
     content = """---
 name: "test"
@@ -504,7 +504,7 @@ With markdown formatting
     assert "# Content" in body
 
 
-def test_parse_frontmatter_invalid_yaml():
+def test_parse_frontmatter_invalid_yaml() -> None:
     """Test parsing invalid YAML in frontmatter."""
     content = """---
 name: "test
@@ -517,7 +517,7 @@ Content
         parse_frontmatter(content)
 
 
-def test_parse_frontmatter_missing_closing_delimiter():
+def test_parse_frontmatter_missing_closing_delimiter() -> None:
     """Test parsing frontmatter without closing delimiter."""
     content = """---
 name: "test"
@@ -528,7 +528,7 @@ No closing delimiter
         parse_frontmatter(content)
 
 
-def test_parse_single_file_markdown_command(tmp_path):
+def test_parse_single_file_markdown_command(tmp_path) -> None:
     """Test parsing markdown file with frontmatter as Command."""
     md_file = tmp_path / "test.md"
     md_file.write_text(
@@ -550,7 +550,7 @@ Test prompt content
     assert command.scripts.sh == "test.sh"
 
 
-def test_parse_single_file_markdown_rules(tmp_path):
+def test_parse_single_file_markdown_rules(tmp_path) -> None:
     """Test parsing markdown file with frontmatter as RulesSection."""
     md_file = tmp_path / "test.md"
     md_file.write_text(

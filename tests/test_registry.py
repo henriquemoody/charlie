@@ -10,7 +10,7 @@ from charlie.agents.registry import (
 )
 
 
-def test_get_agent_spec_valid():
+def test_get_agent_spec_valid() -> None:
     """Test getting spec for a valid agent."""
     spec = get_agent_spec("claude")
     assert spec["name"] == "Claude Code"
@@ -18,13 +18,13 @@ def test_get_agent_spec_valid():
     assert spec["file_format"] == "markdown"
 
 
-def test_get_agent_spec_invalid():
+def test_get_agent_spec_invalid() -> None:
     """Test getting spec for invalid agent raises ValueError."""
     with pytest.raises(ValueError, match="Unknown agent"):
         get_agent_spec("nonexistent")
 
 
-def test_list_supported_agents():
+def test_list_supported_agents() -> None:
     """Test listing all supported agents."""
     agents = list_supported_agents()
     assert isinstance(agents, list)
@@ -36,20 +36,20 @@ def test_list_supported_agents():
     assert agents == sorted(agents)
 
 
-def test_get_agent_info_valid():
+def test_get_agent_info_valid() -> None:
     """Test getting agent info for valid agent."""
     info = get_agent_info("cursor")
     assert info is not None
     assert info["name"] == "Cursor"
 
 
-def test_get_agent_info_invalid():
+def test_get_agent_info_invalid() -> None:
     """Test getting agent info for invalid agent returns None."""
     info = get_agent_info("nonexistent")
     assert info is None
 
 
-def test_all_agents_have_required_fields():
+def test_all_agents_have_required_fields() -> None:
     """Test that all agents have required fields."""
     required_fields = [
         "name",
@@ -65,7 +65,7 @@ def test_all_agents_have_required_fields():
             assert field in spec, f"Agent {agent_name} missing field {field}"
 
 
-def test_markdown_agents_have_correct_placeholder():
+def test_markdown_agents_have_correct_placeholder() -> None:
     """Test that markdown-format agents use $ARGUMENTS placeholder."""
     markdown_agents = [
         name
@@ -78,7 +78,7 @@ def test_markdown_agents_have_correct_placeholder():
         assert spec["arg_placeholder"] == "$ARGUMENTS"
 
 
-def test_toml_agents_have_correct_placeholder():
+def test_toml_agents_have_correct_placeholder() -> None:
     """Test that TOML-format agents use {{args}} placeholder."""
     toml_agents = [
         name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "toml"

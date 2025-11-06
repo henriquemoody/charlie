@@ -7,7 +7,7 @@ from charlie.cli import app
 runner = CliRunner()
 
 
-def create_test_config(tmp_path, filename="charlie.yaml"):
+def create_test_config(tmp_path, filename="charlie.yaml") -> None:
     """Helper to create a test configuration file."""
     config_file = tmp_path / filename
     config_file.write_text(
@@ -36,7 +36,7 @@ commands:
     return config_file
 
 
-def test_setup_with_explicit_config(tmp_path):
+def test_setup_with_explicit_config(tmp_path) -> None:
     """Test setup command with explicit config file."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -51,7 +51,7 @@ def test_setup_with_explicit_config(tmp_path):
     assert "commands" in result.stdout
 
 
-def test_setup_auto_detect_config(tmp_path):
+def test_setup_auto_detect_config(tmp_path) -> None:
     """Test setup command with auto-detected config."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -76,7 +76,7 @@ def test_setup_auto_detect_config(tmp_path):
     assert "Setup complete" in result.stdout
 
 
-def test_setup_different_agents(tmp_path):
+def test_setup_different_agents(tmp_path) -> None:
     """Test setting up different agents individually."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -106,7 +106,7 @@ def test_setup_different_agents(tmp_path):
     assert "commands" in result.stdout
 
 
-def test_setup_with_mcp(tmp_path):
+def test_setup_with_mcp(tmp_path) -> None:
     """Test setting up agent with MCP config."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -123,7 +123,7 @@ def test_setup_with_mcp(tmp_path):
     assert mcp_file.exists()
 
 
-def test_setup_with_rules(tmp_path):
+def test_setup_with_rules(tmp_path) -> None:
     """Test setting up with rules files."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -162,7 +162,7 @@ def test_setup_with_rules(tmp_path):
     assert "rules" in result.stdout
 
 
-def test_setup_with_all_options(tmp_path):
+def test_setup_with_all_options(tmp_path) -> None:
     """Test setting up with all options (mcp and rules)."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
@@ -187,7 +187,7 @@ def test_setup_with_all_options(tmp_path):
     assert "mcp" in result.stdout
 
 
-def test_setup_missing_agent():
+def test_setup_missing_agent() -> None:
     """Test setup command without agent argument."""
     result = runner.invoke(app, ["setup"])
 
@@ -195,7 +195,7 @@ def test_setup_missing_agent():
     assert "Missing argument" in result.stdout or "required" in result.stdout.lower()
 
 
-def test_setup_nonexistent_config():
+def test_setup_nonexistent_config() -> None:
     """Test setup with non-existent config file."""
     result = runner.invoke(app, ["setup", "claude", "--config", "/nonexistent/config.yaml"])
 
@@ -203,7 +203,7 @@ def test_setup_nonexistent_config():
     assert "not found" in result.stdout.lower()
 
 
-def test_setup_invalid_agent(tmp_path):
+def test_setup_invalid_agent(tmp_path) -> None:
     """Test setup with invalid agent name."""
     config_file = create_test_config(tmp_path)
 
@@ -215,7 +215,7 @@ def test_setup_invalid_agent(tmp_path):
     assert "Unknown agent" in result.stdout
 
 
-def test_validate_valid_config(tmp_path):
+def test_validate_valid_config(tmp_path) -> None:
     """Test validate command with valid config."""
     config_file = create_test_config(tmp_path)
 
@@ -226,7 +226,7 @@ def test_validate_valid_config(tmp_path):
     assert "test-project" in result.stdout
 
 
-def test_validate_invalid_config(tmp_path):
+def test_validate_invalid_config(tmp_path) -> None:
     """Test validate with invalid config."""
     config_file = tmp_path / "invalid.yaml"
     config_file.write_text("invalid: yaml: syntax:")
@@ -237,7 +237,7 @@ def test_validate_invalid_config(tmp_path):
     assert "Validation Failed" in result.stdout or "Error" in result.stdout
 
 
-def test_validate_auto_detect(tmp_path):
+def test_validate_auto_detect(tmp_path) -> None:
     """Test validate with auto-detected config."""
     create_test_config(tmp_path)
 
@@ -256,7 +256,7 @@ def test_validate_auto_detect(tmp_path):
         os.chdir(original_dir)
 
 
-def test_list_agents():
+def test_list_agents() -> None:
     """Test list-agents command."""
     result = runner.invoke(app, ["list-agents"])
 
@@ -267,7 +267,7 @@ def test_list_agents():
     assert "copilot" in result.stdout.lower()
 
 
-def test_info_valid_agent():
+def test_info_valid_agent() -> None:
     """Test info command with valid agent."""
     result = runner.invoke(app, ["info", "claude"])
 
@@ -276,7 +276,7 @@ def test_info_valid_agent():
     assert ".claude/commands" in result.stdout
 
 
-def test_info_invalid_agent():
+def test_info_invalid_agent() -> None:
     """Test info command with invalid agent."""
     result = runner.invoke(app, ["info", "nonexistent"])
 
@@ -284,7 +284,7 @@ def test_info_invalid_agent():
     assert "Unknown agent" in result.stdout
 
 
-def test_setup_verbose_output(tmp_path):
+def test_setup_verbose_output(tmp_path) -> None:
     """Test setup with verbose flag."""
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"

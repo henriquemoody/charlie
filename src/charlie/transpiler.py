@@ -1,8 +1,10 @@
 """Core transpiler engine for command generation."""
 
 from pathlib import Path
+from typing import Any
 
 from charlie.agents import get_agent_spec
+from charlie.agents.base import BaseAgentAdapter
 from charlie.agents.claude import ClaudeAdapter
 from charlie.agents.copilot import CopilotAdapter
 from charlie.agents.cursor import CursorAdapter
@@ -13,7 +15,7 @@ from charlie.parser import parse_config
 from charlie.rules import generate_rules_for_agents
 
 # Map agent names to adapter classes
-ADAPTER_CLASSES = {
+ADAPTER_CLASSES: dict[str, type[BaseAgentAdapter]] = {
     "claude": ClaudeAdapter,
     "copilot": CopilotAdapter,
     "cursor": CursorAdapter,
@@ -146,7 +148,7 @@ class CommandTranspiler:
         )
         return rules_files[agent]
 
-    def _get_adapter(self, agent_name: str, agent_spec: dict):
+    def _get_adapter(self, agent_name: str, agent_spec: dict[str, Any]) -> BaseAgentAdapter:
         """Get adapter instance for an agent.
 
         Args:

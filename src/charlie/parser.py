@@ -1,7 +1,7 @@
 """YAML parser with validation."""
 
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -47,7 +47,7 @@ def _create_default_config(base_dir: Path) -> CharlieConfig:
     project_name = _infer_project_name(base_dir)
     return CharlieConfig(
         version="1.0",
-        project={"name": project_name},
+        project=ProjectConfig(name=project_name, command_prefix=None),
         commands=[],
         mcp_servers=[],
     )
@@ -66,7 +66,7 @@ def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig
     if config.project is None:
         # No project config - create one with inferred name
         project_name = _infer_project_name(base_dir)
-        config.project = ProjectConfig(name=project_name)
+        config.project = ProjectConfig(name=project_name, command_prefix=None)
     elif config.project.name is None:
         # Project config exists but name is missing - infer it
         config.project.name = _infer_project_name(base_dir)
@@ -318,7 +318,7 @@ def discover_config_files(base_dir: Path) -> dict[str, list[Path]]:
     """
     charlie_dir = base_dir / ".charlie"
 
-    result = {
+    result: dict[str, list[Path]] = {
         "commands": [],
         "rules": [],
         "mcp_servers": [],
@@ -364,7 +364,7 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         ConfigParseError: If loading or merging fails
     """
     # Start with minimal config
-    config_data = {
+    config_data: dict[str, Any] = {
         "version": "1.0",
         "commands": [],
         "mcp_servers": [],

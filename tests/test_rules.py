@@ -12,7 +12,7 @@ from charlie.rules import (
 from charlie.schema import CharlieConfig, Command, CommandScripts, ProjectConfig, RulesConfig
 
 
-def test_format_command_reference():
+def test_format_command_reference() -> None:
     """Test formatting a command as reference entry."""
     command = Command(
         name="init",
@@ -30,7 +30,7 @@ def test_format_command_reference():
     assert "PowerShell: `init.ps1`" in result
 
 
-def test_extract_manual_additions():
+def test_extract_manual_additions() -> None:
     """Test extracting manual additions from existing content."""
     content = """# Title
 
@@ -49,7 +49,7 @@ More content
     assert "More custom stuff" in result
 
 
-def test_extract_manual_additions_empty():
+def test_extract_manual_additions_empty() -> None:
     """Test extracting from content without manual additions."""
     content = "# Title\n\nSome content"
 
@@ -57,7 +57,7 @@ def test_extract_manual_additions_empty():
     assert result == ""
 
 
-def test_generate_rules_file(tmp_path):
+def test_generate_rules_file(tmp_path) -> None:
     """Test generating a rules file."""
     config = CharlieConfig(
         version="1.0",
@@ -90,7 +90,7 @@ def test_generate_rules_file(tmp_path):
     assert "MANUAL ADDITIONS START" in content
 
 
-def test_generate_rules_file_preserves_manual_additions(tmp_path):
+def test_generate_rules_file_preserves_manual_additions(tmp_path) -> None:
     """Test that rules file preserves manual additions on regeneration."""
     config = CharlieConfig(
         version="1.0",
@@ -129,7 +129,7 @@ def test_generate_rules_file_preserves_manual_additions(tmp_path):
     assert "Another custom rule" in new_content
 
 
-def test_generate_rules_file_custom_title(tmp_path):
+def test_generate_rules_file_custom_title(tmp_path) -> None:
     """Test generating rules file with custom title."""
     config = CharlieConfig(
         version="1.0",
@@ -153,7 +153,7 @@ def test_generate_rules_file_custom_title(tmp_path):
     assert "# Custom Title" in content
 
 
-def test_generate_rules_file_without_commands(tmp_path):
+def test_generate_rules_file_without_commands(tmp_path) -> None:
     """Test generating rules file without command list."""
     config = CharlieConfig(
         version="1.0",
@@ -178,7 +178,7 @@ def test_generate_rules_file_without_commands(tmp_path):
     assert "/test.test" not in content
 
 
-def test_generate_rules_file_without_preserve(tmp_path):
+def test_generate_rules_file_without_preserve(tmp_path) -> None:
     """Test generating rules file without manual preservation."""
     config = CharlieConfig(
         version="1.0",
@@ -202,7 +202,7 @@ def test_generate_rules_file_without_preserve(tmp_path):
     assert "MANUAL ADDITIONS START" not in content
 
 
-def test_generate_rules_for_agents(tmp_path):
+def test_generate_rules_for_agents(tmp_path) -> None:
     """Test generating rules files for multiple agents."""
     config = CharlieConfig(
         version="1.0",
@@ -237,7 +237,7 @@ def test_generate_rules_for_agents(tmp_path):
     assert Path(results["windsurf"][0]).exists()
 
 
-def test_generate_rules_for_agents_skips_missing_rules_file(tmp_path):
+def test_generate_rules_for_agents_skips_missing_rules_file(tmp_path) -> None:
     """Test that agents without rules_file are skipped."""
     config = CharlieConfig(
         version="1.0",
@@ -261,7 +261,7 @@ def test_generate_rules_for_agents_skips_missing_rules_file(tmp_path):
     assert len(results) == 0
 
 
-def test_rules_file_date_format(tmp_path):
+def test_rules_file_date_format(tmp_path) -> None:
     """Test that rules file includes properly formatted date."""
     config = CharlieConfig(
         version="1.0",
@@ -287,7 +287,7 @@ def test_rules_file_date_format(tmp_path):
     assert re.search(r"Last updated: \d{4}-\d{2}-\d{2}", content)
 
 
-def test_generate_rules_merged_mode_with_sections(tmp_path):
+def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
     """Test generating rules in merged mode with custom sections."""
     from charlie.schema import RulesSection
 
@@ -338,7 +338,7 @@ def test_generate_rules_merged_mode_with_sections(tmp_path):
     assert "Use conventional commits" in content
 
 
-def test_generate_rules_separate_mode(tmp_path):
+def test_generate_rules_separate_mode(tmp_path) -> None:
     """Test generating rules in separate mode (one file per section)."""
     from charlie.schema import RulesSection
 

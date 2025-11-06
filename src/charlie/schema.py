@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
 class ProjectConfig(BaseModel):
@@ -65,7 +65,7 @@ class CommandScripts(BaseModel):
 
     @field_validator("sh", "ps")
     @classmethod
-    def validate_at_least_one(cls, v: str | None, info) -> str | None:
+    def validate_at_least_one(cls, v: str | None, info: ValidationInfo) -> str | None:
         """Ensure at least one script is defined."""
         return v
 
@@ -101,7 +101,7 @@ class CharlieConfig(BaseModel):
         default_factory=list, description="MCP server definitions"
     )
     rules: RulesConfig | None = Field(
-        default_factory=RulesConfig, description="Rules configuration"
+        default=None, description="Rules configuration"
     )
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
 

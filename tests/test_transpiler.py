@@ -16,7 +16,7 @@ def create_test_config(tmp_path, config_content: str) -> Path:
     return config_file
 
 
-def test_transpiler_initialization(tmp_path):
+def test_transpiler_initialization(tmp_path) -> None:
     """Test transpiler initializes with valid config."""
     config_file = create_test_config(
         tmp_path,
@@ -39,7 +39,7 @@ commands:
     assert len(transpiler.config.commands) == 1
 
 
-def test_transpiler_invalid_config(tmp_path):
+def test_transpiler_invalid_config(tmp_path) -> None:
     """Test transpiler raises error on invalid config."""
     config_file = create_test_config(tmp_path, "invalid: yaml: syntax:")
 
@@ -47,7 +47,7 @@ def test_transpiler_invalid_config(tmp_path):
         CommandTranspiler(str(config_file))
 
 
-def test_transpiler_generate_single_agent(tmp_path):
+def test_transpiler_generate_single_agent(tmp_path) -> None:
     """Test generating for a single agent."""
     config_file = create_test_config(
         tmp_path,
@@ -79,7 +79,7 @@ commands:
     assert "test.init.md" in str(command_file)
 
 
-def test_transpiler_generate_different_agents(tmp_path):
+def test_transpiler_generate_different_agents(tmp_path) -> None:
     """Test generating for different agents separately."""
     config_file = create_test_config(
         tmp_path,
@@ -113,7 +113,7 @@ commands:
     assert "commands" in results
 
 
-def test_transpiler_generate_mcp(tmp_path):
+def test_transpiler_generate_mcp(tmp_path) -> None:
     """Test generating MCP configuration."""
     config_file = create_test_config(
         tmp_path,
@@ -155,7 +155,7 @@ commands:
     assert "test-server" in mcp_config["mcpServers"]
 
 
-def test_transpiler_generate_rules(tmp_path):
+def test_transpiler_generate_rules(tmp_path) -> None:
     """Test generating rules files."""
     config_file = create_test_config(
         tmp_path,
@@ -202,7 +202,7 @@ commands:
     assert windsurf_rules.exists()
 
 
-def test_transpiler_generate_all(tmp_path):
+def test_transpiler_generate_all(tmp_path) -> None:
     """Test generating commands, MCP, and rules all at once."""
     config_file = create_test_config(
         tmp_path,
@@ -255,7 +255,7 @@ commands:
     assert len(results["commands"]) == 2
 
 
-def test_transpiler_generate_mcp_only(tmp_path):
+def test_transpiler_generate_mcp_only(tmp_path) -> None:
     """Test generate_mcp method."""
     config_file = create_test_config(
         tmp_path,
@@ -285,7 +285,7 @@ commands:
     assert Path(mcp_file).exists()
 
 
-def test_transpiler_generate_rules_only(tmp_path):
+def test_transpiler_generate_rules_only(tmp_path) -> None:
     """Test generate_rules method."""
     config_file = create_test_config(
         tmp_path,
@@ -321,7 +321,7 @@ commands:
     assert Path(rules_files[0]).exists()
 
 
-def test_transpiler_unknown_agent(tmp_path):
+def test_transpiler_unknown_agent(tmp_path) -> None:
     """Test that unknown agent raises ValueError."""
     config_file = create_test_config(
         tmp_path,
@@ -345,7 +345,7 @@ commands:
         transpiler.generate(agent="nonexistent", output_dir="/tmp")
 
 
-def test_transpiler_creates_nested_directories(tmp_path):
+def test_transpiler_creates_nested_directories(tmp_path) -> None:
     """Test that transpiler creates nested output directories."""
     config_file = create_test_config(
         tmp_path,
@@ -375,7 +375,7 @@ commands:
 
 
 
-def test_transpiler_with_dot_charlie_directory(tmp_path):
+def test_transpiler_with_dot_charlie_directory(tmp_path) -> None:
     """Test that transpiler works when passed .charlie directory directly.
 
     Regression test: Ensure commands are generated when .charlie directory

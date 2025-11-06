@@ -96,7 +96,7 @@ def _format_frontmatter(frontmatter: dict[str, Any]) -> str:
     return f"---\n{yaml_str}---\n\n"
 
 
-def _transform_path_placeholders(text: str, agent_spec: dict, root_dir: str = ".") -> str:
+def _transform_path_placeholders(text: str, agent_spec: dict[str, Any], root_dir: str = ".") -> str:
     """Replace path placeholders in text with agent-specific paths.
 
     Args:
@@ -134,7 +134,7 @@ def _transform_path_placeholders(text: str, agent_spec: dict, root_dir: str = ".
 def generate_rules_file(
     config: CharlieConfig,
     agent_name: str,
-    agent_spec: dict,
+    agent_spec: dict[str, Any],
     output_dir: str,
     mode: str = "merged",
     root_dir: str = ".",
@@ -159,7 +159,11 @@ def generate_rules_file(
 
 
 def _generate_merged_rules(
-    config: CharlieConfig, agent_name: str, agent_spec: dict, output_dir: str, root_dir: str = "."
+    config: CharlieConfig,
+    agent_name: str,
+    agent_spec: dict[str, Any],
+    output_dir: str,
+    root_dir: str = ".",
 ) -> str:
     """Generate a single merged rules file with all sections.
 
@@ -194,6 +198,8 @@ def _generate_merged_rules(
 
     # Build rules content
     title = config.rules.title if config.rules else "Development Guidelines"
+    include_commands = config.rules.include_commands if config.rules else True
+    preserve_manual = config.rules.preserve_manual if config.rules else True
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     content_parts = []
@@ -224,10 +230,10 @@ def _generate_merged_rules(
             lines.append("")
 
     # Add commands list if configured
-    if config.rules and config.rules.include_commands and config.commands:
+    if include_commands and config.commands:
         lines.append("## Available Commands")
         lines.append("")
-        if config.project:
+        if config.project and config.project.command_prefix:
             for command in config.commands:
                 lines.append(
                     f"- `/{config.project.command_prefix}.{command.name}` - {command.description}"
@@ -241,7 +247,7 @@ def _generate_merged_rules(
                 lines.append(_format_command_reference(command, config.project.command_prefix))
 
     # Add manual additions section if preserve_manual is enabled
-    if config.rules and config.rules.preserve_manual:
+    if preserve_manual:
         lines.append("<!-- MANUAL ADDITIONS START -->")
         if manual_additions:
             lines.append(manual_additions)
@@ -262,7 +268,11 @@ def _generate_merged_rules(
 
 
 def _generate_separate_rules(
-    config: CharlieConfig, agent_name: str, agent_spec: dict, output_dir: str, root_dir: str = "."
+    config: CharlieConfig,
+    agent_name: str,
+    agent_spec: dict[str, Any],
+    output_dir: str,
+    root_dir: str = ".",
 ) -> list[str]:
     """Generate separate rules files (one per section).
 
@@ -276,7 +286,7 @@ def _generate_separate_rules(
     Returns:
         List of paths to generated rules files
     """
-    generated_files = []
+    generated_files: list[str] = []
 
     if not config.rules or not config.rules.sections:
         return generated_files
@@ -330,11 +340,11 @@ def _generate_separate_rules(
 def generate_rules_for_agents(
     config: CharlieConfig,
     agents: list[str],
-    agent_specs: dict,
+    agent_specs: dict[str, Any],
     output_dir: str,
     mode: str = "merged",
     root_dir: str = ".",
-) -> dict:
+) -> dict[str, list[str]]:
     """Generate rules files for multiple agents.
 
     Args:
@@ -348,7 +358,7 @@ def generate_rules_for_agents(
     Returns:
         Dictionary mapping agent names to list of generated rules file paths
     """
-    results = {}
+    results: dict[str, list[str]] = {}
 
     for agent_name in agents:
         if agent_name in agent_specs:

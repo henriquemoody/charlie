@@ -11,7 +11,7 @@ from charlie.agents.registry import get_agent_spec
 from charlie.schema import Command, CommandScripts
 
 
-def test_claude_adapter_generates_markdown():
+def test_claude_adapter_generates_markdown() -> None:
     """Test Claude adapter generates Markdown format."""
     spec = get_agent_spec("claude")
     adapter = ClaudeAdapter(spec)
@@ -36,7 +36,7 @@ def test_claude_adapter_generates_markdown():
     assert "{{script}}" not in result
 
 
-def test_copilot_adapter_generates_markdown():
+def test_copilot_adapter_generates_markdown() -> None:
     """Test Copilot adapter generates Markdown format."""
     spec = get_agent_spec("copilot")
     adapter = CopilotAdapter(spec)
@@ -55,7 +55,7 @@ def test_copilot_adapter_generates_markdown():
     assert "$ARGUMENTS" in result
 
 
-def test_cursor_adapter_generates_markdown():
+def test_cursor_adapter_generates_markdown() -> None:
     """Test Cursor adapter generates Markdown format."""
     spec = get_agent_spec("cursor")
     adapter = CursorAdapter(spec)
@@ -74,7 +74,7 @@ def test_cursor_adapter_generates_markdown():
     assert "$ARGUMENTS" in result
 
 
-def test_gemini_adapter_generates_toml():
+def test_gemini_adapter_generates_toml() -> None:
     """Test Gemini adapter generates TOML format."""
     spec = get_agent_spec("gemini")
     adapter = GeminiAdapter(spec)
@@ -99,7 +99,7 @@ def test_gemini_adapter_generates_toml():
     assert "{{script}}" not in result
 
 
-def test_qwen_adapter_generates_toml():
+def test_qwen_adapter_generates_toml() -> None:
     """Test Qwen adapter generates TOML format."""
     spec = get_agent_spec("qwen")
     adapter = QwenAdapter(spec)
@@ -118,7 +118,7 @@ def test_qwen_adapter_generates_toml():
     assert "{{args}}" in result
 
 
-def test_adapters_use_powershell_scripts():
+def test_adapters_use_powershell_scripts() -> None:
     """Test that adapters use PowerShell scripts when specified."""
     spec = get_agent_spec("claude")
     adapter = ClaudeAdapter(spec)
@@ -134,7 +134,7 @@ def test_adapters_use_powershell_scripts():
     assert "test.ps1" in result
 
 
-def test_adapters_handle_agent_scripts():
+def test_adapters_handle_agent_scripts() -> None:
     """Test that adapters handle agent_scripts placeholder."""
     spec = get_agent_spec("claude")
     adapter = ClaudeAdapter(spec)
@@ -152,7 +152,7 @@ def test_adapters_handle_agent_scripts():
     assert "agent.sh" in result
 
 
-def test_adapters_pass_through_agent_fields():
+def test_adapters_pass_through_agent_fields() -> None:
     """Test that adapters include pass-through agent-specific fields."""
     # Test Claude (markdown) with allowed-tools
     spec = get_agent_spec("claude")
@@ -194,7 +194,7 @@ def test_adapters_pass_through_agent_fields():
     assert 'custom_field = "custom_value"' in result_toml
 
 
-def test_claude_adapter_generates_files(tmp_path):
+def test_claude_adapter_generates_files(tmp_path) -> None:
     """Test Claude adapter generates command files."""
     spec = get_agent_spec("claude")
     adapter = ClaudeAdapter(spec)
@@ -220,7 +220,7 @@ def test_claude_adapter_generates_files(tmp_path):
     assert "description: Initialize" in content
 
 
-def test_gemini_adapter_generates_toml_files(tmp_path):
+def test_gemini_adapter_generates_toml_files(tmp_path) -> None:
     """Test Gemini adapter generates TOML files."""
     spec = get_agent_spec("gemini")
     adapter = GeminiAdapter(spec)

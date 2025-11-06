@@ -64,7 +64,7 @@ def setup(
     ),
     output: str = typer.Option(".", "--output", "-o", help="Output directory"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
-):
+) -> None:
     """Setup agent-specific configurations from YAML definition.
 
     Examples:
@@ -144,7 +144,7 @@ def validate(
     config_path: str | None = typer.Argument(
         None, help="Path to configuration file (default: auto-detect charlie.yaml)"
     ),
-):
+) -> None:
     """Validate YAML configuration file.
 
     Examples:
@@ -180,7 +180,7 @@ def validate(
 
 
 @app.command("list-agents")
-def list_agents():
+def list_agents() -> None:
     """List all supported AI agents.
 
     Examples:
@@ -211,7 +211,7 @@ def list_agents():
 @app.command()
 def info(
     agent: str = typer.Argument(..., help="Agent name to show information for"),
-):
+) -> None:
     """Show detailed information about an agent.
 
     Examples:
@@ -248,7 +248,7 @@ def info(
     console.print()
 
 
-def main():
+def main() -> None:
     """Main entry point for CLI."""
     app()
 

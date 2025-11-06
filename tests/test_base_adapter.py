@@ -15,7 +15,7 @@ class SampleAdapter(BaseAgentAdapter):
         return f"Command: {namespace}.{command.name}"
 
 
-def test_adapter_initialization():
+def test_adapter_initialization() -> None:
     """Test adapter initialization with agent spec."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec, root_dir="/test/root")
@@ -23,7 +23,7 @@ def test_adapter_initialization():
     assert adapter.root_dir == "/test/root"
 
 
-def test_transform_placeholders_user_input():
+def test_transform_placeholders_user_input() -> None:
     """Test placeholder transformation for user input."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -39,7 +39,7 @@ def test_transform_placeholders_user_input():
     assert result == "Input: $ARGUMENTS"
 
 
-def test_transform_placeholders_script():
+def test_transform_placeholders_script() -> None:
     """Test placeholder transformation for script."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -55,7 +55,7 @@ def test_transform_placeholders_script():
     assert result == "Run: test.sh"
 
 
-def test_transform_placeholders_toml_agent():
+def test_transform_placeholders_toml_agent() -> None:
     """Test placeholder transformation for TOML agent (Gemini)."""
     spec = get_agent_spec("gemini")
     adapter = SampleAdapter(spec)
@@ -71,7 +71,7 @@ def test_transform_placeholders_toml_agent():
     assert result == "Input: {{args}}"
 
 
-def test_get_script_path_sh():
+def test_get_script_path_sh() -> None:
     """Test getting script path for bash."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -87,7 +87,7 @@ def test_get_script_path_sh():
     assert script_path == "test.sh"
 
 
-def test_get_script_path_ps():
+def test_get_script_path_ps() -> None:
     """Test getting script path for PowerShell."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -103,7 +103,7 @@ def test_get_script_path_ps():
     assert script_path == "test.ps1"
 
 
-def test_get_agent_script_path():
+def test_get_agent_script_path() -> None:
     """Test getting agent script path."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -120,7 +120,7 @@ def test_get_agent_script_path():
     assert agent_script == "agent.sh"
 
 
-def test_get_agent_script_path_none():
+def test_get_agent_script_path_none() -> None:
     """Test getting agent script path when none defined."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -136,7 +136,7 @@ def test_get_agent_script_path_none():
     assert agent_script == ""
 
 
-def test_generate_commands_creates_directory(tmp_path):
+def test_generate_commands_creates_directory(tmp_path) -> None:
     """Test that generate_commands creates output directory."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -158,7 +158,7 @@ def test_generate_commands_creates_directory(tmp_path):
     assert expected_dir.is_dir()
 
 
-def test_generate_commands_creates_files(tmp_path):
+def test_generate_commands_creates_files(tmp_path) -> None:
     """Test that generate_commands creates command files."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -189,7 +189,7 @@ def test_generate_commands_creates_files(tmp_path):
         assert Path(filepath).exists()
 
 
-def test_transform_path_placeholders():
+def test_transform_path_placeholders() -> None:
     """Test path placeholder transformation."""
     spec = get_agent_spec("cursor")
     adapter = SampleAdapter(spec, root_dir="/project/root")
@@ -203,7 +203,7 @@ def test_transform_path_placeholders():
     assert ".cursor" in result
 
 
-def test_transform_path_placeholders_cursor():
+def test_transform_path_placeholders_cursor() -> None:
     """Test path placeholders for Cursor agent."""
     spec = get_agent_spec("cursor")
     adapter = SampleAdapter(spec)
@@ -214,7 +214,7 @@ def test_transform_path_placeholders_cursor():
     assert ".cursor/commands" in result
 
 
-def test_transform_path_placeholders_in_transform_placeholders():
+def test_transform_path_placeholders_in_transform_placeholders() -> None:
     """Test that path placeholders are resolved in transform_placeholders."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
@@ -234,7 +234,7 @@ def test_transform_path_placeholders_in_transform_placeholders():
     assert "$ARGUMENTS" in result
 
 
-def test_transform_path_placeholders_agent_without_rules():
+def test_transform_path_placeholders_agent_without_rules() -> None:
     """Test path placeholders for agent without rules_file."""
     spec = {
         "command_dir": ".custom/commands",

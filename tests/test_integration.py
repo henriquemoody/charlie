@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 
-def test_complete_workflow(tmp_path):
+def test_complete_workflow(tmp_path) -> None:
     """Test complete workflow: YAML -> generate all outputs."""
     from charlie import CommandTranspiler
 
@@ -102,7 +102,7 @@ commands:
     assert (output_dir / "mcp-config.json").exists()
 
 
-def test_library_api_usage(tmp_path):
+def test_library_api_usage(tmp_path) -> None:
     """Test using Charlie as a library."""
     from charlie import CommandTranspiler
 
@@ -138,7 +138,7 @@ commands:
     assert "$ARGUMENTS" in content
 
 
-def test_spec_kit_example_workflow(tmp_path):
+def test_spec_kit_example_workflow(tmp_path) -> None:
     """Test workflow similar to spec-kit usage."""
     # Use the spec-kit example config (copy it)
     import shutil

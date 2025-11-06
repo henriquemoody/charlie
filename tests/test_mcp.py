@@ -9,7 +9,7 @@ from charlie.mcp import _command_to_tool_schema, _server_to_mcp_config, generate
 from charlie.schema import CharlieConfig, Command, CommandScripts, MCPServer, ProjectConfig
 
 
-def test_command_to_tool_schema():
+def test_command_to_tool_schema() -> None:
     """Test converting command to MCP tool schema."""
     command = Command(
         name="init",
@@ -27,7 +27,7 @@ def test_command_to_tool_schema():
     assert "input" in schema["inputSchema"]["properties"]
 
 
-def test_server_to_mcp_config_basic():
+def test_server_to_mcp_config_basic() -> None:
     """Test converting server to MCP config."""
     server = MCPServer(name="test-server", command="node", args=["server.js"])
 
@@ -49,7 +49,7 @@ def test_server_to_mcp_config_basic():
     assert len(config["capabilities"]["tools"]["list"]) == 1
 
 
-def test_server_to_mcp_config_with_env():
+def test_server_to_mcp_config_with_env() -> None:
     """Test server config with environment variables."""
     server = MCPServer(
         name="test-server",
@@ -65,7 +65,7 @@ def test_server_to_mcp_config_with_env():
     assert config["env"]["PORT"] == "3000"
 
 
-def test_generate_mcp_config(tmp_path):
+def test_generate_mcp_config(tmp_path) -> None:
     """Test generating complete MCP configuration file."""
     config = CharlieConfig(
         version="1.0",
@@ -111,7 +111,7 @@ def test_generate_mcp_config(tmp_path):
     assert server2_config["env"]["DEBUG"] == "1"
 
 
-def test_generate_mcp_config_no_servers():
+def test_generate_mcp_config_no_servers() -> None:
     """Test that generating config without servers raises ValueError."""
     config = CharlieConfig(
         version="1.0",
@@ -131,7 +131,7 @@ def test_generate_mcp_config_no_servers():
         generate_mcp_config(config, "/tmp")
 
 
-def test_generate_mcp_config_multiple_commands(tmp_path):
+def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
     """Test MCP config with multiple commands as tools."""
     config = CharlieConfig(
         version="1.0",
@@ -164,7 +164,7 @@ def test_generate_mcp_config_multiple_commands(tmp_path):
     assert tools[1]["name"] == "test_plan"
 
 
-def test_mcp_config_json_formatting(tmp_path):
+def test_mcp_config_json_formatting(tmp_path) -> None:
     """Test that generated JSON is properly formatted."""
     config = CharlieConfig(
         version="1.0",

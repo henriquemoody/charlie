@@ -2,11 +2,12 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 from charlie.schema import CharlieConfig, Command, MCPServer
 
 
-def _command_to_tool_schema(command: Command, command_prefix: str) -> dict:
+def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, Any]:
     """Convert a command to MCP tool schema format.
 
     Args:
@@ -27,7 +28,9 @@ def _command_to_tool_schema(command: Command, command_prefix: str) -> dict:
     }
 
 
-def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str) -> dict:
+def _server_to_mcp_config(
+    server: MCPServer, commands: list[Command], command_prefix: str
+) -> dict[str, Any]:
     """Convert server definition to MCP config format.
 
     Args:
@@ -38,7 +41,7 @@ def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_pr
     Returns:
         MCP server configuration dictionary
     """
-    config = {"command": server.command, "args": server.args}
+    config: dict[str, Any] = {"command": server.command, "args": server.args}
 
     # Add environment variables if present
     if server.env:
@@ -72,7 +75,10 @@ def generate_mcp_config(config: CharlieConfig, output_dir: str) -> str:
     if not config.mcp_servers:
         raise ValueError("No MCP servers defined in configuration")
 
-    mcp_config = {"mcpServers": {}}
+    if not config.project or not config.project.command_prefix:
+        raise ValueError("Project command_prefix is required for MCP config generation")
+
+    mcp_config: dict[str, Any] = {"mcpServers": {}}
 
     for server in config.mcp_servers:
         server_config = _server_to_mcp_config(

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from charlie.schema import Command
 
@@ -9,7 +10,7 @@ from charlie.schema import Command
 class BaseAgentAdapter(ABC):
     """Base class for all agent adapters."""
 
-    def __init__(self, agent_spec: dict[str, str], root_dir: str = "."):
+    def __init__(self, agent_spec: dict[str, Any], root_dir: str = "."):
         """Initialize adapter with agent specification.
 
         Args:

@@ -14,14 +14,14 @@ from charlie.schema import (
 )
 
 
-def test_project_config_valid():
+def test_project_config_valid() -> None:
     """Test valid project configuration."""
     config = ProjectConfig(name="test-project", command_prefix="test")
     assert config.name == "test-project"
     assert config.command_prefix == "test"
 
 
-def test_mcp_server_valid():
+def test_mcp_server_valid() -> None:
     """Test valid MCP server configuration."""
     server = MCPServer(
         name="test-server",
@@ -35,7 +35,7 @@ def test_mcp_server_valid():
     assert server.env == {"DEBUG": "true"}
 
 
-def test_mcp_server_defaults():
+def test_mcp_server_defaults() -> None:
     """Test MCP server with default values."""
     server = MCPServer(name="test-server", command="node")
     assert server.args == []
@@ -44,7 +44,7 @@ def test_mcp_server_defaults():
     assert server.config is None
 
 
-def test_mcp_server_with_extra_fields():
+def test_mcp_server_with_extra_fields() -> None:
     """Test MCP server with pass-through extra fields."""
     server = MCPServer(
         name="test-server",
@@ -60,7 +60,7 @@ def test_mcp_server_with_extra_fields():
     assert server_dict["custom_field"] == "custom_value"
 
 
-def test_rules_config_defaults():
+def test_rules_config_defaults() -> None:
     """Test rules configuration with default values."""
     rules = RulesConfig()
     assert rules.title == "Development Guidelines"
@@ -70,7 +70,7 @@ def test_rules_config_defaults():
     assert rules.sections is None
 
 
-def test_rules_section_valid():
+def test_rules_section_valid() -> None:
     """Test valid rules section."""
     section = RulesSection(
         title="Code Style",
@@ -82,7 +82,7 @@ def test_rules_section_valid():
     assert section.order == 1
 
 
-def test_rules_section_with_agent_fields():
+def test_rules_section_with_agent_fields() -> None:
     """Test rules section with pass-through agent-specific fields."""
     section = RulesSection(
         title="Python Style",
@@ -100,14 +100,14 @@ def test_rules_section_with_agent_fields():
     assert section_dict["priority"] == "high"
 
 
-def test_command_scripts_valid():
+def test_command_scripts_valid() -> None:
     """Test valid command scripts."""
     scripts = CommandScripts(sh="script.sh", ps="script.ps1")
     assert scripts.sh == "script.sh"
     assert scripts.ps == "script.ps1"
 
 
-def test_command_valid():
+def test_command_valid() -> None:
     """Test valid command configuration."""
     cmd = Command(
         name="test",
@@ -121,7 +121,7 @@ def test_command_valid():
     assert cmd.scripts.sh == "test.sh"
 
 
-def test_command_with_agent_fields():
+def test_command_with_agent_fields() -> None:
     """Test command with pass-through agent-specific fields."""
     command = Command(
         name="commit",
@@ -140,7 +140,7 @@ def test_command_with_agent_fields():
     assert command_dict["category"] == "source-control"
 
 
-def test_command_no_scripts_fails():
+def test_command_no_scripts_fails() -> None:
     """Test command without scripts fails validation."""
     with pytest.raises(ValidationError):
         Command(
@@ -151,7 +151,7 @@ def test_command_no_scripts_fails():
         )
 
 
-def test_charlie_config_valid():
+def test_charlie_config_valid() -> None:
     """Test valid full charlie configuration."""
     config_data = {
         "version": "1.0",
@@ -172,7 +172,7 @@ def test_charlie_config_valid():
     assert config.commands[0].name == "init"
 
 
-def test_charlie_config_with_mcp():
+def test_charlie_config_with_mcp() -> None:
     """Test configuration with MCP servers."""
     config_data = {
         "version": "1.0",
@@ -194,7 +194,7 @@ def test_charlie_config_with_mcp():
     assert config.mcp_servers[0].name == "server1"
 
 
-def test_charlie_config_invalid_version():
+def test_charlie_config_invalid_version() -> None:
     """Test configuration with invalid version fails."""
     config_data = {
         "version": "2.0",
@@ -213,7 +213,7 @@ def test_charlie_config_invalid_version():
     assert "version" in str(exc_info.value)
 
 
-def test_charlie_config_duplicate_commands():
+def test_charlie_config_duplicate_commands() -> None:
     """Test configuration with duplicate command names fails."""
     config_data = {
         "version": "1.0",
@@ -238,7 +238,7 @@ def test_charlie_config_duplicate_commands():
     assert "Duplicate command names" in str(exc_info.value)
 
 
-def test_charlie_config_minimal():
+def test_charlie_config_minimal() -> None:
     """Test minimal config with defaults (for directory-based configs)."""
     config = CharlieConfig(
         commands=[
@@ -255,7 +255,7 @@ def test_charlie_config_minimal():
     assert len(config.commands) == 1
 
 
-def test_charlie_config_empty_commands():
+def test_charlie_config_empty_commands() -> None:
     """Test configuration with empty commands list."""
     config_data = {
         "version": "1.0",
