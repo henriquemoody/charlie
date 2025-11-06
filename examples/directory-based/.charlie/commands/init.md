@@ -1,10 +1,7 @@
 ---
 name: "init"
 description: "Initialize a new feature"
-allowed-tools:
-  - Bash(mkdir:*)
-  - Bash(touch:*)
-  - Bash(echo:*)
+allowed-tools: Bash(mkdir:*), Bash(touch:*), Bash(echo:*)
 tags:
   - initialization
   - setup

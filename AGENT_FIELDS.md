@@ -22,12 +22,7 @@ These are Charlie's core command fields and are always processed:
 
 ```yaml
 # Security restrictions
-allowed-tools:
-  - Bash(git add:*)
-  - Bash(git status:*)
-  - Bash(git commit:*)
-  - Read
-  - Write
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
 
 # Organization
 tags: ["git", "vcs"]

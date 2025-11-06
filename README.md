@@ -220,8 +220,7 @@ project/
 ---
 name: "init"
 description: "Initialize feature"
-allowed-tools:  # Claude-specific
-  - Bash(mkdir:*)
+allowed-tools: Bash(mkdir:*) # Claude-specific
 tags: ["init", "setup"]
 category: "project"
 scripts:
@@ -323,9 +322,7 @@ Charlie uses **pass-through fields** - add any agent-specific field to your comm
 
 ```yaml
 # Claude-specific
-allowed-tools:
-  - Bash(git add:*)
-  - Bash(git commit:*)
+allowed-tools: Bash(git add:*), Bash(git commit:*)
 
 # Generic metadata
 tags: ["git", "vcs"]
