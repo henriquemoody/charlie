@@ -135,7 +135,11 @@ def generate(
                     console.print(f"  • {filepath}")
                 else:
                     # Show relative path
-                    rel_path = Path(filepath).relative_to(Path(output).resolve(), walk_up=True)
+                    try:
+                        rel_path = Path(filepath).relative_to(Path(output).resolve())
+                    except ValueError:
+                        # If filepath is not relative to output, show absolute
+                        rel_path = Path(filepath)
                     console.print(f"  • {rel_path}")
 
     except FileNotFoundError as e:
