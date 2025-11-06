@@ -23,12 +23,8 @@ class MCPServer(BaseModel):
     command: str = Field(..., description="Command to run the server")
     args: list[str] = Field(default_factory=list, description="Command arguments")
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
-    commands: list[str] | None = Field(
-        None, description="Command names this server should expose"
-    )
-    config: dict[str, Any] | None = Field(
-        None, description="Server-specific configuration"
-    )
+    commands: list[str] | None = Field(None, description="Command names this server should expose")
+    config: dict[str, Any] | None = Field(None, description="Server-specific configuration")
 
 
 class RulesSection(BaseModel):
@@ -46,9 +42,7 @@ class RulesConfig(BaseModel):
 
     title: str = Field(default="Development Guidelines", description="Rules file title")
     include_commands: bool = Field(default=True, description="Include commands reference")
-    include_tech_stack: bool = Field(
-        default=True, description="Include technology stack info"
-    )
+    include_tech_stack: bool = Field(default=True, description="Include technology stack info")
     preserve_manual: bool = Field(
         default=True, description="Preserve manual additions between markers"
     )
@@ -97,12 +91,8 @@ class CharlieConfig(BaseModel):
 
     version: str = Field(default="1.0", description="Schema version")
     project: ProjectConfig | None = Field(None, description="Project configuration")
-    mcp_servers: list[MCPServer] = Field(
-        default_factory=list, description="MCP server definitions"
-    )
-    rules: RulesConfig | None = Field(
-        default=None, description="Rules configuration"
-    )
+    mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
+    rules: RulesConfig | None = Field(default=None, description="Rules configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
 
     @field_validator("version")
@@ -122,4 +112,3 @@ class CharlieConfig(BaseModel):
             duplicates = [name for name in names if names.count(name) > 1]
             raise ValueError(f"Duplicate command names found: {set(duplicates)}")
         return v
-

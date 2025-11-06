@@ -222,9 +222,7 @@ def test_generate_rules_for_agents(tmp_path) -> None:
         "windsurf": get_agent_spec("windsurf"),
     }
 
-    results = generate_rules_for_agents(
-        config, ["claude", "windsurf"], agent_specs, str(tmp_path)
-    )
+    results = generate_rules_for_agents(config, ["claude", "windsurf"], agent_specs, str(tmp_path))
 
     assert len(results) == 2
     assert "claude" in results
@@ -388,4 +386,3 @@ def test_generate_rules_separate_mode(tmp_path) -> None:
     commit_content = Path(commit_file).read_text()
     assert "# Commit Messages" in commit_content
     assert "Use conventional commits" in commit_content
-

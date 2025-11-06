@@ -155,7 +155,7 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
             base_dir = config_path.parent
         else:
             base_dir = config_path
-    elif config_path.suffix in ['.yaml', '.yml']:
+    elif config_path.suffix in [".yaml", ".yml"]:
         # Looks like a file path (even if it doesn't exist)
         base_dir = config_path.parent
     else:
@@ -199,9 +199,7 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
         for error in e.errors():
             loc = " -> ".join(str(x) for x in error["loc"])
             error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError(
-            "Configuration validation failed:\n" + "\n".join(error_messages)
-        )
+        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(error_messages))
 
     return config
 
@@ -297,9 +295,7 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
         for error in e.errors():
             loc = " -> ".join(str(x) for x in error["loc"])
             error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError(
-            f"Validation failed for {file_path}:\n" + "\n".join(error_messages)
-        )
+        raise ConfigParseError(f"Validation failed for {file_path}:\n" + "\n".join(error_messages))
 
 
 def discover_config_files(base_dir: Path) -> dict[str, list[Path]]:
@@ -409,9 +405,7 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
             raise ConfigParseError(f"Error loading rule from {rules_file}: {e}")
 
     if rules_sections:
-        config_data["rules"] = {
-            "sections": [s.model_dump() for s in rules_sections]
-        }
+        config_data["rules"] = {"sections": [s.model_dump() for s in rules_sections]}
 
     # Load MCP servers
     for mcp_file in discovered["mcp_servers"]:
@@ -432,7 +426,4 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         for error in e.errors():
             loc = " -> ".join(str(x) for x in error["loc"])
             error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError(
-            "Configuration validation failed:\n" + "\n".join(error_messages)
-        )
-
+        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(error_messages))

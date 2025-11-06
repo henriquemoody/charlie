@@ -177,9 +177,7 @@ def test_charlie_config_with_mcp() -> None:
     config_data = {
         "version": "1.0",
         "project": {"name": "test", "command_prefix": "test"},
-        "mcp_servers": [
-            {"name": "server1", "command": "node", "args": ["server.js"]}
-        ],
+        "mcp_servers": [{"name": "server1", "command": "node", "args": ["server.js"]}],
         "commands": [
             {
                 "name": "test",
@@ -264,4 +262,3 @@ def test_charlie_config_empty_commands() -> None:
     }
     config = CharlieConfig(**config_data)
     assert config.commands == []
-

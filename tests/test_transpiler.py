@@ -177,9 +177,7 @@ commands:
     output_dir = tmp_path / "output"
 
     # Generate for Claude with rules
-    results = transpiler.generate(
-        agent="claude", rules=True, output_dir=str(output_dir)
-    )
+    results = transpiler.generate(agent="claude", rules=True, output_dir=str(output_dir))
 
     assert "rules" in results
 
@@ -193,9 +191,7 @@ commands:
     assert "/test.test" in content
 
     # Generate for Windsurf with rules
-    results = transpiler.generate(
-        agent="windsurf", rules=True, output_dir=str(output_dir)
-    )
+    results = transpiler.generate(agent="windsurf", rules=True, output_dir=str(output_dir))
 
     assert "rules" in results
     windsurf_rules = Path(results["rules"][0])
@@ -233,9 +229,7 @@ commands:
     output_dir = tmp_path / "output"
 
     # Generate everything for Claude
-    results = transpiler.generate(
-        agent="claude", mcp=True, rules=True, output_dir=str(output_dir)
-    )
+    results = transpiler.generate(agent="claude", mcp=True, rules=True, output_dir=str(output_dir))
 
     # Check all outputs were generated
     assert "commands" in results
@@ -246,9 +240,7 @@ commands:
     assert len(results["commands"]) == 2  # init + plan
 
     # Generate for Gemini
-    results = transpiler.generate(
-        agent="gemini", rules=True, output_dir=str(output_dir)
-    )
+    results = transpiler.generate(agent="gemini", rules=True, output_dir=str(output_dir))
 
     assert "commands" in results
     assert "rules" in results
@@ -372,7 +364,6 @@ commands:
     assert output_dir.exists()
     command_file = Path(results["commands"][0])
     assert command_file.exists()
-
 
 
 def test_transpiler_with_dot_charlie_directory(tmp_path) -> None:

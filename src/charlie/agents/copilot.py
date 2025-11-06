@@ -1,6 +1,5 @@
 """GitHub Copilot agent adapter."""
 
-
 import yaml
 
 from charlie.agents.base import BaseAgentAdapter
@@ -41,4 +40,3 @@ class CopilotAdapter(BaseAgentAdapter):
         frontmatter = f"---\n{yaml_str}---\n\n"
 
         return frontmatter + prompt
-

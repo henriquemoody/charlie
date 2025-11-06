@@ -72,9 +72,7 @@ def test_generate_mcp_config(tmp_path) -> None:
         project=ProjectConfig(name="test", command_prefix="test"),
         mcp_servers=[
             MCPServer(name="server1", command="node", args=["server1.js"]),
-            MCPServer(
-                name="server2", command="python", args=["-m", "server2"], env={"DEBUG": "1"}
-            ),
+            MCPServer(name="server2", command="python", args=["-m", "server2"], env={"DEBUG": "1"}),
         ],
         commands=[
             Command(
@@ -189,4 +187,3 @@ def test_mcp_config_json_formatting(tmp_path) -> None:
 
     # Should be valid JSON
     json.loads(content)
-

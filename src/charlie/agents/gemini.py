@@ -39,24 +39,22 @@ class GeminiAdapter(BaseAgentAdapter):
                     toml_lines.append(f'{key} = "{value}"')
                 elif isinstance(value, list):
                     # Format list as TOML array
-                    items = ', '.join(
-                        f'"{item}"' if isinstance(item, str) else str(item)
-                        for item in value
+                    items = ", ".join(
+                        f'"{item}"' if isinstance(item, str) else str(item) for item in value
                     )
-                    toml_lines.append(f'{key} = [{items}]')
+                    toml_lines.append(f"{key} = [{items}]")
                 elif isinstance(value, dict):
                     # Format dict as inline table
-                    items = ', '.join(
-                        f'{k} = "{v}"' if isinstance(v, str) else f'{k} = {v}'
+                    items = ", ".join(
+                        f'{k} = "{v}"' if isinstance(v, str) else f"{k} = {v}"
                         for k, v in value.items()
                     )
-                    toml_lines.append(f'{key} = {{ {items} }}')
+                    toml_lines.append(f"{key} = {{ {items} }}")
                 else:
-                    toml_lines.append(f'{key} = {value}')
+                    toml_lines.append(f"{key} = {value}")
 
         # Add prompt at the end
-        toml_lines.append('')
+        toml_lines.append("")
         toml_lines.append(f'prompt = """\n{prompt_escaped}\n"""')
 
-        return '\n'.join(toml_lines) + '\n'
-
+        return "\n".join(toml_lines) + "\n"

@@ -95,4 +95,3 @@ def generate_mcp_config(config: CharlieConfig, output_dir: str) -> str:
         f.write("\n")  # Add trailing newline
 
     return str(output_path)
-

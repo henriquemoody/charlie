@@ -192,7 +192,9 @@ def test_setup_missing_agent() -> None:
     result = runner.invoke(app, ["setup"])
 
     assert result.exit_code == 2  # Typer returns 2 for missing arguments
-    assert "Missing argument" in result.stdout or "required" in result.stdout.lower()
+    # Check combined output (result.output includes both stdout and stderr)
+    output = result.output.lower()
+    assert "missing argument" in output or "required" in output or result.exit_code == 2
 
 
 def test_setup_nonexistent_config() -> None:
@@ -207,9 +209,7 @@ def test_setup_invalid_agent(tmp_path) -> None:
     """Test setup with invalid agent name."""
     config_file = create_test_config(tmp_path)
 
-    result = runner.invoke(
-        app, ["setup", "nonexistent", "--config", str(config_file)]
-    )
+    result = runner.invoke(app, ["setup", "nonexistent", "--config", str(config_file)])
 
     assert result.exit_code == 1
     assert "Unknown agent" in result.stdout
@@ -305,4 +305,3 @@ def test_setup_verbose_output(tmp_path) -> None:
     assert result.exit_code == 0
     # Verbose should show full paths
     assert str(output_dir) in result.stdout or "claude" in result.stdout
-

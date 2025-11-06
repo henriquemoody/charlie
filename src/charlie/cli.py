@@ -200,9 +200,7 @@ def list_agents() -> None:
     for agent_name in agents:
         info = get_agent_info(agent_name)
         if info:
-            table.add_row(
-                agent_name, info["name"], info["file_format"], info["command_dir"]
-            )
+            table.add_row(agent_name, info["name"], info["file_format"], info["command_dir"])
 
     console.print(table)
     console.print(f"\n[dim]Total: {len(agents)} agents[/dim]\n")
@@ -223,9 +221,7 @@ def info(
 
     if not agent_info:
         console.print(f"[red]Error:[/red] Unknown agent '{agent}'")
-        console.print(
-            "\n[dim]Use 'charlie list-agents' to see available agents[/dim]"
-        )
+        console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
         raise typer.Exit(1)
 
     # Create info panel
@@ -239,9 +235,7 @@ def info(
         f"[cyan]Rules file:[/cyan] {agent_info['rules_file']}",
     ]
 
-    panel = Panel(
-        "\n".join(info_lines), title=f"[bold]{agent}[/bold]", border_style="cyan"
-    )
+    panel = Panel("\n".join(info_lines), title=f"[bold]{agent}[/bold]", border_style="cyan")
 
     console.print()
     console.print(panel)
@@ -255,4 +249,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -244,4 +244,3 @@ def test_gemini_adapter_generates_toml_files(tmp_path) -> None:
     content = filepath.read_text()
     assert 'description = "Test"' in content
     assert 'prompt = """' in content
-

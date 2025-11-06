@@ -1,6 +1,5 @@
 """Agent registry with built-in knowledge of all supported agents."""
 
-
 # Built-in agent specifications
 AGENT_SPECS: dict[str, dict[str, str]] = {
     "claude": {
@@ -132,8 +131,7 @@ def get_agent_spec(agent_name: str) -> dict[str, str]:
     """
     if agent_name not in AGENT_SPECS:
         raise ValueError(
-            f"Unknown agent: {agent_name}. "
-            f"Supported agents: {', '.join(list_supported_agents())}"
+            f"Unknown agent: {agent_name}. Supported agents: {', '.join(list_supported_agents())}"
         )
     return AGENT_SPECS[agent_name]
 
@@ -157,4 +155,3 @@ def get_agent_info(agent_name: str) -> dict[str, str] | None:
         Agent information dictionary or None if not found
     """
     return AGENT_SPECS.get(agent_name)
-

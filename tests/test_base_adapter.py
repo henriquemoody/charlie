@@ -249,4 +249,3 @@ def test_transform_path_placeholders_agent_without_rules() -> None:
 
     # Should fallback to agent_dir/rules
     assert ".custom/rules" in result
-

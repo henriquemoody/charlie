@@ -178,4 +178,3 @@ def test_spec_kit_example_workflow(tmp_path) -> None:
 
     results = transpiler.generate(agent="cursor", output_dir=str(output_dir))
     assert "commands" in results
-

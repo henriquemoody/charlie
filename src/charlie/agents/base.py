@@ -173,4 +173,3 @@ class BaseAgentAdapter(ABC):
             return command.agent_scripts.ps
         # Fallback
         return command.agent_scripts.sh or command.agent_scripts.ps or ""
-

@@ -1,6 +1,5 @@
 """Tests for parser module."""
 
-
 import pytest
 
 from charlie.parser import (
@@ -567,4 +566,3 @@ Rule content here
     assert rules.title == "Test Rule"
     assert rules.order == 1
     assert rules.content == "Rule content here"
-

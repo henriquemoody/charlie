@@ -1,6 +1,5 @@
 """Claude Code agent adapter."""
 
-
 import yaml
 
 from charlie.agents.base import BaseAgentAdapter
@@ -41,4 +40,3 @@ class ClaudeAdapter(BaseAgentAdapter):
         frontmatter = f"---\n{yaml_str}---\n\n"
 
         return frontmatter + prompt
-

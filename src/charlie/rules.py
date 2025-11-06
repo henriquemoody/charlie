@@ -253,8 +253,7 @@ def _generate_merged_rules(
             lines.append(manual_additions)
         else:
             lines.append(
-                "<!-- Add your custom rules here - "
-                "they will be preserved on regeneration -->"
+                "<!-- Add your custom rules here - they will be preserved on regeneration -->"
             )
         lines.append("<!-- MANUAL ADDITIONS END -->")
 
@@ -370,4 +369,3 @@ def generate_rules_for_agents(
                 results[agent_name] = rules_paths
 
     return results
-

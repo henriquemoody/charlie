@@ -88,9 +88,7 @@ class CommandTranspiler:
 
             # Generate command files
             command_prefix = self.config.project.command_prefix if self.config.project else None
-            files = adapter.generate_commands(
-                self.config.commands, command_prefix, output_dir
-            )
+            files = adapter.generate_commands(self.config.commands, command_prefix, output_dir)
             results["commands"] = files
 
         # Generate MCP configs if requested
@@ -129,9 +127,7 @@ class CommandTranspiler:
         """
         return generate_mcp_config(self.config, output_dir)
 
-    def generate_rules(
-        self, agent: str, output_dir: str = ".", mode: str = "merged"
-    ) -> list[str]:
+    def generate_rules(self, agent: str, output_dir: str = ".", mode: str = "merged") -> list[str]:
         """Generate only rules files for specified agent.
 
         Args:
@@ -170,4 +166,3 @@ class CommandTranspiler:
 
         adapter_class = ADAPTER_CLASSES[agent_name]
         return adapter_class(agent_spec, self.root_dir)
-

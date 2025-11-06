@@ -68,9 +68,7 @@ def test_all_agents_have_required_fields() -> None:
 def test_markdown_agents_have_correct_placeholder() -> None:
     """Test that markdown-format agents use $ARGUMENTS placeholder."""
     markdown_agents = [
-        name
-        for name, spec in AGENT_SPECS.items()
-        if spec["file_format"] == "markdown"
+        name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "markdown"
     ]
 
     for agent_name in markdown_agents:
@@ -80,11 +78,8 @@ def test_markdown_agents_have_correct_placeholder() -> None:
 
 def test_toml_agents_have_correct_placeholder() -> None:
     """Test that TOML-format agents use {{args}} placeholder."""
-    toml_agents = [
-        name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "toml"
-    ]
+    toml_agents = [name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "toml"]
 
     for agent_name in toml_agents:
         spec = AGENT_SPECS[agent_name]
         assert spec["arg_placeholder"] == "{{args}}"
-
