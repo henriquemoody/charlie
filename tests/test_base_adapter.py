@@ -8,8 +8,8 @@ from charlie.agents.registry import get_agent_spec
 from charlie.schema import Command, CommandScripts
 
 
-class TestAdapter(BaseAgentAdapter):
-    """Test implementation of BaseAgentAdapter."""
+class SampleAdapter(BaseAgentAdapter):
+    """Sample implementation of BaseAgentAdapter for testing."""
 
     def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
         """Simple test implementation."""
@@ -19,14 +19,14 @@ class TestAdapter(BaseAgentAdapter):
 def test_adapter_initialization():
     """Test adapter initialization with agent spec."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
     assert adapter.spec == spec
 
 
 def test_transform_placeholders_user_input():
     """Test placeholder transformation for user input."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -42,7 +42,7 @@ def test_transform_placeholders_user_input():
 def test_transform_placeholders_script():
     """Test placeholder transformation for script."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -58,7 +58,7 @@ def test_transform_placeholders_script():
 def test_transform_placeholders_toml_agent():
     """Test placeholder transformation for TOML agent (Gemini)."""
     spec = get_agent_spec("gemini")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -74,7 +74,7 @@ def test_transform_placeholders_toml_agent():
 def test_get_script_path_sh():
     """Test getting script path for bash."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -90,7 +90,7 @@ def test_get_script_path_sh():
 def test_get_script_path_ps():
     """Test getting script path for PowerShell."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -106,7 +106,7 @@ def test_get_script_path_ps():
 def test_get_agent_script_path():
     """Test getting agent script path."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -123,7 +123,7 @@ def test_get_agent_script_path():
 def test_get_agent_script_path_none():
     """Test getting agent script path when none defined."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     command = Command(
         name="test",
@@ -139,7 +139,7 @@ def test_get_agent_script_path_none():
 def test_generate_commands_creates_directory(tmp_path):
     """Test that generate_commands creates output directory."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     commands = [
         Command(
@@ -161,7 +161,7 @@ def test_generate_commands_creates_directory(tmp_path):
 def test_generate_commands_creates_files(tmp_path):
     """Test that generate_commands creates command files."""
     spec = get_agent_spec("claude")
-    adapter = TestAdapter(spec)
+    adapter = SampleAdapter(spec)
 
     commands = [
         Command(
