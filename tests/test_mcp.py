@@ -187,3 +187,60 @@ def test_mcp_config_json_formatting(tmp_path) -> None:
 
     # Should be valid JSON
     json.loads(content)
+
+
+def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
+    """Test that Cursor agent generates MCP config at .cursor/mcp.json."""
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+    )
+
+    output_file = generate_mcp_config(config, str(tmp_path), agent="cursor")
+
+    # Check file was created at .cursor/mcp.json
+    assert Path(output_file).exists()
+    assert output_file == str(tmp_path / ".cursor" / "mcp.json")
+
+    # Verify content is valid
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    assert "mcpServers" in mcp_config
+    assert "server" in mcp_config["mcpServers"]
+
+
+def test_generate_mcp_config_default_location(tmp_path) -> None:
+    """Test that non-Cursor agents generate MCP config at mcp-config.json."""
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+    )
+
+    # Test with no agent specified
+    output_file = generate_mcp_config(config, str(tmp_path), agent=None)
+    assert Path(output_file).exists()
+    assert output_file == str(tmp_path / "mcp-config.json")
+
+    # Test with claude agent
+    output_file2 = generate_mcp_config(config, str(tmp_path / "claude-test"), agent="claude")
+    assert Path(output_file2).exists()
+    assert output_file2 == str(tmp_path / "claude-test" / "mcp-config.json")

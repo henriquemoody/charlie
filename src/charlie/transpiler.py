@@ -93,7 +93,7 @@ class CommandTranspiler:
 
         # Generate MCP configs if requested
         if mcp:
-            mcp_file = generate_mcp_config(self.config, output_dir)
+            mcp_file = generate_mcp_config(self.config, output_dir, agent)
             results["mcp"] = [mcp_file]
 
         # Generate rules if requested
@@ -113,11 +113,12 @@ class CommandTranspiler:
 
         return results
 
-    def generate_mcp(self, output_dir: str = ".") -> str:
+    def generate_mcp(self, output_dir: str = ".", agent: str | None = None) -> str:
         """Generate only MCP server configs.
 
         Args:
             output_dir: Output directory
+            agent: Agent name for agent-specific paths
 
         Returns:
             Path to generated MCP config file
@@ -125,7 +126,7 @@ class CommandTranspiler:
         Raises:
             ValueError: If no MCP servers defined in config
         """
-        return generate_mcp_config(self.config, output_dir)
+        return generate_mcp_config(self.config, output_dir, agent)
 
     def generate_rules(self, agent: str, output_dir: str = ".", mode: str = "merged") -> list[str]:
         """Generate only rules files for specified agent.
