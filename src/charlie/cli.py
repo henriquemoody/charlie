@@ -41,7 +41,7 @@ def _resolve_config_file(config_path: str | None) -> Path:
     found = find_config_file()
     if found:
         return found
-    
+
     # No config found - use current directory (will create default config)
     return Path.cwd()
 

@@ -70,7 +70,7 @@ def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig
     elif config.project.name is None:
         # Project config exists but name is missing - infer it
         config.project.name = _infer_project_name(base_dir)
-    
+
     return config
 
 
@@ -149,7 +149,12 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
     if config_path.is_file():
         base_dir = config_path.parent
     elif config_path.is_dir():
-        base_dir = config_path
+        # Check if this IS the .charlie directory
+        if config_path.name == ".charlie":
+            # Use parent directory as base
+            base_dir = config_path.parent
+        else:
+            base_dir = config_path
     elif config_path.suffix in ['.yaml', '.yml']:
         # Looks like a file path (even if it doesn't exist)
         base_dir = config_path.parent

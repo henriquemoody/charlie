@@ -29,7 +29,7 @@ class CommandTranspiler:
         """Initialize transpiler with configuration file.
 
         Args:
-            config_path: Path to charlie YAML configuration file
+            config_path: Path to charlie YAML configuration file or directory
 
         Raises:
             FileNotFoundError: If config file doesn't exist
@@ -37,8 +37,18 @@ class CommandTranspiler:
         """
         self.config_path = config_path
         self.config = parse_config(config_path)
-        # Store the root directory (where charlie.yaml is located)
-        self.root_dir = str(Path(config_path).parent.resolve())
+        # Store the root directory (where charlie.yaml or .charlie/ is located)
+        config_path_obj = Path(config_path).resolve()
+        if config_path_obj.is_dir():
+            # If config_path is the .charlie directory, use its parent
+            if config_path_obj.name == ".charlie":
+                self.root_dir = str(config_path_obj.parent)
+            else:
+                # Otherwise use the directory itself as root
+                self.root_dir = str(config_path_obj)
+        else:
+            # If config_path is a file, use its parent
+            self.root_dir = str(config_path_obj.parent)
 
     def generate(
         self,

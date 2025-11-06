@@ -351,3 +351,55 @@ commands:
     command_file = Path(results["claude_commands"][0])
     assert command_file.exists()
 
+
+
+def test_transpiler_with_dot_charlie_directory(tmp_path):
+    """Test that transpiler works when passed .charlie directory directly.
+
+    Regression test: Ensure commands are generated when .charlie directory
+    is passed as config path (as done by CLI auto-detection).
+    """
+    # Create directory-based config structure
+    charlie_dir = tmp_path / ".charlie"
+    commands_dir = charlie_dir / "commands"
+    commands_dir.mkdir(parents=True)
+
+    # Create a command file
+    (commands_dir / "test.md").write_text(
+        """---
+name: "test"
+description: "Test command"
+scripts:
+  sh: "test.sh"
+---
+
+Test prompt content
+"""
+    )
+
+    # Initialize transpiler with .charlie directory path (as CLI does)
+    transpiler = CommandTranspiler(str(charlie_dir))
+
+    # Verify config was loaded correctly
+    assert len(transpiler.config.commands) == 1
+    assert transpiler.config.commands[0].name == "test"
+
+    # Verify root_dir is set to parent of .charlie, not .charlie itself
+    assert transpiler.root_dir == str(tmp_path.resolve())
+
+    # Generate commands
+    output_dir = tmp_path / "output"
+    results = transpiler.generate(agents=["cursor"], output_dir=str(output_dir))
+
+    # Verify command was generated
+    assert "cursor_commands" in results
+    assert len(results["cursor_commands"]) == 1
+
+    # Verify file exists
+    generated_file = output_dir / ".cursor" / "commands" / "test.md"
+    assert generated_file.exists()
+
+    # Verify content was generated
+    content = generated_file.read_text()
+    assert "Test command" in content
+    assert "Test prompt content" in content

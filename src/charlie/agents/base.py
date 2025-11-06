@@ -145,7 +145,7 @@ class BaseAgentAdapter(ABC):
         """
         if not command.scripts:
             return ""
-        
+
         if script_type == "sh" and command.scripts.sh:
             return command.scripts.sh
         elif script_type == "ps" and command.scripts.ps:

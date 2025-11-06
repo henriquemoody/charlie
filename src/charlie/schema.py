@@ -8,7 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class ProjectConfig(BaseModel):
     """Project metadata configuration."""
 
-    name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
+    name: str | None = Field(
+        None, description="Project name (inferred from directory if not specified)"
+    )
     command_prefix: str | None = Field(None, description="Command prefix for slash commands")
 
 
