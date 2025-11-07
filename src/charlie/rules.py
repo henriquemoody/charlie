@@ -38,7 +38,7 @@ def _format_command_reference(command: Command, command_prefix: str) -> str:
     else:
         lines.append("- No scripts (prompt only)")
 
-    lines.append("")  # Empty line after each command
+    lines.append("")
 
     return "\n".join(lines)
 
@@ -70,10 +70,8 @@ def _extract_frontmatter_fields(section: RulesSection) -> dict[str, Any]:
     Returns:
         Dictionary of frontmatter fields (excluding core Charlie fields)
     """
-    # Get all fields
     section_dict = section.model_dump()
 
-    # Remove core Charlie fields
     core_fields = {"title", "content", "order"}
     frontmatter = {k: v for k, v in section_dict.items() if k not in core_fields and v is not None}
 
@@ -107,20 +105,14 @@ def _transform_path_placeholders(text: str, agent_spec: AgentSpec, root_dir: str
     Returns:
         Text with resolved path placeholders
     """
-    # Replace root directory placeholder
     text = text.replace("{{root}}", root_dir)
 
-    # Get the base agent directory (e.g., ".claude", ".cursor")
     agent_dir = Path(agent_spec.command_dir).parent
-
-    # Replace agent directory placeholder
     text = text.replace("{{agent_dir}}", str(agent_dir))
 
-    # Replace commands directory placeholder
     commands_dir = agent_spec.command_dir
     text = text.replace("{{commands_dir}}", commands_dir)
 
-    # Replace rules directory placeholder (if rules_file is defined)
     rules_dir = str(Path(agent_spec.rules_file).parent)
     text = text.replace("{{rules_dir}}", rules_dir)
 
@@ -149,23 +141,19 @@ def _generate_merged_rules(
     rules_path = Path(output_dir) / agent_spec.rules_file
     rules_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Check if file exists to preserve manual additions
     manual_additions = ""
     if rules_path.exists():
         existing_content = rules_path.read_text(encoding="utf-8")
         manual_additions = _extract_manual_additions(existing_content)
 
-    # Extract frontmatter from first section if exists (for merged mode)
     frontmatter = {}
     if config.rules and config.rules.sections:
-        # Use frontmatter from first section with lowest order
         sorted_sections = sorted(
             config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title)
         )
         if sorted_sections:
             frontmatter = _extract_frontmatter_fields(sorted_sections[0])
 
-    # Build rules content
     title = config.rules.title if config.rules else "Development Guidelines"
     include_commands = config.rules.include_commands if config.rules else True
     preserve_manual = config.rules.preserve_manual if config.rules else True
@@ -173,7 +161,6 @@ def _generate_merged_rules(
 
     content_parts = []
 
-    # Add frontmatter if present
     if frontmatter:
         content_parts.append(_format_frontmatter(frontmatter))
 
@@ -185,7 +172,6 @@ def _generate_merged_rules(
         "",
     ]
 
-    # Add custom sections if present
     if config.rules and config.rules.sections:
         sorted_sections = sorted(
             config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title)
@@ -193,12 +179,10 @@ def _generate_merged_rules(
         for section in sorted_sections:
             lines.append(f"## {section.title}")
             lines.append("")
-            # Transform path placeholders in content
             content = _transform_path_placeholders(section.content, agent_spec, root_dir)
             lines.append(content)
             lines.append("")
 
-    # Add commands list if configured
     if include_commands and config.commands:
         lines.append("## Available Commands")
         lines.append("")
@@ -209,13 +193,11 @@ def _generate_merged_rules(
                 )
             lines.append("")
 
-            # Add detailed command reference
             lines.append("## Command Reference")
             lines.append("")
             for command in config.commands:
                 lines.append(_format_command_reference(command, config.project.command_prefix))
 
-    # Add manual additions section if preserve_manual is enabled
     if preserve_manual:
         lines.append("<!-- MANUAL ADDITIONS START -->")
         if manual_additions:
@@ -229,7 +211,6 @@ def _generate_merged_rules(
     content_parts.append("\n".join(lines))
     content = "".join(content_parts)
 
-    # Write to file
     rules_path.write_text(content, encoding="utf-8")
 
     return str(rules_path)
@@ -259,32 +240,25 @@ def _generate_separate_rules(
     if not config.rules or not config.rules.sections:
         return generated_files
 
-    # Get base rules directory
     rules_file_path = Path(agent_spec.rules_file)
     rules_dir = Path(output_dir) / rules_file_path.parent
     rules_dir.mkdir(parents=True, exist_ok=True)
 
-    # Sort sections by order
     sorted_sections = sorted(
         config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title)
     )
 
     for section in sorted_sections:
-        # Generate filename from section title
         filename = section.title.lower().replace(" ", "-").replace("/", "-") + ".md"
         section_path = rules_dir / filename
 
-        # Extract frontmatter for this section
         frontmatter = _extract_frontmatter_fields(section)
 
         content_parts = []
 
-        # Add frontmatter if present
         if frontmatter:
             content_parts.append(_format_frontmatter(frontmatter))
 
-        # Add section content
-        # Transform path placeholders in content
         content_text = _transform_path_placeholders(section.content, agent_spec, root_dir)
         lines = [
             f"# {section.title}",
@@ -298,7 +272,6 @@ def _generate_separate_rules(
         content_parts.append("\n".join(lines))
         content = "".join(content_parts)
 
-        # Write file
         section_path.write_text(content, encoding="utf-8")
         generated_files.append(str(section_path))
 
@@ -319,19 +292,6 @@ def generate_rules_for_agents(
         config: Charlie configuration
         agent_name: Agent name
         agent_spec: Agent specifications
-        output_dir: Base output directory
-        mode: "merged" (single file) or "separate" (one file per section)
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        Dictionary mapping agent names to list of generated rules file paths
-    """
-    """Generate rules file(s) for an agent.
-
-    Args:
-        config: Charlie configuration
-        agent_name: Name of the agent
-        agent_spec: Agent specification from registry
         output_dir: Base output directory
         mode: "merged" (single file) or "separate" (one file per section)
         root_dir: Root directory where charlie.yaml is located

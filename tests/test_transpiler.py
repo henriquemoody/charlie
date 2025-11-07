@@ -73,7 +73,6 @@ commands:
     assert "commands" in results
     assert len(results["commands"]) == 1
 
-    # Check file was created
     command_file = Path(results["commands"][0])
     assert command_file.exists()
     assert "test.init.md" in str(command_file)
@@ -100,15 +99,12 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    # Generate for Claude
     results = transpiler.generate(agent_name="claude", output_dir=str(output_dir))
     assert "commands" in results
 
-    # Generate for Gemini
     results = transpiler.generate(agent_name="gemini", output_dir=str(output_dir))
     assert "commands" in results
 
-    # Generate for Cursor
     results = transpiler.generate(agent_name="cursor", output_dir=str(output_dir))
     assert "commands" in results
 
@@ -143,12 +139,10 @@ commands:
     assert "mcp" in results
     assert len(results["mcp"]) == 1
 
-    # Check MCP file was created
     mcp_file = Path(results["mcp"][0])
     assert mcp_file.exists()
     assert mcp_file.name == "mcp-config.json"
 
-    # Check content
     with open(mcp_file) as f:
         mcp_config = json.load(f)
     assert "mcpServers" in mcp_config
@@ -176,21 +170,17 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    # Generate for Claude with rules
     results = transpiler.generate(agent_name="claude", rules=True, output_dir=str(output_dir))
 
     assert "rules" in results
 
-    # Check rules file was created
     claude_rules = Path(results["rules"][0])
     assert claude_rules.exists()
 
-    # Check content
     content = claude_rules.read_text()
     assert "# Development Guidelines" in content
     assert "/test.test" in content
 
-    # Generate for Windsurf with rules
     results = transpiler.generate(agent_name="windsurf", rules=True, output_dir=str(output_dir))
 
     assert "rules" in results
@@ -228,7 +218,6 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    # Generate everything for Claude
     results = transpiler.generate(
         agent_name="claude",
         mcp=True,
@@ -236,15 +225,12 @@ commands:
         output_dir=str(output_dir)
     )
 
-    # Check all outputs were generated
     assert "commands" in results
     assert "mcp" in results
     assert "rules" in results
 
-    # Check command counts
-    assert len(results["commands"]) == 2  # init + plan
+    assert len(results["commands"]) == 2
 
-    # Generate for Gemini
     results = transpiler.generate(agent_name="gemini", rules=True, output_dir=str(output_dir))
 
     assert "commands" in results
@@ -303,14 +289,12 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    # Generate rules for Claude
     rules_files = transpiler.generate_rules("claude", str(output_dir))
 
     assert isinstance(rules_files, list)
     assert len(rules_files) >= 1
     assert Path(rules_files[0]).exists()
 
-    # Generate rules for Windsurf
     rules_files = transpiler.generate_rules("windsurf", str(output_dir))
 
     assert isinstance(rules_files, list)
@@ -365,24 +349,19 @@ commands:
 
     results = transpiler.generate(agent_name="claude", output_dir=str(output_dir))
 
-    # Check that nested directory was created
     assert output_dir.exists()
     command_file = Path(results["commands"][0])
     assert command_file.exists()
 
 
 def test_transpiler_with_dot_charlie_directory(tmp_path) -> None:
-    """Test that transpiler works when passed .charlie directory directly.
-
-    Regression test: Ensure commands are generated when .charlie directory
+    """Regression test: Ensure commands are generated when .charlie directory
     is passed as config path (as done by CLI auto-detection).
     """
-    # Create directory-based config structure
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
 
-    # Create a command file
     (commands_dir / "test.md").write_text(
         """---
 name: "test"
@@ -395,30 +374,23 @@ Test prompt content
 """
     )
 
-    # Initialize transpiler with .charlie directory path (as CLI does)
     transpiler = CommandTranspiler(str(charlie_dir))
 
-    # Verify config was loaded correctly
     assert len(transpiler.config.commands) == 1
     assert transpiler.config.commands[0].name == "test"
 
-    # Verify root_dir is set to parent of .charlie, not .charlie itself
     assert transpiler.root_dir == str(tmp_path.resolve())
 
-    # Generate commands
     output_dir = tmp_path / "output"
     results = transpiler.generate(agent_name="cursor", output_dir=str(output_dir))
 
-    # Verify command was generated
     assert "commands" in results
     assert len(results["commands"]) == 1
 
-    # Verify file exists
     generated_file = output_dir / ".cursor" / "commands" / "test.md"
 
     assert generated_file.exists()
 
-    # Verify content was generated
     content = generated_file.read_text()
     assert "Test command" in content
     assert "Test prompt content" in content

@@ -64,11 +64,9 @@ def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig
         Configuration with project name set
     """
     if config.project is None:
-        # No project config - create one with inferred name
         project_name = _infer_project_name(base_dir)
         config.project = ProjectConfig(name=project_name, command_prefix=None)
     elif config.project.name is None:
-        # Project config exists but name is missing - infer it
         config.project.name = _infer_project_name(base_dir)
 
     return config
@@ -92,13 +90,10 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
     """
     content = content.lstrip()
 
-    # Check if content starts with frontmatter delimiter
     if not content.startswith("---"):
         return {}, content
 
-    # Find the closing delimiter
     try:
-        # Split on --- but skip the first empty match
         parts = content.split("---", 2)
         if len(parts) < 3:
             raise ConfigParseError("Frontmatter closing delimiter '---' not found")
@@ -106,7 +101,6 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
         frontmatter_str = parts[1].strip()
         body = parts[2].lstrip()
 
-        # Parse YAML frontmatter
         if not frontmatter_str:
             return {}, body
 
@@ -141,43 +135,28 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
     """
     config_path = Path(config_path)
 
-    # Determine base directory
-    # If it's an existing file, use its parent
-    # If it's an existing directory, use it
-    # If it doesn't exist but has a file extension, assume it's a file path and use parent
-    # Otherwise, treat it as a directory
     if config_path.is_file():
         base_dir = config_path.parent
     elif config_path.is_dir():
-        # Check if this IS the .charlie directory
         if config_path.name == ".charlie":
-            # Use parent directory as base
             base_dir = config_path.parent
         else:
             base_dir = config_path
     elif config_path.suffix in [".yaml", ".yml"]:
-        # Looks like a file path (even if it doesn't exist)
         base_dir = config_path.parent
     else:
-        # Treat as directory path
         base_dir = config_path
 
-    # Check if directory-based structure exists
     charlie_dir = base_dir / ".charlie"
     if charlie_dir.exists() and charlie_dir.is_dir():
-        # Use directory-based loading
         return load_directory_config(base_dir)
 
-    # If config_path is a directory, create default config
     if config_path.is_dir():
         return _create_default_config(base_dir)
 
-    # Check if config file exists
     if not config_path.exists():
-        # If no config file exists, create minimal default config
         return _create_default_config(base_dir)
 
-    # Fall back to monolithic file loading
     try:
         with open(config_path, encoding="utf-8") as f:
             raw_config = yaml.safe_load(f)
@@ -187,12 +166,10 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
         raise ConfigParseError(f"Error reading configuration file: {e}")
 
     if not raw_config:
-        # Empty file - create default config
         return _create_default_config(base_dir)
 
     try:
         config = CharlieConfig(**raw_config)
-        # Ensure project name is set
         config = _ensure_project_name(config, base_dir)
     except ValidationError as e:
         error_messages = []
@@ -220,17 +197,14 @@ def find_config_file(start_dir: str | Path = ".") -> Path | None:
     """
     start_dir = Path(start_dir).resolve()
 
-    # Check for charlie.yaml
     charlie_yaml = start_dir / "charlie.yaml"
     if charlie_yaml.exists():
         return charlie_yaml
 
-    # Check for .charlie.yaml (hidden)
     hidden_charlie = start_dir / ".charlie.yaml"
     if hidden_charlie.exists():
         return hidden_charlie
 
-    # Check for .charlie/ directory
     charlie_dir = start_dir / ".charlie"
     if charlie_dir.exists() and charlie_dir.is_dir():
         return charlie_dir
@@ -260,26 +234,19 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
     if not file_content.strip():
         raise ConfigParseError(f"File is empty: {file_path}")
 
-    # Determine file type and parse accordingly
     if file_path.suffix == ".md":
-        # Parse markdown with frontmatter
         try:
             frontmatter, body = parse_frontmatter(file_content)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error parsing frontmatter in {file_path}: {e}")
 
-        # Merge frontmatter and body based on model type
         if model_class.__name__ == "Command":
-            # For commands: frontmatter = metadata, body = prompt
             raw_data = {**frontmatter, "prompt": body.strip()}
         elif model_class.__name__ == "RulesSection":
-            # For rules: frontmatter = metadata (title, order, etc.), body = content
             raw_data = {**frontmatter, "content": body.strip()}
         else:
-            # Generic: just use frontmatter
             raw_data = frontmatter
     else:
-        # Parse YAML file
         try:
             raw_data = yaml.safe_load(file_content)
         except yaml.YAMLError as e:
@@ -323,17 +290,14 @@ def discover_config_files(base_dir: Path) -> dict[str, list[Path]]:
     if not charlie_dir.exists():
         return result
 
-    # Discover commands (markdown files with frontmatter)
     commands_dir = charlie_dir / "commands"
     if commands_dir.exists():
         result["commands"] = sorted(commands_dir.glob("*.md"))
 
-    # Discover rules (markdown files with frontmatter)
     rules_dir = charlie_dir / "rules"
     if rules_dir.exists():
         result["rules"] = sorted(rules_dir.glob("*.md"))
 
-    # Discover MCP servers (still YAML)
     mcp_dir = charlie_dir / "mcp-servers"
     if mcp_dir.exists():
         result["mcp_servers"] = sorted(mcp_dir.glob("*.yaml"))
@@ -359,21 +323,18 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     Raises:
         ConfigParseError: If loading or merging fails
     """
-    # Start with minimal config
     config_data: dict[str, Any] = {
         "version": "1.0",
         "commands": [],
         "mcp_servers": [],
     }
 
-    # Try to load main charlie.yaml for project config
     main_config_path = base_dir / "charlie.yaml"
     if main_config_path.exists():
         try:
             with open(main_config_path, encoding="utf-8") as f:
                 main_data = yaml.safe_load(f)
                 if main_data:
-                    # Extract project config if present
                     if "project" in main_data:
                         config_data["project"] = main_data["project"]
                     if "version" in main_data:
@@ -381,21 +342,17 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         except Exception as e:
             raise ConfigParseError(f"Error reading {main_config_path}: {e}")
 
-    # Discover all config files
     discovered = discover_config_files(base_dir)
 
-    # Load commands
     for command_file in discovered["commands"]:
         try:
             command = parse_single_file(command_file, Command)
-            # Infer name from filename if not specified
             if not command.name:
-                command.name = command_file.stem  # filename without extension
+                command.name = command_file.stem
             config_data["commands"].append(command.model_dump())
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading command from {command_file}: {e}")
 
-    # Load rules
     rules_sections = []
     for rules_file in discovered["rules"]:
         try:
@@ -407,7 +364,6 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     if rules_sections:
         config_data["rules"] = {"sections": [s.model_dump() for s in rules_sections]}
 
-    # Load MCP servers
     for mcp_file in discovered["mcp_servers"]:
         try:
             server = parse_single_file(mcp_file, MCPServer)
@@ -415,10 +371,8 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading MCP server from {mcp_file}: {e}")
 
-    # Create final config
     try:
         config = CharlieConfig(**config_data)
-        # Ensure project name is set
         config = _ensure_project_name(config, base_dir)
         return config
     except ValidationError as e:

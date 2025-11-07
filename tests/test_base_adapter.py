@@ -149,7 +149,6 @@ def test_generate_commands_creates_directory(tmp_path) -> None:
 
     adapter.generate_commands(commands, "myapp", str(tmp_path))
 
-    # Check directory was created
     expected_dir = tmp_path / ".claude" / "commands"
     assert expected_dir.exists()
     assert expected_dir.is_dir()
@@ -181,7 +180,6 @@ def test_generate_commands_creates_files(tmp_path) -> None:
     assert any("myapp.init.md" in f for f in files)
     assert any("myapp.plan.md" in f for f in files)
 
-    # Check files exist
     for filepath in files:
         assert Path(filepath).exists()
 
@@ -227,7 +225,5 @@ def test_transform_path_placeholders_in_transform_placeholders() -> None:
 
     result = adapter.transform_placeholders(command.prompt, command, "sh")
 
-    # Path placeholder should be resolved
     assert ".claude/commands" in result
-    # User input placeholder should also be resolved
     assert "$ARGUMENTS" in result

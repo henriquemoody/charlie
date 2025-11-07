@@ -14,7 +14,6 @@ from charlie.mcp import generate_mcp_config
 from charlie.parser import parse_config
 from charlie.rules import generate_rules_for_agents
 
-# Map agent names to adapter classes
 ADAPTER_CLASSES: dict[str, type[BaseAgentAdapter]] = {
     "claude": ClaudeAdapter,
     "copilot": CopilotAdapter,
@@ -39,17 +38,13 @@ class CommandTranspiler:
         """
         self.config_path = config_path
         self.config = parse_config(config_path)
-        # Store the root directory (where charlie.yaml or .charlie/ is located)
         config_path_obj = Path(config_path).resolve()
         if config_path_obj.is_dir():
-            # If config_path is the .charlie directory, use its parent
             if config_path_obj.name == ".charlie":
                 self.root_dir = str(config_path_obj.parent)
             else:
-                # Otherwise use the directory itself as root
                 self.root_dir = str(config_path_obj)
         else:
-            # If config_path is a file, use its parent
             self.root_dir = str(config_path_obj.parent)
 
     def generate(
@@ -80,23 +75,18 @@ class CommandTranspiler:
         """
         results = {}
 
-        # Get agent spec and adapter
         agent_spec = get_agent_spec(agent_name)
         adapter = self._get_adapter(agent_name, agent_spec)
 
-        # Generate command files
         command_prefix = self.config.project.command_prefix if self.config.project else None
         files = adapter.generate_commands(self.config.commands, command_prefix, output_dir)
         results["commands"] = files
 
-        # Generate MCP configs if requested
         if mcp:
             mcp_file = generate_mcp_config(self.config, agent_name, output_dir)
             results["mcp"] = [mcp_file]
 
-        # Generate rules if requested
         if rules and agent_name:
-            # Get spec for the agent
             rules_files = generate_rules_for_agents(
                 self.config,
                 agent_name,
@@ -105,7 +95,6 @@ class CommandTranspiler:
                 mode=rules_mode,
                 root_dir=self.root_dir,
             )
-            # Extract the rules paths for the single agent
             results["rules"] = rules_files
 
         return results
@@ -166,9 +155,8 @@ class CommandTranspiler:
             ValueError: If agent doesn't have a registered adapter
         """
         if agent_name not in ADAPTER_CLASSES:
-            # For agents without specific adapters yet, use a generic one based on format
             if agent_spec.file_format == "markdown":
-                return ClaudeAdapter(agent_spec, self.root_dir)  # Reuse Claude adapter for markdown
+                return ClaudeAdapter(agent_spec, self.root_dir)
             else:
                 raise ValueError(f"No adapter registered for agent: {agent_name}")
 

@@ -25,11 +25,8 @@ def test_claude_adapter_generates_markdown() -> None:
 
     result = adapter.generate_command(command, "myapp", "sh")
 
-    # Check frontmatter
     assert "---" in result
     assert "description: Test command" in result
-
-    # Check placeholders are transformed
     assert "$ARGUMENTS" in result
     assert "test.sh" in result
     assert "{{user_input}}" not in result
@@ -88,11 +85,8 @@ def test_gemini_adapter_generates_toml() -> None:
 
     result = adapter.generate_command(command, "myapp", "sh")
 
-    # Check TOML format
     assert 'description = "Test command"' in result
     assert 'prompt = """' in result
-
-    # Check placeholders are transformed to TOML format
     assert "{{args}}" in result
     assert "test.sh" in result
     assert "{{user_input}}" not in result
@@ -154,7 +148,6 @@ def test_adapters_handle_agent_scripts() -> None:
 
 def test_adapters_pass_through_agent_fields() -> None:
     """Test that adapters include pass-through agent-specific fields."""
-    # Test Claude (markdown) with allowed-tools
     spec = get_agent_spec("claude")
     adapter = ClaudeAdapter(spec)
 
@@ -170,7 +163,6 @@ def test_adapters_pass_through_agent_fields() -> None:
 
     result = adapter.generate_command(command, "myapp", "sh")
 
-    # Check frontmatter includes pass-through fields
     assert "allowed_tools:" in result or "allowed-tools:" in result
     assert "Bash(git add:*)" in result
     assert "tags:" in result
@@ -178,7 +170,6 @@ def test_adapters_pass_through_agent_fields() -> None:
     assert "category:" in result
     assert "source-control" in result
 
-    # Test Gemini (TOML) with custom fields
     spec = get_agent_spec("gemini")
     adapter = GeminiAdapter(spec)
 
@@ -215,7 +206,6 @@ def test_claude_adapter_generates_files(tmp_path) -> None:
     normalized_path = files[0].replace("\\", "/")
     assert ".claude/commands/myapp.init.md" in normalized_path
 
-    # Check file exists and has content
     filepath = Path(files[0])
     assert filepath.exists()
     content = filepath.read_text()
@@ -243,7 +233,6 @@ def test_gemini_adapter_generates_toml_files(tmp_path) -> None:
     normalized_path = files[0].replace("\\", "/")
     assert ".gemini/commands/myapp.test.toml" in normalized_path
 
-    # Check file has TOML content
     filepath = Path(files[0])
     content = filepath.read_text()
     assert 'description = "Test"' in content

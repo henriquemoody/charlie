@@ -41,7 +41,6 @@ commands:
 def test_parse_nonexistent_file(tmp_path) -> None:
     """Test parsing a non-existent file creates default config."""
     config = parse_config(tmp_path / "nonexistent.yaml")
-    # Should create default config with inferred name from directory
     assert config.project is not None
     assert config.project.name == tmp_path.name
     assert config.version == "1.0"
@@ -54,7 +53,6 @@ def test_parse_empty_file(tmp_path) -> None:
     config_file.write_text("")
 
     config = parse_config(config_file)
-    # Should create default config with inferred name from directory
     assert config.project is not None
     assert config.project.name == tmp_path.name
     assert config.version == "1.0"
@@ -225,7 +223,6 @@ def test_discover_config_files_complete(tmp_path) -> None:
     rules_dir.mkdir(parents=True)
     mcp_dir.mkdir(parents=True)
 
-    # Create files (commands and rules use .md now, MCP servers still use .yaml)
     (commands_dir / "init.md").write_text("test")
     (commands_dir / "build.md").write_text("test")
     (rules_dir / "style.md").write_text("test")
@@ -244,7 +241,6 @@ def test_load_directory_config_minimal(tmp_path) -> None:
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
 
-    # Create one command (markdown format with frontmatter)
     (commands_dir / "test.md").write_text(
         """---
 name: "test"
@@ -268,7 +264,6 @@ Test prompt content
 
 def test_load_directory_config_with_project(tmp_path) -> None:
     """Test loading directory config with project metadata."""
-    # Create charlie.yaml with project info
     (tmp_path / "charlie.yaml").write_text(
         """
 version: "1.0"
@@ -278,7 +273,6 @@ project:
 """
     )
 
-    # Create command (markdown format with frontmatter)
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
@@ -303,7 +297,6 @@ Init prompt content
 
 def test_load_directory_config_with_rules(tmp_path) -> None:
     """Test loading directory config with rules sections."""
-    # Create rules (markdown format with frontmatter)
     charlie_dir = tmp_path / ".charlie"
     rules_dir = charlie_dir / "rules"
     commands_dir = charlie_dir / "commands"
@@ -330,7 +323,6 @@ Use conventional commits
 """
     )
 
-    # Need at least one command for valid config (markdown format)
     (commands_dir / "test.md").write_text(
         """---
 name: "test"
@@ -347,7 +339,6 @@ Test prompt content
     assert config.rules is not None
     assert config.rules.sections is not None
     assert len(config.rules.sections) == 2
-    # Check both sections exist (order not guaranteed in loading)
     titles = [s.title for s in config.rules.sections]
     assert "Code Style" in titles
     assert "Commit Messages" in titles
@@ -370,7 +361,6 @@ commands: ["init", "build"]
 """
     )
 
-    # Need at least one command
     (commands_dir / "init.yaml").write_text(
         """
 name: "init"
@@ -389,7 +379,6 @@ scripts:
 
 def test_parse_config_detects_directory_format(tmp_path) -> None:
     """Test that parse_config detects directory-based format."""
-    # Create directory structure
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
@@ -406,7 +395,6 @@ Test prompt content
 """
     )
 
-    # Also create a charlie.yaml that would be invalid if used
     (tmp_path / "charlie.yaml").write_text(
         """
 version: "1.0"
@@ -416,9 +404,8 @@ project:
 """
     )
 
-    # parse_config should use directory loading
     config = parse_config(tmp_path / "charlie.yaml")
-    assert len(config.commands) == 1  # From directory, not from file
+    assert len(config.commands) == 1
     assert config.commands[0].name == "test"
 
 

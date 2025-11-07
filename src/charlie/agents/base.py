@@ -50,17 +50,14 @@ class BaseAgentAdapter(ABC):
         command_dir = Path(output_dir) / self.spec.command_dir
         command_dir.mkdir(parents=True, exist_ok=True)
 
-        # Determine script type to use (prefer sh, fallback to ps)
-        script_type = "sh"  # Default to sh
+        script_type = "sh"
 
         for command in commands:
-            # Check if command has the preferred script type
             if command.scripts and command.scripts.sh:
                 script_type = "sh"
             elif command.scripts and command.scripts.ps:
                 script_type = "ps"
 
-            # Build filename with or without namespace
             if namespace:
                 filename = f"{namespace}.{command.name}{self.spec.file_extension}"
             else:
@@ -86,19 +83,15 @@ class BaseAgentAdapter(ABC):
         Returns:
             Text with agent-specific placeholders
         """
-        # Replace user input placeholder
         text = text.replace("{{user_input}}", self.spec.arg_placeholder)
 
-        # Replace script placeholder with actual script
         script_path = self._get_script_path(command, script_type)
         text = text.replace("{{script}}", script_path)
 
-        # Replace agent script placeholder if present
         if command.agent_scripts:
             agent_script_path = self._get_agent_script_path(command, script_type)
             text = text.replace("{{agent_script}}", agent_script_path)
 
-        # Replace path placeholders
         text = self.transform_path_placeholders(text)
 
         return text
@@ -119,7 +112,6 @@ class BaseAgentAdapter(ABC):
             "{{rules_dir}}": Path(self.spec.rules_file).parent.as_posix()
         }
 
-        # Replace path placeholders
         for placeholder, value in placeholders.items():
             text = text.replace(placeholder, value)
 
@@ -142,7 +134,6 @@ class BaseAgentAdapter(ABC):
             return command.scripts.sh
         elif script_type == "ps" and command.scripts.ps:
             return command.scripts.ps
-        # Fallback: return whatever is available
         return command.scripts.sh or command.scripts.ps or ""
 
     def _get_agent_script_path(self, command: Command, script_type: str) -> str:
@@ -162,5 +153,4 @@ class BaseAgentAdapter(ABC):
             return command.agent_scripts.sh
         elif script_type == "ps" and command.agent_scripts.ps:
             return command.agent_scripts.ps
-        # Fallback
         return command.agent_scripts.sh or command.agent_scripts.ps or ""

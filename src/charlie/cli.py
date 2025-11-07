@@ -37,12 +37,10 @@ def _resolve_config_file(config_path: str | None) -> Path:
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
         return path
 
-    # Auto-detect charlie.yaml, .charlie.yaml, or .charlie/
     found = find_config_file()
     if found:
         return found
 
-    # No config found - use current directory (will create default config)
     return Path.cwd()
 
 
@@ -85,15 +83,12 @@ def setup(
         charlie setup cursor --output ./build
     """
     try:
-        # Resolve config file
         config_file = _resolve_config_file(config_path)
 
         console.print(f"[cyan]Using configuration:[/cyan] {config_file}")
 
-        # Initialize transpiler
         transpiler = CommandTranspiler(str(config_file))
 
-        # Generate
         console.print(f"\n[bold]Setting up {agent}...[/bold]")
 
         results = transpiler.generate(
@@ -104,7 +99,6 @@ def setup(
             output_dir=output,
         )
 
-        # Display results
         console.print(f"\n[green]✓ Setup complete for {agent}![/green]\n")
 
         for target_name, files in results.items():
@@ -113,11 +107,9 @@ def setup(
                 if verbose:
                     console.print(f"  • {filepath}")
                 else:
-                    # Show relative path
                     try:
                         rel_path = Path(filepath).relative_to(Path(output).resolve())
                     except ValueError:
-                        # If filepath is not relative to output, show absolute
                         rel_path = Path(filepath)
                     console.print(f"  • {rel_path}")
 
@@ -134,7 +126,6 @@ def setup(
         console.print(f"[red]Unexpected Error:[/red] {e}")
         if verbose:
             import traceback
-
             console.print(traceback.format_exc())
         raise typer.Exit(1)
 
@@ -160,7 +151,6 @@ def validate(
 
         console.print(f"[cyan]Validating:[/cyan] {config_file}")
 
-        # Parse will raise error if invalid
         config = parse_config(config_file)
 
         console.print("\n[green]✓ Configuration is valid![/green]\n")
@@ -223,7 +213,6 @@ def info(
         console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
         raise typer.Exit(1)
 
-    # Create info panel
     info_lines = [
         f"[bold]Agent:[/bold] {agent_spec.name}",
         "",

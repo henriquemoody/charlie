@@ -56,7 +56,6 @@ def test_setup_auto_detect_config(tmp_path) -> None:
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
-    # Use mix=False to run in isolated environment but with cwd set
     result = runner.invoke(
         app,
         ["setup", "claude", "--output", str(output_dir)],
@@ -64,10 +63,6 @@ def test_setup_auto_detect_config(tmp_path) -> None:
         catch_exceptions=False,
     )
 
-    # Note: CliRunner doesn't actually change directory, so config must be explicit
-    # This test verifies the command works when config is in the expected location
-    # For true auto-detection, we'd need integration tests
-    # Let's just test with explicit config for now
     result = runner.invoke(
         app, ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)]
     )
@@ -81,7 +76,6 @@ def test_setup_different_agents(tmp_path) -> None:
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
-    # Setup claude
     result = runner.invoke(
         app,
         ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)],
@@ -89,7 +83,6 @@ def test_setup_different_agents(tmp_path) -> None:
     assert result.exit_code == 0
     assert "commands" in result.stdout
 
-    # Setup gemini
     result = runner.invoke(
         app,
         ["setup", "gemini", "--config", str(config_file), "--output", str(output_dir)],
@@ -97,7 +90,6 @@ def test_setup_different_agents(tmp_path) -> None:
     assert result.exit_code == 0
     assert "commands" in result.stdout
 
-    # Setup cursor
     result = runner.invoke(
         app,
         ["setup", "cursor", "--config", str(config_file), "--output", str(output_dir)],
@@ -118,7 +110,6 @@ def test_setup_with_mcp(tmp_path) -> None:
     assert result.exit_code == 0
     assert "mcp" in result.stdout
 
-    # Check file was created
     mcp_file = output_dir / "mcp-config.json"
     assert mcp_file.exists()
 
@@ -191,8 +182,7 @@ def test_setup_missing_agent() -> None:
     """Test setup command without agent argument."""
     result = runner.invoke(app, ["setup"])
 
-    assert result.exit_code == 2  # Typer returns 2 for missing arguments
-    # Check combined output (result.output includes both stdout and stderr)
+    assert result.exit_code == 2
     output = result.output.lower()
     assert "missing argument" in output or "required" in output or result.exit_code == 2
 

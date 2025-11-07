@@ -43,11 +43,9 @@ def _server_to_mcp_config(
     """
     config: dict[str, Any] = {"command": server.command, "args": server.args}
 
-    # Add environment variables if present
     if server.env:
         config["env"] = server.env
 
-    # Add tool capabilities from commands
     if commands:
         config["capabilities"] = {
             "tools": {
@@ -87,18 +85,15 @@ def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str)
         )
         mcp_config["mcpServers"][server.name] = server_config
 
-    # Determine output path based on agent
     if agent_name == "cursor":
-        # Cursor expects MCP config at .cursor/mcp.json
         output_path = Path(output_dir) / ".cursor" / "mcp.json"
     else:
-        # Default to mcp-config.json in output directory
         output_path = Path(output_dir) / "mcp-config.json"
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(mcp_config, f, indent=2)
-        f.write("\n")  # Add trailing newline
+        f.write("\n")
 
     return str(output_path)

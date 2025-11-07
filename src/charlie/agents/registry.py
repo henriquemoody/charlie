@@ -2,7 +2,6 @@ from charlie.schema import AgentSpec
 
 """Agent registry with built-in knowledge of all supported agents."""
 
-# Built-in agent specifications
 AGENT_SPECS: dict[str, dict[str, str]] = {
     "claude": {
         "name": "Claude Code",
