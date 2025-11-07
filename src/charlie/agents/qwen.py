@@ -32,15 +32,10 @@ class QwenAdapter(BaseAgentAdapter):
                 if isinstance(value, str):
                     toml_lines.append(f'{key} = "{value}"')
                 elif isinstance(value, list):
-                    items = ", ".join(
-                        f'"{item}"' if isinstance(item, str) else str(item) for item in value
-                    )
+                    items = ", ".join(f'"{item}"' if isinstance(item, str) else str(item) for item in value)
                     toml_lines.append(f"{key} = [{items}]")
                 elif isinstance(value, dict):
-                    items = ", ".join(
-                        f'{k} = "{v}"' if isinstance(v, str) else f"{k} = {v}"
-                        for k, v in value.items()
-                    )
+                    items = ", ".join(f'{k} = "{v}"' if isinstance(v, str) else f"{k} = {v}" for k, v in value.items())
                     toml_lines.append(f"{key} = {{ {items} }}")
                 else:
                     toml_lines.append(f"{key} = {value}")

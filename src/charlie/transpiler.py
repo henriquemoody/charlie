@@ -133,12 +133,7 @@ class CommandTranspiler:
         agent_spec = get_agent_spec(agent_name)
 
         return generate_rules_for_agents(
-            self.config,
-            agent_name,
-            agent_spec,
-            output_dir,
-            mode=mode,
-            root_dir=self.root_dir
+            self.config, agent_name, agent_spec, output_dir, mode=mode, root_dir=self.root_dir
         )
 
     def _get_adapter(self, agent_name: str, agent_spec: AgentSpec) -> BaseAgentAdapter:

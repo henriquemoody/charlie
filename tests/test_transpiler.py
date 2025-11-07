@@ -218,12 +218,7 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    results = transpiler.generate(
-        agent_name="claude",
-        mcp=True,
-        rules=True,
-        output_dir=str(output_dir)
-    )
+    results = transpiler.generate(agent_name="claude", mcp=True, rules=True, output_dir=str(output_dir))
 
     assert "commands" in results
     assert "mcp" in results

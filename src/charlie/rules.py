@@ -188,9 +188,7 @@ def _generate_merged_rules(
         lines.append("")
         if config.project and config.project.command_prefix:
             for command in config.commands:
-                lines.append(
-                    f"- `/{config.project.command_prefix}.{command.name}` - {command.description}"
-                )
+                lines.append(f"- `/{config.project.command_prefix}.{command.name}` - {command.description}")
             lines.append("")
 
             lines.append("## Command Reference")
@@ -203,9 +201,7 @@ def _generate_merged_rules(
         if manual_additions:
             lines.append(manual_additions)
         else:
-            lines.append(
-                "<!-- Add your custom rules here - they will be preserved on regeneration -->"
-            )
+            lines.append("<!-- Add your custom rules here - they will be preserved on regeneration -->")
         lines.append("<!-- MANUAL ADDITIONS END -->")
 
     content_parts.append("\n".join(lines))
@@ -244,9 +240,7 @@ def _generate_separate_rules(
     rules_dir = Path(output_dir) / rules_file_path.parent
     rules_dir.mkdir(parents=True, exist_ok=True)
 
-    sorted_sections = sorted(
-        config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title)
-    )
+    sorted_sections = sorted(config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title))
 
     for section in sorted_sections:
         filename = section.title.lower().replace(" ", "-").replace("/", "-") + ".md"

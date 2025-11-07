@@ -28,9 +28,7 @@ def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, 
     }
 
 
-def _server_to_mcp_config(
-    server: MCPServer, commands: list[Command], command_prefix: str
-) -> dict[str, Any]:
+def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str) -> dict[str, Any]:
     """Convert server definition to MCP config format.
 
     Args:
@@ -80,9 +78,7 @@ def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str)
     mcp_config: dict[str, Any] = {"mcpServers": {}}
 
     for server in config.mcp_servers:
-        server_config = _server_to_mcp_config(
-            server, config.commands, config.project.command_prefix
-        )
+        server_config = _server_to_mcp_config(server, config.commands, config.project.command_prefix)
         mcp_config["mcpServers"][server.name] = server_config
 
     if agent_name == "cursor":

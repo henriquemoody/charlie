@@ -26,6 +26,7 @@ def test_list_supported_agents() -> None:
 
     assert agents == sorted(agents)
 
+
 def test_markdown_agents_have_correct_placeholder() -> None:
     """Test that markdown-format agents use $ARGUMENTS placeholder."""
     agent_specs = [get_agent_spec(name) for name in list_supported_agents()]

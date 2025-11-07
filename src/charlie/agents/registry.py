@@ -131,19 +131,17 @@ def get_agent_spec(agent_name: str) -> AgentSpec:
         ValueError: If agent is not supported
     """
     if agent_name not in AGENT_SPECS:
-        raise ValueError(
-            f"Unknown agent: {agent_name}. Supported agents: {', '.join(list_supported_agents())}"
-        )
+        raise ValueError(f"Unknown agent: {agent_name}. Supported agents: {', '.join(list_supported_agents())}")
 
     agent_spec = AGENT_SPECS[agent_name]
 
     return AgentSpec(
-        name=agent_spec['name'],
-        command_dir=agent_spec['command_dir'],
-        rules_file=agent_spec['rules_file'],
-        file_format=agent_spec['file_format'],
-        file_extension=agent_spec['file_extension'],
-        arg_placeholder=agent_spec['arg_placeholder'],
+        name=agent_spec["name"],
+        command_dir=agent_spec["command_dir"],
+        rules_file=agent_spec["rules_file"],
+        file_format=agent_spec["file_format"],
+        file_extension=agent_spec["file_extension"],
+        arg_placeholder=agent_spec["arg_placeholder"],
     )
 
 

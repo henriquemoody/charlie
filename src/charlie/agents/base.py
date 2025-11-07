@@ -33,9 +33,7 @@ class BaseAgentAdapter(ABC):
         """
         pass
 
-    def generate_commands(
-        self, commands: list[Command], namespace: str | None, output_dir: str
-    ) -> list[str]:
+    def generate_commands(self, commands: list[Command], namespace: str | None, output_dir: str) -> list[str]:
         """Generate all command files for this agent.
 
         Args:
@@ -109,7 +107,7 @@ class BaseAgentAdapter(ABC):
             "{{root}}": self.root_dir,
             "{{agent_dir}}": Path(self.spec.command_dir).parent.as_posix(),
             "{{commands_dir}}": self.spec.command_dir,
-            "{{rules_dir}}": Path(self.spec.rules_file).parent.as_posix()
+            "{{rules_dir}}": Path(self.spec.rules_file).parent.as_posix(),
         }
 
         for placeholder, value in placeholders.items():

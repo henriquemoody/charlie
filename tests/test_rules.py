@@ -191,6 +191,7 @@ def test_generate_rules_for_agents(tmp_path) -> None:
     assert len(results) >= 1
     assert Path(results[0]).exists()
 
+
 def test_rules_file_date_format(tmp_path) -> None:
     """Test that rules file includes properly formatted date."""
     config = CharlieConfig(
@@ -251,13 +252,7 @@ def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
     )
 
     agent_spec = get_agent_spec("cursor")
-    rules_paths = generate_rules_for_agents(
-        config,
-        "cursor",
-        agent_spec,
-        str(tmp_path),
-        mode="merged"
-    )
+    rules_paths = generate_rules_for_agents(config, "cursor", agent_spec, str(tmp_path), mode="merged")
 
     assert len(rules_paths) == 1
     content = Path(rules_paths[0]).read_text()

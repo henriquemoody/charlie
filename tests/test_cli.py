@@ -63,9 +63,7 @@ def test_setup_auto_detect_config(tmp_path) -> None:
         catch_exceptions=False,
     )
 
-    result = runner.invoke(
-        app, ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)]
-    )
+    result = runner.invoke(app, ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)])
 
     assert result.exit_code == 0
     assert "Setup complete" in result.stdout
@@ -103,9 +101,7 @@ def test_setup_with_mcp(tmp_path) -> None:
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
-    result = runner.invoke(
-        app, ["setup", "claude", "--config", str(config_file), "--mcp", "--output", str(output_dir)]
-    )
+    result = runner.invoke(app, ["setup", "claude", "--config", str(config_file), "--mcp", "--output", str(output_dir)])
 
     assert result.exit_code == 0
     assert "mcp" in result.stdout

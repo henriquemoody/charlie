@@ -11,13 +11,10 @@ class SampleAdapter(BaseAgentAdapter):
     def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
         return f"Command: {namespace}.{command.name}"
 
-def create_command(
-    name="name",
-    description="description",
-    prompt="prompt",
-    scripts=None
-) -> Command:
+
+def create_command(name="name", description="description", prompt="prompt", scripts=None) -> Command:
     return Command(name=name, description=description, prompt=prompt, scripts=scripts)
+
 
 def test_adapter_initialization() -> None:
     spec = get_agent_spec("claude")
@@ -193,7 +190,7 @@ def test_transform_path_placeholders() -> None:
         "{{root}}": "/project/root",
         "{{commands_dir}}": ".cursor/commands",
         "{{rules_dir}}": ".",
-        "{{agent_dir}}": ".cursor"
+        "{{agent_dir}}": ".cursor",
     }
 
     for placeholder, value in placeholders.items():

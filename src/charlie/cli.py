@@ -126,6 +126,7 @@ def setup(
         console.print(f"[red]Unexpected Error:[/red] {e}")
         if verbose:
             import traceback
+
             console.print(traceback.format_exc())
         raise typer.Exit(1)
 

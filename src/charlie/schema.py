@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 
 class AgentSpec(BaseModel):
     """Agent specification."""
+
     name: str
     command_dir: str
     rules_file: str
@@ -14,12 +15,11 @@ class AgentSpec(BaseModel):
     file_extension: str
     arg_placeholder: str
 
+
 class ProjectConfig(BaseModel):
     """Project metadata configuration."""
 
-    name: str | None = Field(
-        None, description="Project name (inferred from directory if not specified)"
-    )
+    name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
     command_prefix: str | None = Field(None, description="Command prefix for slash commands")
 
 
@@ -52,12 +52,8 @@ class RulesConfig(BaseModel):
     title: str = Field(default="Development Guidelines", description="Rules file title")
     include_commands: bool = Field(default=True, description="Include commands reference")
     include_tech_stack: bool = Field(default=True, description="Include technology stack info")
-    preserve_manual: bool = Field(
-        default=True, description="Preserve manual additions between markers"
-    )
-    sections: list[RulesSection] | None = Field(
-        None, description="Custom rule sections (from directory-based config)"
-    )
+    preserve_manual: bool = Field(default=True, description="Preserve manual additions between markers")
+    sections: list[RulesSection] | None = Field(None, description="Custom rule sections (from directory-based config)")
 
 
 class CommandScripts(BaseModel):
@@ -72,6 +68,7 @@ class CommandScripts(BaseModel):
         """Ensure at least one script is defined."""
         return v
 
+
 class Command(BaseModel):
     """Command definition with pass-through for agent-specific fields."""
 
@@ -81,9 +78,7 @@ class Command(BaseModel):
     description: str = Field(..., description="Command description")
     prompt: str = Field(default="", description="Command prompt template")
     scripts: CommandScripts | None = Field(None, description="Platform-specific scripts")
-    agent_scripts: CommandScripts | None = Field(
-        None, description="Optional agent-specific scripts"
-    )
+    agent_scripts: CommandScripts | None = Field(None, description="Optional agent-specific scripts")
 
     @field_validator("scripts")
     @classmethod
