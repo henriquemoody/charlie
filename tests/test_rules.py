@@ -12,7 +12,6 @@ from charlie.schema import CharlieConfig, Command, CommandScripts, ProjectConfig
 
 
 def test_format_command_reference() -> None:
-    """Test formatting a command as reference entry."""
     command = Command(
         name="init",
         description="Initialize feature",
@@ -30,7 +29,6 @@ def test_format_command_reference() -> None:
 
 
 def test_extract_manual_additions() -> None:
-    """Test extracting manual additions from existing content."""
     content = """# Title
 
 Some content
@@ -49,7 +47,6 @@ More content
 
 
 def test_extract_manual_additions_empty() -> None:
-    """Test extracting from content without manual additions."""
     content = "# Title\n\nSome content"
 
     result = _extract_manual_additions(content)
@@ -57,7 +54,6 @@ def test_extract_manual_additions_empty() -> None:
 
 
 def test_generate_rules_for_agents_preserves_manual_additions(tmp_path) -> None:
-    """Test that rules file preserves manual additions on regeneration."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -96,7 +92,6 @@ def test_generate_rules_for_agents_preserves_manual_additions(tmp_path) -> None:
 
 
 def test_generate_rules_for_agents_custom_title(tmp_path) -> None:
-    """Test generating rules file with custom title."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -120,7 +115,6 @@ def test_generate_rules_for_agents_custom_title(tmp_path) -> None:
 
 
 def test_generate_rules_for_agents_without_commands(tmp_path) -> None:
-    """Test generating rules file without command list."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -145,7 +139,6 @@ def test_generate_rules_for_agents_without_commands(tmp_path) -> None:
 
 
 def test_generate_rules_for_agents_without_preserve(tmp_path) -> None:
-    """Test generating rules file without manual preservation."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -169,7 +162,6 @@ def test_generate_rules_for_agents_without_preserve(tmp_path) -> None:
 
 
 def test_generate_rules_for_agents(tmp_path) -> None:
-    """Test generating rules files for multiple agents."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -193,7 +185,6 @@ def test_generate_rules_for_agents(tmp_path) -> None:
 
 
 def test_rules_file_date_format(tmp_path) -> None:
-    """Test that rules file includes properly formatted date."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -219,7 +210,6 @@ def test_rules_file_date_format(tmp_path) -> None:
 
 
 def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
-    """Test generating rules in merged mode with custom sections."""
     from charlie.schema import RulesSection
 
     config = CharlieConfig(
@@ -270,7 +260,6 @@ def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
 
 
 def test_generate_rules_separate_mode(tmp_path) -> None:
-    """Test generating rules in separate mode (one file per section)."""
     from charlie.schema import RulesSection
 
     config = CharlieConfig(

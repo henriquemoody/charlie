@@ -46,7 +46,6 @@ def test_server_to_mcp_config_basic_conversion_with_command_and_args() -> None:
 
 
 def test_server_to_mcp_config_with_env() -> None:
-    """Test server config with environment variables."""
     server = MCPServer(
         name="test-server",
         command="node",
@@ -62,7 +61,6 @@ def test_server_to_mcp_config_with_env() -> None:
 
 
 def test_generate_mcp_config(tmp_path) -> None:
-    """Test generating complete MCP configuration file."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -106,7 +104,6 @@ def test_generate_mcp_config(tmp_path) -> None:
 
 
 def test_generate_mcp_config_no_servers() -> None:
-    """Test that generating config without servers raises ValueError."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -126,7 +123,6 @@ def test_generate_mcp_config_no_servers() -> None:
 
 
 def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
-    """Test MCP config with multiple commands as tools."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -159,7 +155,6 @@ def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
 
 
 def test_mcp_config_json_formatting(tmp_path) -> None:
-    """Test that generated JSON is properly formatted."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -186,7 +181,6 @@ def test_mcp_config_json_formatting(tmp_path) -> None:
 
 
 def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
-    """Test that Cursor agent generates MCP config at .cursor/mcp.json."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -216,7 +210,6 @@ def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
 
 
 def test_generate_mcp_config_default_location(tmp_path) -> None:
-    """Test that non-Cursor agents generate MCP config at mcp-config.json."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -243,7 +236,6 @@ def test_generate_mcp_config_default_location(tmp_path) -> None:
 
 
 def test_generate_mcp_config_without_command_prefix(tmp_path) -> None:
-    """Test that MCP config can be generated without command_prefix when there are no commands."""
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test"),  # No command_prefix
@@ -267,7 +259,6 @@ def test_generate_mcp_config_without_command_prefix(tmp_path) -> None:
 
 
 def test_generate_mcp_config_without_command_prefix_no_project(tmp_path) -> None:
-    """Test that MCP config can be generated without project config when there are no commands."""
     config = CharlieConfig(
         version="1.0",
         project=None,  # No project config at all

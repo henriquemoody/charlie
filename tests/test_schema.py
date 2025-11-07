@@ -1,5 +1,3 @@
-"""Tests for schema validation."""
-
 import pytest
 from pydantic import ValidationError
 
@@ -15,14 +13,12 @@ from charlie.schema import (
 
 
 def test_project_config_valid() -> None:
-    """Test valid project configuration."""
     config = ProjectConfig(name="test-project", command_prefix="test")
     assert config.name == "test-project"
     assert config.command_prefix == "test"
 
 
 def test_mcp_server_valid() -> None:
-    """Test valid MCP server configuration."""
     server = MCPServer(
         name="test-server",
         command="node",
@@ -36,7 +32,6 @@ def test_mcp_server_valid() -> None:
 
 
 def test_mcp_server_defaults() -> None:
-    """Test MCP server with default values."""
     server = MCPServer(name="test-server", command="node")
     assert server.args == []
     assert server.env == {}
@@ -45,7 +40,6 @@ def test_mcp_server_defaults() -> None:
 
 
 def test_mcp_server_with_extra_fields() -> None:
-    """Test MCP server with pass-through extra fields."""
     server = MCPServer(
         name="test-server",
         command="node",
@@ -61,7 +55,6 @@ def test_mcp_server_with_extra_fields() -> None:
 
 
 def test_rules_config_defaults() -> None:
-    """Test rules configuration with default values."""
     rules = RulesConfig()
     assert rules.title == "Development Guidelines"
     assert rules.include_commands is True
@@ -71,7 +64,6 @@ def test_rules_config_defaults() -> None:
 
 
 def test_rules_section_valid() -> None:
-    """Test valid rules section."""
     section = RulesSection(
         title="Code Style",
         content="Use Black for formatting",
@@ -83,7 +75,6 @@ def test_rules_section_valid() -> None:
 
 
 def test_rules_section_with_agent_fields() -> None:
-    """Test rules section with pass-through agent-specific fields."""
     section = RulesSection(
         title="Python Style",
         content="Type hints required",
@@ -101,14 +92,12 @@ def test_rules_section_with_agent_fields() -> None:
 
 
 def test_command_scripts_valid() -> None:
-    """Test valid command scripts."""
     scripts = CommandScripts(sh="script.sh", ps="script.ps1")
     assert scripts.sh == "script.sh"
     assert scripts.ps == "script.ps1"
 
 
 def test_command_valid() -> None:
-    """Test valid command configuration."""
     cmd = Command(
         name="test",
         description="Test command",
@@ -122,7 +111,6 @@ def test_command_valid() -> None:
 
 
 def test_command_with_agent_fields() -> None:
-    """Test command with pass-through agent-specific fields."""
     command = Command(
         name="commit",
         description="Git commit",
@@ -141,7 +129,6 @@ def test_command_with_agent_fields() -> None:
 
 
 def test_command_no_scripts_fails() -> None:
-    """Test command without scripts fails validation."""
     with pytest.raises(ValidationError):
         Command(
             name="test",
@@ -152,7 +139,6 @@ def test_command_no_scripts_fails() -> None:
 
 
 def test_charlie_config_valid() -> None:
-    """Test valid full charlie configuration."""
     config_data = {
         "version": "1.0",
         "project": {"name": "test-project", "command_prefix": "test"},
@@ -173,7 +159,6 @@ def test_charlie_config_valid() -> None:
 
 
 def test_charlie_config_with_mcp() -> None:
-    """Test configuration with MCP servers."""
     config_data = {
         "version": "1.0",
         "project": {"name": "test", "command_prefix": "test"},
@@ -193,7 +178,6 @@ def test_charlie_config_with_mcp() -> None:
 
 
 def test_charlie_config_invalid_version() -> None:
-    """Test configuration with invalid version fails."""
     config_data = {
         "version": "2.0",
         "project": {"name": "test", "command_prefix": "test"},
@@ -212,7 +196,6 @@ def test_charlie_config_invalid_version() -> None:
 
 
 def test_charlie_config_duplicate_commands() -> None:
-    """Test configuration with duplicate command names fails."""
     config_data = {
         "version": "1.0",
         "project": {"name": "test", "command_prefix": "test"},
@@ -237,7 +220,6 @@ def test_charlie_config_duplicate_commands() -> None:
 
 
 def test_charlie_config_minimal() -> None:
-    """Test minimal config with defaults (for directory-based configs)."""
     config = CharlieConfig(
         commands=[
             Command(
@@ -254,7 +236,6 @@ def test_charlie_config_minimal() -> None:
 
 
 def test_charlie_config_empty_commands() -> None:
-    """Test configuration with empty commands list."""
     config_data = {
         "version": "1.0",
         "project": {"name": "test", "command_prefix": "test"},
