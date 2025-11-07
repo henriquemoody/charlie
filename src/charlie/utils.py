@@ -49,7 +49,7 @@ class PlaceholderTransformer:
             "{{root}}": self.root_dir,
             "{{agent_dir}}": Path(self.agent_spec.command_dir).parent.as_posix(),
             "{{commands_dir}}": self.agent_spec.command_dir,
-            "{{rules_dir}}": Path(self.agent_spec.rules_file).parent.as_posix(),
+            "{{rules_dir}}": self.agent_spec.rules_dir,
         }
 
         transformed_text = text

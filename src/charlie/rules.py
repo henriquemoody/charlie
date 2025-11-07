@@ -155,8 +155,7 @@ def _generate_separate_rules(
     if not config.rules or not config.rules.sections:
         return generated_files
 
-    rules_file_path = Path(agent_spec.rules_file)
-    rules_dir = Path(output_dir) / rules_file_path.parent
+    rules_dir = Path(output_dir) / agent_spec.rules_dir
     rules_dir.mkdir(parents=True, exist_ok=True)
 
     transformer = PlaceholderTransformer(agent_spec, root_dir)

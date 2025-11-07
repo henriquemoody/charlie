@@ -179,7 +179,7 @@ def test_transform_path_placeholders_replaces_all_path_placeholders() -> None:
     placeholders = {
         "{{root}}": "/project/root",
         "{{commands_dir}}": ".cursor/commands",
-        "{{rules_dir}}": ".",
+        "{{rules_dir}}": ".cursor/rules",
         "{{agent_dir}}": ".cursor",
     }
 

@@ -11,6 +11,7 @@ def cursor_agent_spec() -> AgentSpec:
         name="cursor",
         command_dir=".cursor/commands",
         rules_file=".cursorrules",
+        rules_dir=".cursor/rules",
         file_format="markdown",
         file_extension=".mdc",
         arg_placeholder="{{args}}",
@@ -23,6 +24,7 @@ def claude_agent_spec() -> AgentSpec:
         name="claude",
         command_dir=".claude/commands",
         rules_file=".claude/rules/.clinerules",
+        rules_dir=".claude/rules",
         file_format="markdown",
         file_extension=".md",
         arg_placeholder="$ARGUMENTS",
@@ -72,7 +74,7 @@ def test_transform_path_placeholders_replaces_rules_dir(cursor_agent_spec: Agent
     text = "The rules dir is {{rules_dir}}"
     result = transformer.transform_path_placeholders(text)
 
-    assert result == "The rules dir is ."
+    assert result == "The rules dir is .cursor/rules"
 
 
 def test_transform_path_placeholders_replaces_rules_dir_with_subdirectory(claude_agent_spec: AgentSpec) -> None:
@@ -90,7 +92,7 @@ def test_transform_path_placeholders_replaces_all_placeholders(cursor_agent_spec
     text = "Root: {{root}}, Agent: {{agent_dir}}, Commands: {{commands_dir}}, Rules: {{rules_dir}}"
     result = transformer.transform_path_placeholders(text)
 
-    assert result == "Root: /project/root, Agent: .cursor, Commands: .cursor/commands, Rules: ."
+    assert result == "Root: /project/root, Agent: .cursor, Commands: .cursor/commands, Rules: .cursor/rules"
 
 
 def test_transform_agent_placeholders_replaces_user_input(cursor_agent_spec: AgentSpec) -> None:
