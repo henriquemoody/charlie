@@ -110,7 +110,7 @@ def _generate_merged_rules(
         for section in sorted_sections:
             lines.append(f"## {section.title}")
             lines.append("")
-            content = transformer.transform_path_placeholders(section.content)
+            content = transformer.transform(section.content)
             lines.append(content)
             lines.append("")
 
@@ -173,7 +173,7 @@ def _generate_separate_rules(
         if frontmatter:
             content_parts.append(_format_frontmatter(frontmatter))
 
-        content_text = transformer.transform_path_placeholders(section.content)
+        content_text = transformer.transform(section.content)
         lines = [
             f"# {section.title}",
             "",

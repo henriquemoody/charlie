@@ -314,3 +314,132 @@ def test_generate_rules_separate_mode(tmp_path) -> None:
     commit_content = Path(commit_file).read_text()
     assert "# Commit Messages" in commit_content
     assert "Use conventional commits" in commit_content
+
+
+def test_generate_rules_replaces_agent_name_placeholder_merged_mode(tmp_path) -> None:
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Agent Information",
+                    content="You are using {{agent_name}} as your AI assistant.",
+                    order=1,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_for_agents(config, "cursor", agent_spec, str(tmp_path), mode="merged")
+
+    assert len(rules_paths) == 1
+    content = Path(rules_paths[0]).read_text()
+
+    # The {{agent_name}} placeholder should be replaced with "Cursor" (the agent's display name)
+    assert "You are using Cursor as your AI assistant." in content
+    # The placeholder itself should NOT be present
+    assert "{{agent_name}}" not in content
+
+
+def test_generate_rules_replaces_agent_name_placeholder_separate_mode(tmp_path) -> None:
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Agent Information",
+                    content="You are using {{agent_name}} as your AI assistant. Welcome to {{agent_name}}!",
+                    order=1,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("claude")
+    rules_paths = generate_rules_for_agents(
+        config,
+        "claude",
+        agent_spec,
+        str(tmp_path),
+        mode="separate",
+    )
+
+    assert len(rules_paths) == 1
+    content = Path(rules_paths[0]).read_text()
+
+    # The {{agent_name}} placeholder should be replaced with "Claude Code" (the agent's display name)
+    assert "You are using Claude Code as your AI assistant." in content
+    assert "Welcome to Claude Code!" in content
+    # The placeholder itself should NOT be present
+    assert "{{agent_name}}" not in content
+
+
+def test_generate_rules_replaces_multiple_placeholders(tmp_path) -> None:
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Context",
+                    content="Agent: {{agent_name}}, Commands: {{commands_dir}}, Root: {{root}}",
+                    order=1,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(tmp_path),
+        mode="merged",
+        root_dir="/project/root",
+    )
+
+    assert len(rules_paths) == 1
+    content = Path(rules_paths[0]).read_text()
+
+    # All placeholders should be replaced
+    assert "Agent: Cursor" in content  # Cursor is the agent's display name
+    assert "Commands: .cursor/commands" in content
+    assert "Root: /project/root" in content
+    # Placeholders should NOT be present
+    assert "{{agent_name}}" not in content
+    assert "{{commands_dir}}" not in content
+    assert "{{root}}" not in content
