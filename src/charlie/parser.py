@@ -1,4 +1,4 @@
-"""YAML parser with validation."""
+
 
 from pathlib import Path
 from typing import Any, TypeVar
@@ -18,54 +18,27 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class ConfigParseError(Exception):
-    """Error parsing configuration file."""
-
     pass
 
 
 def _infer_project_name(base_dir: Path) -> str:
-    """Infer project name from directory name.
-
-    Args:
-        base_dir: Base directory path
-
-    Returns:
-        Project name inferred from directory
-    """
     return base_dir.resolve().name
 
 
 def _create_default_config(base_dir: Path) -> CharlieConfig:
-    """Create a minimal default configuration with inferred project name.
-
-    Args:
-        base_dir: Base directory path
-
-    Returns:
-        Default CharlieConfig with inferred project name
-    """
-    project_name = _infer_project_name(base_dir)
+    inferred_project_name = _infer_project_name(base_dir)
     return CharlieConfig(
         version="1.0",
-        project=ProjectConfig(name=project_name, command_prefix=None),
+        project=ProjectConfig(name=inferred_project_name, command_prefix=None),
         commands=[],
         mcp_servers=[],
     )
 
 
 def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig:
-    """Ensure config has a project name, inferring from directory if needed.
-
-    Args:
-        config: Configuration object
-        base_dir: Base directory path
-
-    Returns:
-        Configuration with project name set
-    """
     if config.project is None:
-        project_name = _infer_project_name(base_dir)
-        config.project = ProjectConfig(name=project_name, command_prefix=None)
+        inferred_project_name = _infer_project_name(base_dir)
+        config.project = ProjectConfig(name=inferred_project_name, command_prefix=None)
     elif config.project.name is None:
         config.project.name = _infer_project_name(base_dir)
 
@@ -73,42 +46,27 @@ def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig
 
 
 def parse_frontmatter(content: str) -> tuple[dict, str]:
-    """Parse YAML frontmatter from markdown content.
+    stripped_content = content.lstrip()
 
-    Extracts YAML frontmatter between --- delimiters and returns
-    both the parsed frontmatter and the remaining content.
-
-    Args:
-        content: Markdown content with optional frontmatter
-
-    Returns:
-        Tuple of (frontmatter_dict, content_body)
-        If no frontmatter, returns ({}, original_content)
-
-    Raises:
-        ConfigParseError: If frontmatter YAML is invalid
-    """
-    content = content.lstrip()
-
-    if not content.startswith("---"):
-        return {}, content
+    if not stripped_content.startswith("---"):
+        return {}, stripped_content
 
     try:
-        parts = content.split("---", 2)
-        if len(parts) < 3:
+        content_parts = stripped_content.split("---", 2)
+        if len(content_parts) < 3:
             raise ConfigParseError("Frontmatter closing delimiter '---' not found")
 
-        frontmatter_str = parts[1].strip()
-        body = parts[2].lstrip()
+        frontmatter_text = content_parts[1].strip()
+        content_body = content_parts[2].lstrip()
 
-        if not frontmatter_str:
-            return {}, body
+        if not frontmatter_text:
+            return {}, content_body
 
-        frontmatter = yaml.safe_load(frontmatter_str)
-        if frontmatter is None:
-            frontmatter = {}
+        parsed_frontmatter = yaml.safe_load(frontmatter_text)
+        if parsed_frontmatter is None:
+            parsed_frontmatter = {}
 
-        return frontmatter, body
+        return parsed_frontmatter, content_body
 
     except yaml.YAMLError as e:
         raise ConfigParseError(f"Invalid YAML in frontmatter: {e}")
@@ -117,114 +75,73 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
 
 
 def parse_config(config_path: str | Path) -> CharlieConfig:
-    """Parse and validate a charlie configuration file.
+    resolved_config_path = Path(config_path)
 
-    Automatically detects format:
-    - If .charlie/ directory exists: load from directory-based structure
-    - Otherwise: load from monolithic charlie.yaml file
-    - If no config exists: create minimal default config
-
-    Args:
-        config_path: Path to the YAML configuration file or base directory
-
-    Returns:
-        Validated CharlieConfig object
-
-    Raises:
-        ConfigParseError: If file cannot be read or validation fails
-    """
-    config_path = Path(config_path)
-
-    if config_path.is_file():
-        base_dir = config_path.parent
-    elif config_path.is_dir():
-        if config_path.name == ".charlie":
-            base_dir = config_path.parent
+    if resolved_config_path.is_file():
+        base_directory = resolved_config_path.parent
+    elif resolved_config_path.is_dir():
+        if resolved_config_path.name == ".charlie":
+            base_directory = resolved_config_path.parent
         else:
-            base_dir = config_path
-    elif config_path.suffix in [".yaml", ".yml"]:
-        base_dir = config_path.parent
+            base_directory = resolved_config_path
+    elif resolved_config_path.suffix in [".yaml", ".yml"]:
+        base_directory = resolved_config_path.parent
     else:
-        base_dir = config_path
+        base_directory = resolved_config_path
 
-    charlie_dir = base_dir / ".charlie"
-    if charlie_dir.exists() and charlie_dir.is_dir():
-        return load_directory_config(base_dir)
+    charlie_config_dir = base_directory / ".charlie"
+    if charlie_config_dir.exists() and charlie_config_dir.is_dir():
+        return load_directory_config(base_directory)
 
-    if config_path.is_dir():
-        return _create_default_config(base_dir)
+    if resolved_config_path.is_dir():
+        return _create_default_config(base_directory)
 
-    if not config_path.exists():
-        return _create_default_config(base_dir)
+    if not resolved_config_path.exists():
+        return _create_default_config(base_directory)
 
     try:
-        with open(config_path, encoding="utf-8") as f:
-            raw_config = yaml.safe_load(f)
+        with open(resolved_config_path, encoding="utf-8") as f:
+            raw_config_data = yaml.safe_load(f)
     except yaml.YAMLError as e:
         raise ConfigParseError(f"Invalid YAML syntax: {e}")
     except Exception as e:
         raise ConfigParseError(f"Error reading configuration file: {e}")
 
-    if not raw_config:
-        return _create_default_config(base_dir)
+    if not raw_config_data:
+        return _create_default_config(base_directory)
 
     try:
-        config = CharlieConfig(**raw_config)
-        config = _ensure_project_name(config, base_dir)
+        parsed_config = CharlieConfig(**raw_config_data)
+        parsed_config = _ensure_project_name(parsed_config, base_directory)
     except ValidationError as e:
-        error_messages = []
+        validation_errors = []
         for error in e.errors():
-            loc = " -> ".join(str(x) for x in error["loc"])
-            error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(error_messages))
+            error_location = " -> ".join(str(x) for x in error["loc"])
+            validation_errors.append(f"  {error_location}: {error['msg']}")
+        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(validation_errors))
 
-    return config
+    return parsed_config
 
 
 def find_config_file(start_dir: str | Path = ".") -> Path | None:
-    """Find charlie configuration file in order of preference.
+    resolved_start_dir = Path(start_dir).resolve()
 
-    Resolution order:
-    1. charlie.yaml in current directory
-    2. .charlie.yaml in current directory
-    3. .charlie/ directory (returns directory path)
+    main_config_file = resolved_start_dir / "charlie.yaml"
+    if main_config_file.exists():
+        return main_config_file
 
-    Args:
-        start_dir: Directory to search from (default: current directory)
+    hidden_config_file = resolved_start_dir / ".charlie.yaml"
+    if hidden_config_file.exists():
+        return hidden_config_file
 
-    Returns:
-        Path to configuration file or directory, or None if not found
-    """
-    start_dir = Path(start_dir).resolve()
-
-    charlie_yaml = start_dir / "charlie.yaml"
-    if charlie_yaml.exists():
-        return charlie_yaml
-
-    hidden_charlie = start_dir / ".charlie.yaml"
-    if hidden_charlie.exists():
-        return hidden_charlie
-
-    charlie_dir = start_dir / ".charlie"
-    if charlie_dir.exists() and charlie_dir.is_dir():
-        return charlie_dir
+    config_directory = resolved_start_dir / ".charlie"
+    if config_directory.exists() and config_directory.is_dir():
+        return config_directory
 
     return None
 
 
 def parse_single_file(file_path: Path, model_class: type[T]) -> T:
-    """Parse a single file (YAML or Markdown with frontmatter) into a Pydantic model.
-
-    Args:
-        file_path: Path to file (YAML or Markdown)
-        model_class: Pydantic model class to parse into
-
-    Returns:
-        Instance of model_class
-
-    Raises:
-        ConfigParseError: If parsing or validation fails
-    """
     try:
         with open(file_path, encoding="utf-8") as f:
             file_content = f.read()
@@ -236,16 +153,16 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
 
     if file_path.suffix == ".md":
         try:
-            frontmatter, body = parse_frontmatter(file_content)
+            parsed_frontmatter, content_body = parse_frontmatter(file_content)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error parsing frontmatter in {file_path}: {e}")
 
         if model_class.__name__ == "Command":
-            raw_data = {**frontmatter, "prompt": body.strip()}
+            raw_data = {**parsed_frontmatter, "prompt": content_body.strip()}
         elif model_class.__name__ == "RulesSection":
-            raw_data = {**frontmatter, "content": body.strip()}
+            raw_data = {**parsed_frontmatter, "content": content_body.strip()}
         else:
-            raw_data = frontmatter
+            raw_data = parsed_frontmatter
     else:
         try:
             raw_data = yaml.safe_load(file_content)
@@ -258,126 +175,96 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
     try:
         return model_class(**raw_data)
     except ValidationError as e:
-        error_messages = []
+        validation_errors = []
         for error in e.errors():
-            loc = " -> ".join(str(x) for x in error["loc"])
-            error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError(f"Validation failed for {file_path}:\n" + "\n".join(error_messages))
+            error_location = " -> ".join(str(x) for x in error["loc"])
+            validation_errors.append(f"  {error_location}: {error['msg']}")
+        raise ConfigParseError(f"Validation failed for {file_path}:\n" + "\n".join(validation_errors))
 
 
 def discover_config_files(base_dir: Path) -> dict[str, list[Path]]:
-    """Discover config files in .charlie/ directory structure.
+    charlie_config_directory = base_dir / ".charlie"
 
-    Args:
-        base_dir: Base directory to search from
-
-    Returns:
-        Dictionary mapping config type to list of paths:
-        {
-            "commands": [Path, ...],
-            "rules": [Path, ...],
-            "mcp_servers": [Path, ...]
-        }
-    """
-    charlie_dir = base_dir / ".charlie"
-
-    result: dict[str, list[Path]] = {
+    discovered_files: dict[str, list[Path]] = {
         "commands": [],
         "rules": [],
         "mcp_servers": [],
     }
 
-    if not charlie_dir.exists():
-        return result
+    if not charlie_config_directory.exists():
+        return discovered_files
 
-    commands_dir = charlie_dir / "commands"
-    if commands_dir.exists():
-        result["commands"] = sorted(commands_dir.glob("*.md"))
+    commands_directory = charlie_config_directory / "commands"
+    if commands_directory.exists():
+        discovered_files["commands"] = sorted(commands_directory.glob("*.md"))
 
-    rules_dir = charlie_dir / "rules"
-    if rules_dir.exists():
-        result["rules"] = sorted(rules_dir.glob("*.md"))
+    rules_directory = charlie_config_directory / "rules"
+    if rules_directory.exists():
+        discovered_files["rules"] = sorted(rules_directory.glob("*.md"))
 
-    mcp_dir = charlie_dir / "mcp-servers"
-    if mcp_dir.exists():
-        result["mcp_servers"] = sorted(mcp_dir.glob("*.yaml"))
+    mcp_servers_directory = charlie_config_directory / "mcp-servers"
+    if mcp_servers_directory.exists():
+        discovered_files["mcp_servers"] = sorted(mcp_servers_directory.glob("*.yaml"))
 
-    return result
+    return discovered_files
 
 
 def load_directory_config(base_dir: Path) -> CharlieConfig:
-    """Load configuration from directory-based structure.
-
-    Loads from:
-    - charlie.yaml (optional project config)
-    - .charlie/commands/*.yaml
-    - .charlie/rules/*.yaml
-    - .charlie/mcp-servers/*.yaml
-
-    Args:
-        base_dir: Base directory containing .charlie/
-
-    Returns:
-        Merged CharlieConfig
-
-    Raises:
-        ConfigParseError: If loading or merging fails
-    """
-    config_data: dict[str, Any] = {
+    merged_config_data: dict[str, Any] = {
         "version": "1.0",
         "commands": [],
         "mcp_servers": [],
     }
 
-    main_config_path = base_dir / "charlie.yaml"
-    if main_config_path.exists():
+    main_config_file_path = base_dir / "charlie.yaml"
+    if main_config_file_path.exists():
         try:
-            with open(main_config_path, encoding="utf-8") as f:
-                main_data = yaml.safe_load(f)
-                if main_data:
-                    if "project" in main_data:
-                        config_data["project"] = main_data["project"]
-                    if "version" in main_data:
-                        config_data["version"] = main_data["version"]
+            with open(main_config_file_path, encoding="utf-8") as f:
+                main_config_content = yaml.safe_load(f)
+                if main_config_content:
+                    if "project" in main_config_content:
+                        merged_config_data["project"] = main_config_content["project"]
+                    if "version" in main_config_content:
+                        merged_config_data["version"] = main_config_content["version"]
         except Exception as e:
-            raise ConfigParseError(f"Error reading {main_config_path}: {e}")
+            raise ConfigParseError(f"Error reading {main_config_file_path}: {e}")
 
-    discovered = discover_config_files(base_dir)
+    discovered_config_files = discover_config_files(base_dir)
 
-    for command_file in discovered["commands"]:
+    for command_file_path in discovered_config_files["commands"]:
         try:
-            command = parse_single_file(command_file, Command)
-            if not command.name:
-                command.name = command_file.stem
-            config_data["commands"].append(command.model_dump())
+            parsed_command = parse_single_file(command_file_path, Command)
+            if not parsed_command.name:
+                parsed_command.name = command_file_path.stem
+            merged_config_data["commands"].append(parsed_command.model_dump())
         except ConfigParseError as e:
-            raise ConfigParseError(f"Error loading command from {command_file}: {e}")
+            raise ConfigParseError(f"Error loading command from {command_file_path}: {e}")
 
-    rules_sections = []
-    for rules_file in discovered["rules"]:
+    parsed_rules_sections = []
+    for rules_file_path in discovered_config_files["rules"]:
         try:
-            section = parse_single_file(rules_file, RulesSection)
-            rules_sections.append(section)
+            rules_section = parse_single_file(rules_file_path, RulesSection)
+            parsed_rules_sections.append(rules_section)
         except ConfigParseError as e:
-            raise ConfigParseError(f"Error loading rule from {rules_file}: {e}")
+            raise ConfigParseError(f"Error loading rule from {rules_file_path}: {e}")
 
-    if rules_sections:
-        config_data["rules"] = {"sections": [s.model_dump() for s in rules_sections]}
+    if parsed_rules_sections:
+        merged_config_data["rules"] = {"sections": [s.model_dump() for s in parsed_rules_sections]}
 
-    for mcp_file in discovered["mcp_servers"]:
+    for mcp_server_file_path in discovered_config_files["mcp_servers"]:
         try:
-            server = parse_single_file(mcp_file, MCPServer)
-            config_data["mcp_servers"].append(server.model_dump())
+            mcp_server_config = parse_single_file(mcp_server_file_path, MCPServer)
+            merged_config_data["mcp_servers"].append(mcp_server_config.model_dump())
         except ConfigParseError as e:
-            raise ConfigParseError(f"Error loading MCP server from {mcp_file}: {e}")
+            raise ConfigParseError(f"Error loading MCP server from {mcp_server_file_path}: {e}")
 
     try:
-        config = CharlieConfig(**config_data)
-        config = _ensure_project_name(config, base_dir)
-        return config
+        final_config = CharlieConfig(**merged_config_data)
+        final_config = _ensure_project_name(final_config, base_dir)
+        return final_config
     except ValidationError as e:
-        error_messages = []
+        validation_errors = []
         for error in e.errors():
-            loc = " -> ".join(str(x) for x in error["loc"])
-            error_messages.append(f"  {loc}: {error['msg']}")
-        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(error_messages))
+            error_location = " -> ".join(str(x) for x in error["loc"])
+            validation_errors.append(f"  {error_location}: {error['msg']}")
+        raise ConfigParseError("Configuration validation failed:\n" + "\n".join(validation_errors))
