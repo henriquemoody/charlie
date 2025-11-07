@@ -1,5 +1,3 @@
-"""GitHub Copilot agent adapter."""
-
 import yaml
 
 from charlie.agents.base import BaseAgentAdapter
@@ -7,19 +5,7 @@ from charlie.schema import Command
 
 
 class CopilotAdapter(BaseAgentAdapter):
-    """Adapter for GitHub Copilot prompts (Markdown format)."""
-
     def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
-        """Generate GitHub Copilot prompt file in Markdown format.
-
-        Args:
-            command: Command definition
-            namespace: Command namespace/prefix (optional)
-            script_type: Script type (sh or ps)
-
-        Returns:
-            Markdown formatted prompt content
-        """
         prompt = self.transform_placeholders(command.prompt, command, script_type)
 
         command_dict = command.model_dump()

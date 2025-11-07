@@ -1,5 +1,3 @@
-"""Rules file generator for IDE-based agents."""
-
 import re
 from datetime import datetime
 from pathlib import Path
@@ -11,15 +9,6 @@ from charlie.schema import AgentSpec, CharlieConfig, Command, RulesSection
 
 
 def _format_command_reference(command: Command, command_prefix: str) -> str:
-    """Format a command as a reference entry.
-
-    Args:
-        command: Command definition
-        command_prefix: Command prefix
-
-    Returns:
-        Formatted command reference
-    """
     lines = [
         f"### /{command_prefix}.{command.name}",
         "",
@@ -44,14 +33,6 @@ def _format_command_reference(command: Command, command_prefix: str) -> str:
 
 
 def _extract_manual_additions(existing_content: str) -> str:
-    """Extract manual additions from existing rules file.
-
-    Args:
-        existing_content: Existing file content
-
-    Returns:
-        Content between manual addition markers, or empty string
-    """
     pattern = r"<!-- MANUAL ADDITIONS START -->(.*?)<!-- MANUAL ADDITIONS END -->"
     match = re.search(pattern, existing_content, re.DOTALL)
 
@@ -62,14 +43,6 @@ def _extract_manual_additions(existing_content: str) -> str:
 
 
 def _extract_frontmatter_fields(section: RulesSection) -> dict[str, Any]:
-    """Extract agent-specific frontmatter fields from a rules section.
-
-    Args:
-        section: Rules section with possible agent-specific fields
-
-    Returns:
-        Dictionary of frontmatter fields (excluding core Charlie fields)
-    """
     section_dict = section.model_dump()
 
     core_fields = {"title", "content", "order"}
@@ -79,14 +52,6 @@ def _extract_frontmatter_fields(section: RulesSection) -> dict[str, Any]:
 
 
 def _format_frontmatter(frontmatter: dict[str, Any]) -> str:
-    """Format frontmatter as YAML for markdown files.
-
-    Args:
-        frontmatter: Dictionary of frontmatter fields
-
-    Returns:
-        Formatted YAML frontmatter string
-    """
     if not frontmatter:
         return ""
 
@@ -95,16 +60,6 @@ def _format_frontmatter(frontmatter: dict[str, Any]) -> str:
 
 
 def _transform_path_placeholders(text: str, agent_spec: AgentSpec, root_dir: str = ".") -> str:
-    """Replace path placeholders in text with agent-specific paths.
-
-    Args:
-        text: Text with potential path placeholders
-        agent_spec: Agent specification from registry
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        Text with resolved path placeholders
-    """
     text = text.replace("{{root}}", root_dir)
 
     agent_dir = Path(agent_spec.command_dir).parent
@@ -126,18 +81,6 @@ def _generate_merged_rules(
     output_dir: str,
     root_dir: str = ".",
 ) -> str:
-    """Generate a single merged rules file with all sections.
-
-    Args:
-        config: Charlie configuration
-        agent_name: Name of the agent
-        agent_spec: Agent specification from registry
-        output_dir: Base output directory
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        Path to generated rules file
-    """
     rules_path = Path(output_dir) / agent_spec.rules_file
     rules_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -219,18 +162,6 @@ def _generate_separate_rules(
     output_dir: str,
     root_dir: str = ".",
 ) -> list[str]:
-    """Generate separate rules files (one per section).
-
-    Args:
-        config: Charlie configuration
-        agent_name: Name of the agent
-        agent_spec: Agent specification from registry
-        output_dir: Base output directory
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        List of paths to generated rules files
-    """
     generated_files: list[str] = []
 
     if not config.rules or not config.rules.sections:
@@ -280,19 +211,6 @@ def generate_rules_for_agents(
     mode: str = "merged",
     root_dir: str = ".",
 ) -> list[str]:
-    """Generate rules files for multiple agents.
-
-    Args:
-        config: Charlie configuration
-        agent_name: Agent name
-        agent_spec: Agent specifications
-        output_dir: Base output directory
-        mode: "merged" (single file) or "separate" (one file per section)
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        List of paths to generated rules files
-    """
     if mode == "separate" and config.rules and config.rules.sections:
         return _generate_separate_rules(config, agent_name, agent_spec, output_dir, root_dir)
     else:

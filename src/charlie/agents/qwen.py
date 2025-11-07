@@ -1,23 +1,9 @@
-"""Qwen Code agent adapter."""
-
 from charlie.agents.base import BaseAgentAdapter
 from charlie.schema import Command
 
 
 class QwenAdapter(BaseAgentAdapter):
-    """Adapter for Qwen Code commands (TOML format)."""
-
     def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
-        """Generate Qwen Code command file in TOML format.
-
-        Args:
-            command: Command definition
-            namespace: Command namespace/prefix (optional)
-            script_type: Script type (sh or ps)
-
-        Returns:
-            TOML formatted command content
-        """
         prompt = self.transform_placeholders(command.prompt, command, script_type)
 
         prompt_escaped = prompt.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')

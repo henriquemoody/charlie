@@ -6,7 +6,6 @@ from charlie.schema import AgentSpec, Command
 
 
 class BaseAgentAdapter(ABC):
-
     def __init__(self, agent_specification: AgentSpec, root_dir: str = "."):
         self.spec = agent_specification
         self.root_dir = root_dir

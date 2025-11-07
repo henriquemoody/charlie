@@ -1,5 +1,3 @@
-"""MCP server configuration generator."""
-
 import json
 from pathlib import Path
 from typing import Any
@@ -8,15 +6,6 @@ from charlie.schema import CharlieConfig, Command, MCPServer
 
 
 def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, Any]:
-    """Convert a command to MCP tool schema format.
-
-    Args:
-        command: Command definition
-        command_prefix: Command prefix/namespace
-
-    Returns:
-        MCP tool schema dictionary
-    """
     return {
         "name": f"{command_prefix}_{command.name}",
         "description": command.description,
@@ -29,16 +18,6 @@ def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, 
 
 
 def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str) -> dict[str, Any]:
-    """Convert server definition to MCP config format.
-
-    Args:
-        server: MCP server definition
-        commands: List of commands to include as tools
-        command_prefix: Command prefix for tool names
-
-    Returns:
-        MCP server configuration dictionary
-    """
     config: dict[str, Any] = {"command": server.command, "args": server.args}
 
     if server.env:
@@ -56,19 +35,6 @@ def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_pr
 
 
 def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str) -> str:
-    """Generate MCP server configuration JSON from YAML definition.
-
-    Args:
-        config: Charlie configuration
-        output_dir: Output directory for MCP config file
-        agent: Agent name (e.g., "cursor", "claude") for agent-specific paths
-
-    Returns:
-        Path to generated MCP config file
-
-    Raises:
-        ValueError: If no MCP servers are defined in config
-    """
     if not config.mcp_servers:
         raise ValueError("No MCP servers defined in configuration")
 

@@ -143,10 +143,7 @@ def list_agents() -> None:
     for agent_name in supported_agent_names:
         agent_specification = get_agent_spec(agent_name)
         agents_table.add_row(
-            agent_name,
-            agent_specification.name,
-            agent_specification.file_format,
-            agent_specification.command_dir
+            agent_name, agent_specification.name, agent_specification.file_format, agent_specification.command_dir
         )
 
     console.print(agents_table)

@@ -1,7 +1,5 @@
 from charlie.schema import AgentSpec
 
-"""Agent registry with built-in knowledge of all supported agents."""
-
 AGENT_SPECS: dict[str, dict[str, str]] = {
     "claude": {
         "name": "Claude Code",
@@ -119,17 +117,6 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
 
 
 def get_agent_spec(agent_name: str) -> AgentSpec:
-    """Get built-in specification for an agent.
-
-    Args:
-        agent_name: Name of the agent
-
-    Returns:
-        Agent specification dictionary
-
-    Raises:
-        ValueError: If agent is not supported
-    """
     if agent_name not in AGENT_SPECS:
         raise ValueError(f"Unknown agent: {agent_name}. Supported agents: {', '.join(list_supported_agents())}")
 
@@ -146,9 +133,4 @@ def get_agent_spec(agent_name: str) -> AgentSpec:
 
 
 def list_supported_agents() -> list[str]:
-    """List all supported agent names.
-
-    Returns:
-        List of agent names
-    """
     return sorted(AGENT_SPECS.keys())
