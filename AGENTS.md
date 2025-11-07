@@ -21,5 +21,5 @@ This document provides guidelines and instructions for using AI agents effective
     - `Reference: https://example.com`
     - `Assisted-by: Tool/Agent (<Model/Version>)`
 - AI attribution
-  - When an AI agent generates/assists with code or commits, add `Assisted-by: Tool/Agent (<Model/Version>)`, for example `Assisted-by: Claude (Claude Sonnet 4.5)`.
-
+  - When an AI agent generates/assists with code or commits, add `Assisted-by: Tool/Agent (<Model/Version>)`, for example `Assisted-by: Claude (Claude Sonnet 4.5)`, `Assisted-by: Cursor (GPT-5)`, `Assisted-by: Zed (GPT-4o)`
+  - If you're not sure which agent or model is being used, ask the user.
