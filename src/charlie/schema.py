@@ -12,6 +12,7 @@ class AgentSpec(BaseModel):
     command_extension: str
     rules_extension: str
     arg_placeholder: str
+    mcp_config_path: str
 
 
 class ProjectConfig(BaseModel):

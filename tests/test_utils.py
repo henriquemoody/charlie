@@ -16,6 +16,7 @@ def cursor_agent_spec() -> AgentSpec:
         command_extension=".md",
         rules_extension=".mdc",
         arg_placeholder="{{args}}",
+        mcp_config_path=".cursor/mcp.json",
     )
 
 
@@ -30,6 +31,7 @@ def claude_agent_spec() -> AgentSpec:
         command_extension=".md",
         rules_extension=".md",
         arg_placeholder="$ARGUMENTS",
+        mcp_config_path=".claude/mcp.json",
     )
 
 

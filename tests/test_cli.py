@@ -99,7 +99,7 @@ def test_setup_with_mcp_config_generation(tmp_path) -> None:
     assert result.exit_code == 0
     assert "mcp" in result.stdout
 
-    mcp_file = output_dir / "mcp-config.json"
+    mcp_file = output_dir / ".claude" / "mcp.json"
     assert mcp_file.exists()
 
 

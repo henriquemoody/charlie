@@ -78,8 +78,9 @@ def generate_mcp_config(
         server_config = _server_to_mcp_config(server, server_commands, command_prefix, transformer)
         mcp_config["mcpServers"][server.name] = server_config
 
-    if agent_name == "cursor":
-        output_path = Path(output_dir) / ".cursor" / "mcp.json"
+    # Use the mcp_config_path from agent_spec, or fallback to default
+    if agent_spec and agent_spec.mcp_config_path:
+        output_path = Path(output_dir) / agent_spec.mcp_config_path
     else:
         output_path = Path(output_dir) / "mcp-config.json"
 

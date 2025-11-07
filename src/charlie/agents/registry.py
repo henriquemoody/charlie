@@ -10,6 +10,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": ".claude/mcp.json",
     },
     "copilot": {
         "name": "GitHub Copilot",
@@ -20,6 +21,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".prompt.md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "cursor": {
         "name": "Cursor",
@@ -30,6 +32,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".mdc",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": ".cursor/mcp.json",
     },
     "gemini": {
         "name": "Gemini CLI",
@@ -40,6 +43,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".toml",
         "rules_extension": ".md",
         "arg_placeholder": "{{args}}",
+        "mcp_config_path": "mcp-config.json",
     },
     "qwen": {
         "name": "Qwen Code",
@@ -50,6 +54,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".toml",
         "rules_extension": ".md",
         "arg_placeholder": "{{args}}",
+        "mcp_config_path": "mcp-config.json",
     },
     "windsurf": {
         "name": "Windsurf",
@@ -60,6 +65,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "kilocode": {
         "name": "Kilo Code",
@@ -70,6 +76,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "opencode": {
         "name": "opencode",
@@ -80,6 +87,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "codex": {
         "name": "Codex CLI",
@@ -90,6 +98,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "auggie": {
         "name": "Auggie CLI",
@@ -100,6 +109,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "roo": {
         "name": "Roo Code",
@@ -110,6 +120,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "codebuddy": {
         "name": "CodeBuddy CLI",
@@ -120,6 +131,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "amp": {
         "name": "Amp",
@@ -130,6 +142,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
     "q": {
         "name": "Amazon Q Developer CLI",
@@ -140,6 +153,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "command_extension": ".md",
         "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
+        "mcp_config_path": "mcp-config.json",
     },
 }
 
@@ -159,6 +173,7 @@ def get_agent_spec(agent_name: str) -> AgentSpec:
         command_extension=agent_spec["command_extension"],
         rules_extension=agent_spec["rules_extension"],
         arg_placeholder=agent_spec["arg_placeholder"],
+        mcp_config_path=agent_spec["mcp_config_path"],
     )
 
 

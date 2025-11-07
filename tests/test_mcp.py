@@ -196,7 +196,8 @@ def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
         ],
     )
 
-    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
+    agent_spec = get_agent_spec("cursor")
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path), agent_spec)
 
     # Check file was created at .cursor/mcp.json
     assert Path(output_file).exists()
