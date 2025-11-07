@@ -94,7 +94,7 @@ def test_setup_with_mcp_config_generation(tmp_path) -> None:
     config_file = create_test_config(tmp_path)
     output_dir = tmp_path / "output"
 
-    result = runner.invoke(app, ["setup", "claude", "--config", str(config_file), "--mcp", "--output", str(output_dir)])
+    result = runner.invoke(app, ["setup", "claude", "--config", str(config_file), "--output", str(output_dir)])
 
     assert result.exit_code == 0
     assert "mcp" in result.stdout
@@ -114,7 +114,6 @@ def test_setup_with_rules_file_generation(tmp_path) -> None:
             "claude",
             "--config",
             str(config_file),
-            "--rules",
             "--output",
             str(output_dir),
         ],
@@ -131,7 +130,6 @@ def test_setup_with_rules_file_generation(tmp_path) -> None:
             "windsurf",
             "--config",
             str(config_file),
-            "--rules",
             "--output",
             str(output_dir),
         ],
@@ -152,8 +150,6 @@ def test_setup_with_all_options_mcp_and_rules_enabled(tmp_path) -> None:
             "claude",
             "--config",
             str(config_file),
-            "--mcp",
-            "--rules",
             "--output",
             str(output_dir),
         ],
@@ -163,6 +159,7 @@ def test_setup_with_all_options_mcp_and_rules_enabled(tmp_path) -> None:
     # Should generate multiple targets
     assert "commands" in result.stdout
     assert "mcp" in result.stdout
+    assert "rules" in result.stdout
 
 
 def test_setup_fails_without_agent_argument() -> None:
@@ -272,3 +269,76 @@ def test_setup_verbose_output_shows_full_paths(tmp_path) -> None:
     assert result.exit_code == 0
     # Verbose should show full paths
     assert str(output_dir) in result.stdout or "claude" in result.stdout
+
+
+def test_setup_with_no_mcp_flag(tmp_path) -> None:
+    config_file = create_test_config(tmp_path)
+    output_dir = tmp_path / "output"
+
+    result = runner.invoke(
+        app,
+        ["setup", "claude", "--config", str(config_file), "--no-mcp", "--output", str(output_dir)],
+    )
+
+    assert result.exit_code == 0
+    assert "commands:" in result.stdout
+    assert "rules:" in result.stdout
+    assert "mcp:" not in result.stdout
+
+    mcp_file = output_dir / "mcp-config.json"
+    assert not mcp_file.exists()
+
+
+def test_setup_with_no_rules_flag(tmp_path) -> None:
+    config_file = create_test_config(tmp_path)
+    output_dir = tmp_path / "output"
+
+    result = runner.invoke(
+        app,
+        ["setup", "claude", "--config", str(config_file), "--no-rules", "--output", str(output_dir)],
+    )
+
+    assert result.exit_code == 0
+    assert "commands:" in result.stdout
+    assert "mcp:" in result.stdout
+    assert "rules:" not in result.stdout
+
+
+def test_setup_with_no_commands_flag(tmp_path) -> None:
+    config_file = create_test_config(tmp_path)
+    output_dir = tmp_path / "output"
+
+    result = runner.invoke(
+        app,
+        ["setup", "claude", "--config", str(config_file), "--no-commands", "--output", str(output_dir)],
+    )
+
+    assert result.exit_code == 0
+    assert "commands:" not in result.stdout
+    assert "mcp:" in result.stdout
+    assert "rules:" in result.stdout
+
+
+def test_setup_with_all_no_flags(tmp_path) -> None:
+    config_file = create_test_config(tmp_path)
+    output_dir = tmp_path / "output"
+
+    result = runner.invoke(
+        app,
+        [
+            "setup",
+            "claude",
+            "--config",
+            str(config_file),
+            "--no-commands",
+            "--no-mcp",
+            "--no-rules",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "commands:" not in result.stdout
+    assert "mcp:" not in result.stdout
+    assert "rules:" not in result.stdout

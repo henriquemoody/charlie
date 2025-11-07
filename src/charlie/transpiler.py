@@ -38,6 +38,7 @@ class CommandTranspiler:
     def generate(
         self,
         agent_name: str,
+        commands: bool = True,
         mcp: bool = False,
         rules: bool = False,
         rules_mode: str = "merged",
@@ -48,9 +49,10 @@ class CommandTranspiler:
         agent_specification = get_agent_spec(agent_name)
         agent_adapter = self._get_adapter(agent_name, agent_specification)
 
-        command_prefix = self.config.project.command_prefix if self.config.project else None
-        generated_command_files = agent_adapter.generate_commands(self.config.commands, command_prefix, output_dir)
-        generation_results["commands"] = generated_command_files
+        if commands:
+            command_prefix = self.config.project.command_prefix if self.config.project else None
+            generated_command_files = agent_adapter.generate_commands(self.config.commands, command_prefix, output_dir)
+            generation_results["commands"] = generated_command_files
 
         if mcp:
             mcp_config_file = generate_mcp_config(self.config, agent_name, output_dir)

@@ -335,6 +335,65 @@ commands:
     assert command_file.exists()
 
 
+def test_transpiler_generate_with_commands_disabled(tmp_path) -> None:
+    config_file = create_test_config(
+        tmp_path,
+        """
+version: "1.0"
+project:
+  name: "test"
+  command_prefix: "test"
+mcp_servers:
+  - name: "test-server"
+    command: "node"
+    args: ["server.js"]
+commands:
+  - name: "test"
+    description: "Test"
+    prompt: "Test"
+    scripts:
+      sh: "test.sh"
+""",
+    )
+
+    transpiler = CommandTranspiler(str(config_file))
+    output_dir = tmp_path / "output"
+
+    results = transpiler.generate(agent_name="claude", commands=False, mcp=True, output_dir=str(output_dir))
+
+    assert "commands" not in results
+    assert "mcp" in results
+    assert len(results["mcp"]) == 1
+
+
+def test_transpiler_default_generates_only_commands(tmp_path) -> None:
+    config_file = create_test_config(
+        tmp_path,
+        """
+version: "1.0"
+project:
+  name: "test"
+  command_prefix: "test"
+commands:
+  - name: "test"
+    description: "Test"
+    prompt: "Test"
+    scripts:
+      sh: "test.sh"
+""",
+    )
+
+    transpiler = CommandTranspiler(str(config_file))
+    output_dir = tmp_path / "output"
+
+    # Without any flags, only commands are generated (mcp and rules are False by default)
+    results = transpiler.generate(agent_name="claude", output_dir=str(output_dir))
+
+    assert "commands" in results
+    assert "mcp" not in results
+    assert "rules" not in results
+
+
 def test_transpiler_with_dot_charlie_directory_regression_test(tmp_path) -> None:
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"

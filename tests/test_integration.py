@@ -77,12 +77,12 @@ commands:
     assert "/test.build" in rules_content
     assert "MANUAL ADDITIONS START" in rules_content
 
-    results = transpiler.generate(agent_name="gemini", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="gemini", mcp=True, rules=True, output_dir=str(output_dir))
     assert "commands" in results
     assert len(results["commands"]) == 2
 
     # Generate for Windsurf with rules
-    results = transpiler.generate(agent_name="windsurf", rules=True, output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="windsurf", rules=True, mcp=True, output_dir=str(output_dir))
     assert "commands" in results
     assert "rules" in results
 
@@ -153,8 +153,8 @@ def test_spec_kit_example_workflow_similar_to_real_usage(tmp_path) -> None:
     assert any("plan" in name for name in command_names)
     assert any("constitution" in name for name in command_names)
 
-    results = transpiler.generate(agent_name="copilot", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="copilot", mcp=True, rules=True, output_dir=str(output_dir))
     assert "commands" in results
 
-    results = transpiler.generate(agent_name="cursor", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="cursor", mcp=True, rules=True, output_dir=str(output_dir))
     assert "commands" in results

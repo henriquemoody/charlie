@@ -40,8 +40,9 @@ def setup(
         "-c",
         help="Path to configuration file (default: auto-detect charlie.yaml)",
     ),
-    generate_mcp: bool = typer.Option(False, "--mcp", help="Generate MCP server configuration"),
-    generate_rules: bool = typer.Option(False, "--rules", help="Generate rules files"),
+    no_commands: bool = typer.Option(False, "--no-commands", help="Skip command file generation"),
+    no_mcp: bool = typer.Option(False, "--no-mcp", help="Skip MCP server configuration"),
+    no_rules: bool = typer.Option(False, "--no-rules", help="Skip rules file generation"),
     rules_generation_mode: str = typer.Option(
         "merged",
         "--rules-mode",
@@ -61,8 +62,9 @@ def setup(
 
         generation_results = command_transpiler.generate(
             agent_name=agent_name,
-            mcp=generate_mcp,
-            rules=generate_rules,
+            commands=not no_commands,
+            mcp=not no_mcp,
+            rules=not no_rules,
             rules_mode=rules_generation_mode,
             output_dir=output_dir_path,
         )
