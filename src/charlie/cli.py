@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from charlie.agents.registry import get_agent_info, list_supported_agents
+from charlie.agents.registry import get_agent_spec, list_supported_agents
 from charlie.parser import ConfigParseError, find_config_file, parse_config
 from charlie.transpiler import CommandTranspiler
 
@@ -198,9 +198,8 @@ def list_agents() -> None:
     table.add_column("Command Directory")
 
     for agent_name in agents:
-        info = get_agent_info(agent_name)
-        if info:
-            table.add_row(agent_name, info["name"], info["file_format"], info["command_dir"])
+        info = get_agent_spec(agent_name)
+        table.add_row(agent_name, info["name"], info["file_format"], info["command_dir"])
 
     console.print(table)
     console.print(f"\n[dim]Total: {len(agents)} agents[/dim]\n")
@@ -217,9 +216,9 @@ def info(
         charlie info claude
         charlie info gemini
     """
-    agent_info = get_agent_info(agent)
-
-    if not agent_info:
+    try:
+        agent_info = get_agent_spec(agent)
+    except ValueError:
         console.print(f"[red]Error:[/red] Unknown agent '{agent}'")
         console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
         raise typer.Exit(1)

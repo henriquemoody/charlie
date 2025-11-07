@@ -143,15 +143,3 @@ def list_supported_agents() -> list[str]:
         List of agent names
     """
     return sorted(AGENT_SPECS.keys())
-
-
-def get_agent_info(agent_name: str) -> dict[str, str] | None:
-    """Get detailed information about an agent.
-
-    Args:
-        agent_name: Name of the agent
-
-    Returns:
-        Agent information dictionary or None if not found
-    """
-    return AGENT_SPECS.get(agent_name)

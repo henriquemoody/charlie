@@ -4,7 +4,6 @@ import pytest
 
 from charlie.agents.registry import (
     AGENT_SPECS,
-    get_agent_info,
     get_agent_spec,
     list_supported_agents,
 )
@@ -34,20 +33,6 @@ def test_list_supported_agents() -> None:
     assert len(agents) == len(AGENT_SPECS)
     # Should be sorted
     assert agents == sorted(agents)
-
-
-def test_get_agent_info_valid() -> None:
-    """Test getting agent info for valid agent."""
-    info = get_agent_info("cursor")
-    assert info is not None
-    assert info["name"] == "Cursor"
-
-
-def test_get_agent_info_invalid() -> None:
-    """Test getting agent info for invalid agent returns None."""
-    info = get_agent_info("nonexistent")
-    assert info is None
-
 
 def test_all_agents_have_required_fields() -> None:
     """Test that all agents have required fields."""
