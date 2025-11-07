@@ -240,3 +240,49 @@ def test_generate_mcp_config_default_location(tmp_path) -> None:
     output_file2 = generate_mcp_config(config, "claude", str(tmp_path / "claude-test"))
     assert Path(output_file2).exists()
     assert output_file2 == str(tmp_path / "claude-test" / "mcp-config.json")
+
+
+def test_generate_mcp_config_without_command_prefix(tmp_path) -> None:
+    """Test that MCP config can be generated without command_prefix when there are no commands."""
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test"),  # No command_prefix
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        commands=[],  # No commands
+    )
+
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
+
+    # Check file was created
+    assert Path(output_file).exists()
+
+    # Check file content
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    assert "mcpServers" in mcp_config
+    assert "server" in mcp_config["mcpServers"]
+    assert mcp_config["mcpServers"]["server"]["command"] == "node"
+    assert mcp_config["mcpServers"]["server"]["args"] == ["server.js"]
+
+
+def test_generate_mcp_config_without_command_prefix_no_project(tmp_path) -> None:
+    """Test that MCP config can be generated without project config when there are no commands."""
+    config = CharlieConfig(
+        version="1.0",
+        project=None,  # No project config at all
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        commands=[],  # No commands
+    )
+
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
+
+    # Check file was created
+    assert Path(output_file).exists()
+
+    # Check file content
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    assert "mcpServers" in mcp_config
+    assert "server" in mcp_config["mcpServers"]

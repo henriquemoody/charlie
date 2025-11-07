@@ -5,9 +5,10 @@ from typing import Any
 from charlie.schema import CharlieConfig, Command, MCPServer
 
 
-def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, Any]:
+def _command_to_tool_schema(command: Command, command_prefix: str | None) -> dict[str, Any]:
+    name = f"{command_prefix}_{command.name}" if command_prefix else command.name
     return {
-        "name": f"{command_prefix}_{command.name}",
+        "name": name,
         "description": command.description,
         "inputSchema": {
             "type": "object",
@@ -17,7 +18,7 @@ def _command_to_tool_schema(command: Command, command_prefix: str) -> dict[str, 
     }
 
 
-def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str) -> dict[str, Any]:
+def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str | None) -> dict[str, Any]:
     config: dict[str, Any] = {"command": server.command, "args": server.args}
 
     if server.env:
@@ -38,13 +39,12 @@ def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str)
     if not config.mcp_servers:
         raise ValueError("No MCP servers defined in configuration")
 
-    if not config.project or not config.project.command_prefix:
-        raise ValueError("Project command_prefix is required for MCP config generation")
-
+    # Only require command_prefix if there are commands to expose
+    command_prefix = config.project.command_prefix if config.project else None
     mcp_config: dict[str, Any] = {"mcpServers": {}}
 
     for server in config.mcp_servers:
-        server_config = _server_to_mcp_config(server, config.commands, config.project.command_prefix)
+        server_config = _server_to_mcp_config(server, config.commands, command_prefix)
         mcp_config["mcpServers"][server.name] = server_config
 
     if agent_name == "cursor":
