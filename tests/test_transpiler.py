@@ -1,5 +1,3 @@
-"""Tests for core transpiler engine."""
-
 import json
 from pathlib import Path
 
@@ -10,14 +8,12 @@ from charlie.transpiler import CommandTranspiler
 
 
 def create_test_config(tmp_path, config_content: str) -> Path:
-    """Helper to create a test configuration file."""
     config_file = tmp_path / "test-config.yaml"
     config_file.write_text(config_content)
     return config_file
 
 
-def test_transpiler_initialization(tmp_path) -> None:
-    """Test transpiler initializes with valid config."""
+def test_transpiler_initialization_with_valid_config(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -39,16 +35,14 @@ commands:
     assert len(transpiler.config.commands) == 1
 
 
-def test_transpiler_invalid_config(tmp_path) -> None:
-    """Test transpiler raises error on invalid config."""
+def test_transpiler_invalid_config_raises_error(tmp_path) -> None:
     config_file = create_test_config(tmp_path, "invalid: yaml: syntax:")
 
     with pytest.raises(ConfigParseError):
         CommandTranspiler(str(config_file))
 
 
-def test_transpiler_generate_single_agent(tmp_path) -> None:
-    """Test generating for a single agent."""
+def test_transpiler_generate_single_agent_creates_command_file(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -78,8 +72,7 @@ commands:
     assert "test.init.md" in str(command_file)
 
 
-def test_transpiler_generate_different_agents(tmp_path) -> None:
-    """Test generating for different agents separately."""
+def test_transpiler_generate_different_agents_separately(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -109,8 +102,7 @@ commands:
     assert "commands" in results
 
 
-def test_transpiler_generate_mcp(tmp_path) -> None:
-    """Test generating MCP configuration."""
+def test_transpiler_generate_mcp_configuration(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -149,8 +141,7 @@ commands:
     assert "test-server" in mcp_config["mcpServers"]
 
 
-def test_transpiler_generate_rules(tmp_path) -> None:
-    """Test generating rules files."""
+def test_transpiler_generate_rules_files_for_multiple_agents(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -188,8 +179,7 @@ commands:
     assert windsurf_rules.exists()
 
 
-def test_transpiler_generate_all(tmp_path) -> None:
-    """Test generating commands, MCP, and rules all at once."""
+def test_transpiler_generate_commands_mcp_and_rules_all_at_once(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -233,8 +223,7 @@ commands:
     assert len(results["commands"]) == 2
 
 
-def test_transpiler_generate_mcp_only(tmp_path) -> None:
-    """Test generate_mcp method."""
+def test_transpiler_generate_mcp_only_method(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -263,8 +252,7 @@ commands:
     assert Path(mcp_file).exists()
 
 
-def test_transpiler_generate_rules_only(tmp_path) -> None:
-    """Test generate_rules method."""
+def test_transpiler_generate_rules_only_method(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -297,8 +285,7 @@ commands:
     assert Path(rules_files[0]).exists()
 
 
-def test_transpiler_unknown_agent(tmp_path) -> None:
-    """Test that unknown agent raises ValueError."""
+def test_transpiler_unknown_agent_raises_value_error(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -321,8 +308,7 @@ commands:
         transpiler.generate(agent_name="nonexistent", output_dir="/tmp")
 
 
-def test_transpiler_creates_nested_directories(tmp_path) -> None:
-    """Test that transpiler creates nested output directories."""
+def test_transpiler_creates_nested_output_directories(tmp_path) -> None:
     config_file = create_test_config(
         tmp_path,
         """
@@ -349,10 +335,7 @@ commands:
     assert command_file.exists()
 
 
-def test_transpiler_with_dot_charlie_directory(tmp_path) -> None:
-    """Regression test: Ensure commands are generated when .charlie directory
-    is passed as config path (as done by CLI auto-detection).
-    """
+def test_transpiler_with_dot_charlie_directory_regression_test(tmp_path) -> None:
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)

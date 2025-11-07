@@ -1,5 +1,3 @@
-"""Tests for MCP server configuration generator."""
-
 import json
 from pathlib import Path
 
@@ -9,8 +7,7 @@ from charlie.mcp import _command_to_tool_schema, _server_to_mcp_config, generate
 from charlie.schema import CharlieConfig, Command, CommandScripts, MCPServer, ProjectConfig
 
 
-def test_command_to_tool_schema() -> None:
-    """Test converting command to MCP tool schema."""
+def test_command_to_tool_schema_converts_command_to_mcp_tool_format() -> None:
     command = Command(
         name="init",
         description="Initialize feature",
@@ -27,8 +24,7 @@ def test_command_to_tool_schema() -> None:
     assert "input" in schema["inputSchema"]["properties"]
 
 
-def test_server_to_mcp_config_basic() -> None:
-    """Test converting server to MCP config."""
+def test_server_to_mcp_config_basic_conversion_with_command_and_args() -> None:
     server = MCPServer(name="test-server", command="node", args=["server.js"])
 
     commands = [

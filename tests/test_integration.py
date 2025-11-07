@@ -1,11 +1,8 @@
-"""Integration tests for end-to-end workflows."""
-
 import json
 from pathlib import Path
 
 
-def test_complete_workflow(tmp_path) -> None:
-    """Test complete workflow: YAML -> generate all outputs."""
+def test_complete_workflow_yaml_to_all_outputs(tmp_path) -> None:
     from charlie import CommandTranspiler
 
     config_file = tmp_path / "charlie.yaml"
@@ -94,8 +91,7 @@ commands:
     assert (output_dir / "mcp-config.json").exists()
 
 
-def test_library_api_usage(tmp_path) -> None:
-    """Test using Charlie as a library."""
+def test_library_api_usage_as_library(tmp_path) -> None:
     from charlie import CommandTranspiler
 
     config_file = tmp_path / "config.yaml"
@@ -128,8 +124,7 @@ commands:
     assert "$ARGUMENTS" in content
 
 
-def test_spec_kit_example_workflow(tmp_path) -> None:
-    """Test workflow similar to spec-kit usage."""
+def test_spec_kit_example_workflow_similar_to_real_usage(tmp_path) -> None:
     import shutil
 
     from charlie import CommandTranspiler
