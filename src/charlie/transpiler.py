@@ -1,7 +1,6 @@
 """Core transpiler engine for command generation."""
 
 from pathlib import Path
-from typing import Any
 
 from charlie.agents import get_agent_spec
 from charlie.agents.base import BaseAgentAdapter
@@ -10,6 +9,7 @@ from charlie.agents.copilot import CopilotAdapter
 from charlie.agents.cursor import CursorAdapter
 from charlie.agents.gemini import GeminiAdapter
 from charlie.agents.qwen import QwenAdapter
+from charlie.agents.registry import AgentSpec
 from charlie.mcp import generate_mcp_config
 from charlie.parser import parse_config
 from charlie.rules import generate_rules_for_agents
@@ -83,8 +83,8 @@ class CommandTranspiler:
         # Generate agent commands
         if agent:
             # Get agent spec and adapter
-            spec = get_agent_spec(agent)
-            adapter = self._get_adapter(agent, spec)
+            agent_spec = get_agent_spec(agent)
+            adapter = self._get_adapter(agent, agent_spec)
 
             # Generate command files
             command_prefix = self.config.project.command_prefix if self.config.project else None
@@ -145,7 +145,7 @@ class CommandTranspiler:
         )
         return rules_files[agent]
 
-    def _get_adapter(self, agent_name: str, agent_spec: dict[str, Any]) -> BaseAgentAdapter:
+    def _get_adapter(self, agent_name: str, agent_spec: AgentSpec) -> BaseAgentAdapter:
         """Get adapter instance for an agent.
 
         Args:
@@ -160,7 +160,7 @@ class CommandTranspiler:
         """
         if agent_name not in ADAPTER_CLASSES:
             # For agents without specific adapters yet, use a generic one based on format
-            if agent_spec["file_format"] == "markdown":
+            if agent_spec.file_format == "markdown":
                 return ClaudeAdapter(agent_spec, self.root_dir)  # Reuse Claude adapter for markdown
             else:
                 raise ValueError(f"No adapter registered for agent: {agent_name}")

@@ -198,8 +198,8 @@ def list_agents() -> None:
     table.add_column("Command Directory")
 
     for agent_name in agents:
-        info = get_agent_spec(agent_name)
-        table.add_row(agent_name, info["name"], info["file_format"], info["command_dir"])
+        agent_spec = get_agent_spec(agent_name)
+        table.add_row(agent_name, agent_spec.name, agent_spec.file_format, agent_spec.command_dir)
 
     console.print(table)
     console.print(f"\n[dim]Total: {len(agents)} agents[/dim]\n")
@@ -217,7 +217,7 @@ def info(
         charlie info gemini
     """
     try:
-        agent_info = get_agent_spec(agent)
+        agent_spec = get_agent_spec(agent)
     except ValueError:
         console.print(f"[red]Error:[/red] Unknown agent '{agent}'")
         console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
@@ -225,13 +225,13 @@ def info(
 
     # Create info panel
     info_lines = [
-        f"[bold]Agent:[/bold] {agent_info['name']}",
+        f"[bold]Agent:[/bold] {agent_spec.name}",
         "",
-        f"[cyan]Format:[/cyan] {agent_info['file_format']}",
-        f"[cyan]Command directory:[/cyan] {agent_info['command_dir']}",
-        f"[cyan]File extension:[/cyan] {agent_info['file_extension']}",
-        f"[cyan]Argument placeholder:[/cyan] {agent_info['arg_placeholder']}",
-        f"[cyan]Rules file:[/cyan] {agent_info['rules_file']}",
+        f"[cyan]Format:[/cyan] {agent_spec.file_format}",
+        f"[cyan]Command directory:[/cyan] {agent_spec.command_dir}",
+        f"[cyan]File extension:[/cyan] {agent_spec.file_extension}",
+        f"[cyan]Argument placeholder:[/cyan] {agent_spec.arg_placeholder}",
+        f"[cyan]Rules file:[/cyan] {agent_spec.rules_file}",
     ]
 
     panel = Panel("\n".join(info_lines), title=f"[bold]{agent}[/bold]", border_style="cyan")

@@ -2,15 +2,14 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
 
-from charlie.schema import Command
+from charlie.schema import AgentSpec, Command
 
 
 class BaseAgentAdapter(ABC):
     """Base class for all agent adapters."""
 
-    def __init__(self, agent_spec: dict[str, Any], root_dir: str = "."):
+    def __init__(self, agent_spec: AgentSpec, root_dir: str = "."):
         """Initialize adapter with agent specification.
 
         Args:
@@ -48,7 +47,7 @@ class BaseAgentAdapter(ABC):
             List of generated file paths
         """
         generated_files = []
-        command_dir = Path(output_dir) / self.spec["command_dir"]
+        command_dir = Path(output_dir) / self.spec.command_dir
         command_dir.mkdir(parents=True, exist_ok=True)
 
         # Determine script type to use (prefer sh, fallback to ps)
@@ -63,10 +62,12 @@ class BaseAgentAdapter(ABC):
 
             # Build filename with or without namespace
             if namespace:
-                filename = f"{namespace}.{command.name}{self.spec['file_extension']}"
+                filename = f"{namespace}.{command.name}{self.spec.file_extension}"
             else:
-                filename = f"{command.name}{self.spec['file_extension']}"
+                filename = f"{command.name}{self.spec.file_extension}"
             filepath = command_dir / filename
+
+            print(filepath)
 
             content = self.generate_command(command, namespace, script_type)
             filepath.write_text(content, encoding="utf-8")
@@ -86,7 +87,7 @@ class BaseAgentAdapter(ABC):
             Text with agent-specific placeholders
         """
         # Replace user input placeholder
-        text = text.replace("{{user_input}}", self.spec["arg_placeholder"])
+        text = text.replace("{{user_input}}", self.spec.arg_placeholder)
 
         # Replace script placeholder with actual script
         script_path = self._get_script_path(command, script_type)
@@ -111,28 +112,16 @@ class BaseAgentAdapter(ABC):
         Returns:
             Text with resolved paths
         """
-        # Replace root directory placeholder
-        text = text.replace("{{root}}", self.root_dir)
+        placeholders = {
+            "{{root}}": self.root_dir,
+            "{{agent_dir}}": Path(self.spec.command_dir).parent.as_posix(),
+            "{{commands_dir}}": self.spec.command_dir,
+            "{{rules_dir}}": Path(self.spec.rules_file).parent.as_posix()
+        }
 
-        # Get the base agent directory (e.g., ".claude", ".cursor")
-        agent_dir = Path(self.spec.get("command_dir", "")).parent
-
-        # Replace agent directory placeholder
-        # Use as_posix() for consistent forward slashes across platforms
-        text = text.replace("{{agent_dir}}", agent_dir.as_posix())
-
-        # Replace commands directory placeholder
-        commands_dir = self.spec.get("command_dir", "")
-        text = text.replace("{{commands_dir}}", commands_dir)
-
-        # Replace rules directory placeholder (if rules_file is defined)
-        if "rules_file" in self.spec:
-            rules_dir = Path(self.spec["rules_file"]).parent.as_posix()
-            text = text.replace("{{rules_dir}}", rules_dir)
-        else:
-            # Fallback: use common pattern
-            # Use as_posix() for consistent forward slashes across platforms
-            text = text.replace("{{rules_dir}}", (agent_dir / "rules").as_posix())
+        # Replace path placeholders
+        for placeholder, value in placeholders.items():
+            text = text.replace(placeholder, value)
 
         return text
 

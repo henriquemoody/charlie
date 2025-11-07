@@ -1,3 +1,5 @@
+from charlie.schema import AgentSpec
+
 """Agent registry with built-in knowledge of all supported agents."""
 
 # Built-in agent specifications
@@ -21,7 +23,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
     "cursor": {
         "name": "Cursor",
         "command_dir": ".cursor/commands",
-        "rules_file": ".cursor/rules/charlie-rules.mdc",
+        "rules_file": "CURSOR.md",
         "file_format": "markdown",
         "file_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
@@ -117,7 +119,7 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
 }
 
 
-def get_agent_spec(agent_name: str) -> dict[str, str]:
+def get_agent_spec(agent_name: str) -> AgentSpec:
     """Get built-in specification for an agent.
 
     Args:
@@ -133,7 +135,17 @@ def get_agent_spec(agent_name: str) -> dict[str, str]:
         raise ValueError(
             f"Unknown agent: {agent_name}. Supported agents: {', '.join(list_supported_agents())}"
         )
-    return AGENT_SPECS[agent_name]
+
+    agent_spec = AGENT_SPECS[agent_name]
+
+    return AgentSpec(
+        name=agent_spec['name'],
+        command_dir=agent_spec['command_dir'],
+        rules_file=agent_spec['rules_file'],
+        file_format=agent_spec['file_format'],
+        file_extension=agent_spec['file_extension'],
+        arg_placeholder=agent_spec['arg_placeholder'],
+    )
 
 
 def list_supported_agents() -> list[str]:

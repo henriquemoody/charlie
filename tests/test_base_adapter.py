@@ -8,50 +8,47 @@ from charlie.schema import Command, CommandScripts
 
 
 class SampleAdapter(BaseAgentAdapter):
-    """Sample implementation of BaseAgentAdapter for testing."""
-
     def generate_command(self, command: Command, namespace: str, script_type: str) -> str:
-        """Simple test implementation."""
         return f"Command: {namespace}.{command.name}"
 
+def create_command(
+    name="name",
+    description="description",
+    prompt="prompt",
+    scripts=None
+) -> Command:
+    return Command(name=name, description=description, prompt=prompt, scripts=scripts)
 
 def test_adapter_initialization() -> None:
-    """Test adapter initialization with agent spec."""
     spec = get_agent_spec("claude")
+
     adapter = SampleAdapter(spec, root_dir="/test/root")
+
     assert adapter.spec == spec
     assert adapter.root_dir == "/test/root"
 
 
 def test_transform_placeholders_user_input() -> None:
-    """Test placeholder transformation for user input."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
-
-    command = Command(
-        name="test",
-        description="Test",
-        prompt="Input: {{user_input}}",
-        scripts=CommandScripts(sh="test.sh"),
-    )
+    command = create_command(prompt="Input: {{user_input}}")
 
     result = adapter.transform_placeholders(command.prompt, command, "sh")
+
     assert result == "Input: $ARGUMENTS"
 
 
 def test_transform_placeholders_script() -> None:
-    """Test placeholder transformation for script."""
     spec = get_agent_spec("claude")
     adapter = SampleAdapter(spec)
 
-    command = Command(
-        name="test",
-        description="Test",
+    command = create_command(
         prompt="Run: {{script}}",
         scripts=CommandScripts(sh="test.sh"),
     )
 
     result = adapter.transform_placeholders(command.prompt, command, "sh")
+
     assert result == "Run: test.sh"
 
 
@@ -194,14 +191,15 @@ def test_transform_path_placeholders() -> None:
     spec = get_agent_spec("cursor")
     adapter = SampleAdapter(spec, root_dir="/project/root")
 
-    text = "Root: {{root}}, Commands: {{commands_dir}}, Rules: {{rules_dir}}, Agent: {{agent_dir}}"
-    result = adapter.transform_path_placeholders(text)
+    placeholders = {
+        "{{root}}": "/project/root",
+        "{{commands_dir}}": ".cursor/commands",
+        "{{rules_dir}}": ".",
+        "{{agent_dir}}": ".cursor"
+    }
 
-    # Paths should use forward slashes consistently across platforms
-    assert "/project/root" in result
-    assert ".cursor/commands" in result
-    assert ".cursor/rules" in result
-    assert ".cursor" in result
+    for placeholder, value in placeholders.items():
+        assert value == adapter.transform_path_placeholders(placeholder), f"Failed: {placeholder}"
 
 
 def test_transform_path_placeholders_cursor() -> None:
@@ -233,21 +231,3 @@ def test_transform_path_placeholders_in_transform_placeholders() -> None:
     assert ".claude/commands" in result
     # User input placeholder should also be resolved
     assert "$ARGUMENTS" in result
-
-
-def test_transform_path_placeholders_agent_without_rules() -> None:
-    """Test path placeholders for agent without rules_file."""
-    spec = {
-        "command_dir": ".custom/commands",
-        "arg_placeholder": "$ARGS",
-        "file_format": "markdown",
-        "file_extension": ".md",
-    }
-    adapter = SampleAdapter(spec)
-
-    text = "Rules: {{rules_dir}}"
-    result = adapter.transform_path_placeholders(text)
-
-    # Paths should use forward slashes consistently across platforms
-    # Should fallback to agent_dir/rules
-    assert ".custom/rules" in result

@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from charlie.schema import CharlieConfig, Command, RulesSection
+from charlie.schema import AgentSpec, CharlieConfig, Command, RulesSection
 
 
 def _format_command_reference(command: Command, command_prefix: str) -> str:
@@ -96,7 +96,7 @@ def _format_frontmatter(frontmatter: dict[str, Any]) -> str:
     return f"---\n{yaml_str}---\n\n"
 
 
-def _transform_path_placeholders(text: str, agent_spec: dict[str, Any], root_dir: str = ".") -> str:
+def _transform_path_placeholders(text: str, agent_spec: AgentSpec, root_dir: str = ".") -> str:
     """Replace path placeholders in text with agent-specific paths.
 
     Args:
@@ -111,22 +111,18 @@ def _transform_path_placeholders(text: str, agent_spec: dict[str, Any], root_dir
     text = text.replace("{{root}}", root_dir)
 
     # Get the base agent directory (e.g., ".claude", ".cursor")
-    agent_dir = Path(agent_spec.get("command_dir", "")).parent
+    agent_dir = Path(agent_spec.command_dir).parent
 
     # Replace agent directory placeholder
     text = text.replace("{{agent_dir}}", str(agent_dir))
 
     # Replace commands directory placeholder
-    commands_dir = agent_spec.get("command_dir", "")
+    commands_dir = agent_spec.command_dir
     text = text.replace("{{commands_dir}}", commands_dir)
 
     # Replace rules directory placeholder (if rules_file is defined)
-    if "rules_file" in agent_spec:
-        rules_dir = str(Path(agent_spec["rules_file"]).parent)
-        text = text.replace("{{rules_dir}}", rules_dir)
-    else:
-        # Fallback: use common pattern
-        text = text.replace("{{rules_dir}}", str(agent_dir / "rules"))
+    rules_dir = str(Path(agent_spec.rules_file).parent)
+    text = text.replace("{{rules_dir}}", rules_dir)
 
     return text
 
@@ -134,7 +130,7 @@ def _transform_path_placeholders(text: str, agent_spec: dict[str, Any], root_dir
 def generate_rules_file(
     config: CharlieConfig,
     agent_name: str,
-    agent_spec: dict[str, Any],
+    agent_spec: AgentSpec,
     output_dir: str,
     mode: str = "merged",
     root_dir: str = ".",
@@ -161,7 +157,7 @@ def generate_rules_file(
 def _generate_merged_rules(
     config: CharlieConfig,
     agent_name: str,
-    agent_spec: dict[str, Any],
+    agent_spec: AgentSpec,
     output_dir: str,
     root_dir: str = ".",
 ) -> str:
@@ -177,7 +173,7 @@ def _generate_merged_rules(
     Returns:
         Path to generated rules file
     """
-    rules_path = Path(output_dir) / agent_spec["rules_file"]
+    rules_path = Path(output_dir) / agent_spec.rules_file
     rules_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Check if file exists to preserve manual additions
@@ -269,7 +265,7 @@ def _generate_merged_rules(
 def _generate_separate_rules(
     config: CharlieConfig,
     agent_name: str,
-    agent_spec: dict[str, Any],
+    agent_spec: AgentSpec,
     output_dir: str,
     root_dir: str = ".",
 ) -> list[str]:
@@ -291,7 +287,7 @@ def _generate_separate_rules(
         return generated_files
 
     # Get base rules directory
-    rules_file_path = Path(agent_spec["rules_file"])
+    rules_file_path = Path(agent_spec.rules_file)
     rules_dir = Path(output_dir) / rules_file_path.parent
     rules_dir.mkdir(parents=True, exist_ok=True)
 
@@ -339,7 +335,7 @@ def _generate_separate_rules(
 def generate_rules_for_agents(
     config: CharlieConfig,
     agents: list[str],
-    agent_specs: dict[str, Any],
+    agent_specs: dict[str, AgentSpec],
     output_dir: str,
     mode: str = "merged",
     root_dir: str = ".",
@@ -362,10 +358,9 @@ def generate_rules_for_agents(
     for agent_name in agents:
         if agent_name in agent_specs:
             agent_spec = agent_specs[agent_name]
-            if "rules_file" in agent_spec:
-                rules_paths = generate_rules_file(
-                    config, agent_name, agent_spec, output_dir, mode=mode, root_dir=root_dir
-                )
-                results[agent_name] = rules_paths
+            rules_paths = generate_rules_file(
+                config, agent_name, agent_spec, output_dir, mode=mode, root_dir=root_dir
+            )
+            results[agent_name] = rules_paths
 
     return results

@@ -5,6 +5,15 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
+class AgentSpec(BaseModel):
+    """Agent specification."""
+    name: str
+    command_dir: str
+    rules_file: str
+    file_format: str
+    file_extension: str
+    arg_placeholder: str
+
 class ProjectConfig(BaseModel):
     """Project metadata configuration."""
 
@@ -62,7 +71,6 @@ class CommandScripts(BaseModel):
     def validate_at_least_one(cls, v: str | None, info: ValidationInfo) -> str | None:
         """Ensure at least one script is defined."""
         return v
-
 
 class Command(BaseModel):
     """Command definition with pass-through for agent-specific fields."""

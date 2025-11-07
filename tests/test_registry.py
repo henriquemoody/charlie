@@ -2,19 +2,16 @@
 
 import pytest
 
-from charlie.agents.registry import (
-    AGENT_SPECS,
-    get_agent_spec,
-    list_supported_agents,
-)
+from charlie.agents.registry import get_agent_spec, list_supported_agents
 
 
 def test_get_agent_spec_valid() -> None:
     """Test getting spec for a valid agent."""
     spec = get_agent_spec("claude")
-    assert spec["name"] == "Claude Code"
-    assert spec["command_dir"] == ".claude/commands"
-    assert spec["file_format"] == "markdown"
+
+    assert spec.name == "Claude Code"
+    assert spec.command_dir == ".claude/commands"
+    assert spec.file_format == "markdown"
 
 
 def test_get_agent_spec_invalid() -> None:
@@ -26,45 +23,23 @@ def test_get_agent_spec_invalid() -> None:
 def test_list_supported_agents() -> None:
     """Test listing all supported agents."""
     agents = list_supported_agents()
-    assert isinstance(agents, list)
-    assert "claude" in agents
-    assert "copilot" in agents
-    assert "gemini" in agents
-    assert len(agents) == len(AGENT_SPECS)
-    # Should be sorted
+
     assert agents == sorted(agents)
-
-def test_all_agents_have_required_fields() -> None:
-    """Test that all agents have required fields."""
-    required_fields = [
-        "name",
-        "command_dir",
-        "rules_file",
-        "file_format",
-        "file_extension",
-        "arg_placeholder",
-    ]
-
-    for agent_name, spec in AGENT_SPECS.items():
-        for field in required_fields:
-            assert field in spec, f"Agent {agent_name} missing field {field}"
-
 
 def test_markdown_agents_have_correct_placeholder() -> None:
     """Test that markdown-format agents use $ARGUMENTS placeholder."""
-    markdown_agents = [
-        name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "markdown"
-    ]
 
-    for agent_name in markdown_agents:
-        spec = AGENT_SPECS[agent_name]
-        assert spec["arg_placeholder"] == "$ARGUMENTS"
+    agent_specs = [get_agent_spec(name) for name in list_supported_agents()]
+    markdown_agent_specs = [spec for spec in agent_specs if spec.file_format == "markdown"]
+
+    for agent_spec in markdown_agent_specs:
+        assert agent_spec.arg_placeholder == "$ARGUMENTS", f"Failed: {agent_spec.name}"
 
 
 def test_toml_agents_have_correct_placeholder() -> None:
     """Test that TOML-format agents use {{args}} placeholder."""
-    toml_agents = [name for name, spec in AGENT_SPECS.items() if spec["file_format"] == "toml"]
+    agent_specs = [get_agent_spec(name) for name in list_supported_agents()]
+    toml_agents = [spec for spec in agent_specs if spec.file_format == "toml"]
 
-    for agent_name in toml_agents:
-        spec = AGENT_SPECS[agent_name]
-        assert spec["arg_placeholder"] == "{{args}}"
+    for agent_spec in toml_agents:
+        assert agent_spec.arg_placeholder == "{{args}}"

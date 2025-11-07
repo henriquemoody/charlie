@@ -410,6 +410,7 @@ Test prompt content
 
     # Verify file exists
     generated_file = output_dir / ".cursor" / "commands" / "test.md"
+
     assert generated_file.exists()
 
     # Verify content was generated

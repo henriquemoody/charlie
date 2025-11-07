@@ -234,31 +234,6 @@ def test_generate_rules_for_agents(tmp_path) -> None:
     assert len(results["windsurf"]) >= 1
     assert Path(results["windsurf"][0]).exists()
 
-
-def test_generate_rules_for_agents_skips_missing_rules_file(tmp_path) -> None:
-    """Test that agents without rules_file are skipped."""
-    config = CharlieConfig(
-        version="1.0",
-        project=ProjectConfig(name="test", command_prefix="test"),
-        commands=[
-            Command(
-                name="test",
-                description="Test",
-                prompt="Test",
-                scripts=CommandScripts(sh="test.sh"),
-            )
-        ],
-    )
-
-    # Create a fake agent spec without rules_file
-    agent_specs = {"fake": {"name": "Fake Agent", "command_dir": ".fake"}}
-
-    results = generate_rules_for_agents(config, ["fake"], agent_specs, str(tmp_path))
-
-    # Should not generate anything for agent without rules_file
-    assert len(results) == 0
-
-
 def test_rules_file_date_format(tmp_path) -> None:
     """Test that rules file includes properly formatted date."""
     config = CharlieConfig(
