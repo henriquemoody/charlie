@@ -4,30 +4,7 @@
       "command": "node",
       "args": [
         "server.js"
-      ],
-      "capabilities": {
-        "tools": {
-          "enabled": true,
-          "list": [
-            {
-              "name": "test_test",
-              "description": "Test",
-              "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "input": {
-                    "type": "string",
-                    "description": "Command input"
-                  }
-                },
-                "required": [
-                  "input"
-                ]
-              }
-            }
-          ]
-        }
-      }
+      ]
     }
   }
 }

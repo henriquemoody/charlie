@@ -18,6 +18,7 @@ mcp_servers:
   - name: "test-server"
     command: "node"
     args: ["server.js"]
+    commands: ["init", "build"]
     env:
       DEBUG: "true"
 

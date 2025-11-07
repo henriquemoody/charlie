@@ -44,7 +44,14 @@ def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str)
     mcp_config: dict[str, Any] = {"mcpServers": {}}
 
     for server in config.mcp_servers:
-        server_config = _server_to_mcp_config(server, config.commands, command_prefix)
+        # Filter commands based on what this server should expose
+        server_commands: list[Command] = []
+        if server.commands:
+            # Only include commands that are specified in the server's commands list
+            command_dict = {cmd.name: cmd for cmd in config.commands}
+            server_commands = [command_dict[cmd_name] for cmd_name in server.commands if cmd_name in command_dict]
+
+        server_config = _server_to_mcp_config(server, server_commands, command_prefix)
         mcp_config["mcpServers"][server.name] = server_config
 
     if agent_name == "cursor":

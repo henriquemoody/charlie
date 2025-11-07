@@ -65,8 +65,8 @@ def test_generate_mcp_config(tmp_path) -> None:
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
         mcp_servers=[
-            MCPServer(name="server1", command="node", args=["server1.js"]),
-            MCPServer(name="server2", command="python", args=["-m", "server2"], env={"DEBUG": "1"}),
+            MCPServer(name="server1", command="node", args=["server1.js"], commands=["init"]),
+            MCPServer(name="server2", command="python", args=["-m", "server2"], env={"DEBUG": "1"}, commands=["init"]),
         ],
         commands=[
             Command(
@@ -126,7 +126,7 @@ def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"], commands=["init", "plan"])],
         commands=[
             Command(
                 name="init",
@@ -158,7 +158,7 @@ def test_mcp_config_json_formatting(tmp_path) -> None:
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"], commands=["test"])],
         commands=[
             Command(
                 name="test",
@@ -184,7 +184,7 @@ def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"], commands=["test"])],
         commands=[
             Command(
                 name="test",
@@ -213,7 +213,7 @@ def test_generate_mcp_config_default_location(tmp_path) -> None:
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"])],
+        mcp_servers=[MCPServer(name="server", command="node", args=["server.js"], commands=["test"])],
         commands=[
             Command(
                 name="test",
@@ -277,3 +277,92 @@ def test_generate_mcp_config_without_command_prefix_no_project(tmp_path) -> None
 
     assert "mcpServers" in mcp_config
     assert "server" in mcp_config["mcpServers"]
+
+
+def test_mcp_server_with_specific_commands_exposes_only_those_commands(tmp_path) -> None:
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[
+            MCPServer(
+                name="server1",
+                command="node",
+                args=["server1.js"],
+                commands=["init"],  # Only expose init command
+            ),
+            MCPServer(
+                name="server2",
+                command="python",
+                args=["-m", "server2"],
+                commands=["plan", "deploy"],  # Only expose plan and deploy
+            ),
+        ],
+        commands=[
+            Command(
+                name="init",
+                description="Initialize",
+                prompt="Init",
+                scripts=CommandScripts(sh="init.sh"),
+            ),
+            Command(
+                name="plan",
+                description="Plan",
+                prompt="Plan",
+                scripts=CommandScripts(sh="plan.sh"),
+            ),
+            Command(
+                name="deploy",
+                description="Deploy",
+                prompt="Deploy",
+                scripts=CommandScripts(sh="deploy.sh"),
+            ),
+        ],
+    )
+
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
+
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    # server1 should only have init command
+    server1_tools = mcp_config["mcpServers"]["server1"]["capabilities"]["tools"]["list"]
+    assert len(server1_tools) == 1
+    assert server1_tools[0]["name"] == "test_init"
+
+    # server2 should only have plan and deploy commands
+    server2_tools = mcp_config["mcpServers"]["server2"]["capabilities"]["tools"]["list"]
+    assert len(server2_tools) == 2
+    assert server2_tools[0]["name"] == "test_plan"
+    assert server2_tools[1]["name"] == "test_deploy"
+
+
+def test_mcp_server_without_commands_field_exposes_no_commands(tmp_path) -> None:
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[
+            MCPServer(
+                name="server",
+                command="node",
+                args=["server.js"],
+                # No commands field specified
+            ),
+        ],
+        commands=[
+            Command(
+                name="init",
+                description="Initialize",
+                prompt="Init",
+                scripts=CommandScripts(sh="init.sh"),
+            ),
+        ],
+    )
+
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
+
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    # Server should not have capabilities when no commands are specified
+    server_config = mcp_config["mcpServers"]["server"]
+    assert "capabilities" not in server_config
