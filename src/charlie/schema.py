@@ -1,13 +1,9 @@
-"""YAML schema definitions and validation using Pydantic."""
-
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
 class AgentSpec(BaseModel):
-    """Agent specification."""
-
     name: str
     command_dir: str
     rules_file: str
@@ -17,15 +13,11 @@ class AgentSpec(BaseModel):
 
 
 class ProjectConfig(BaseModel):
-    """Project metadata configuration."""
-
     name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
     command_prefix: str | None = Field(None, description="Command prefix for slash commands")
 
 
 class MCPServer(BaseModel):
-    """MCP server configuration with pass-through for agent-specific fields."""
-
     model_config = ConfigDict(extra="allow")
 
     name: str = Field(..., description="Server name")
@@ -37,8 +29,6 @@ class MCPServer(BaseModel):
 
 
 class RulesSection(BaseModel):
-    """Individual rules section from a separate file."""
-
     model_config = ConfigDict(extra="allow")
 
     title: str = Field(..., description="Section title")
@@ -47,8 +37,6 @@ class RulesSection(BaseModel):
 
 
 class RulesConfig(BaseModel):
-    """Rules file configuration."""
-
     title: str = Field(default="Development Guidelines", description="Rules file title")
     include_commands: bool = Field(default=True, description="Include commands reference")
     include_tech_stack: bool = Field(default=True, description="Include technology stack info")
@@ -57,21 +45,16 @@ class RulesConfig(BaseModel):
 
 
 class CommandScripts(BaseModel):
-    """Script definitions for different platforms."""
-
     sh: str | None = Field(None, description="Bash script path")
     ps: str | None = Field(None, description="PowerShell script path")
 
     @field_validator("sh", "ps")
     @classmethod
     def validate_at_least_one(cls, v: str | None, info: ValidationInfo) -> str | None:
-        """Ensure at least one script is defined."""
         return v
 
 
 class Command(BaseModel):
-    """Command definition with pass-through for agent-specific fields."""
-
     model_config = ConfigDict(extra="allow")
 
     name: str | None = Field(None, description="Command name (without prefix)")
@@ -83,15 +66,12 @@ class Command(BaseModel):
     @field_validator("scripts")
     @classmethod
     def validate_scripts(cls, v: CommandScripts | None) -> CommandScripts | None:
-        """Ensure at least one script is provided if scripts are defined."""
         if v is not None and not v.sh and not v.ps:
             raise ValueError("At least one script (sh or ps) must be defined")
         return v
 
 
 class CharlieConfig(BaseModel):
-    """Main configuration schema for charlie."""
-
     version: str = Field(default="1.0", description="Schema version")
     project: ProjectConfig | None = Field(None, description="Project configuration")
     mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
@@ -101,7 +81,6 @@ class CharlieConfig(BaseModel):
     @field_validator("version")
     @classmethod
     def validate_version(cls, v: str) -> str:
-        """Validate schema version format."""
         if not v.startswith("1."):
             raise ValueError("Only schema version 1.x is supported")
         return v
@@ -109,9 +88,8 @@ class CharlieConfig(BaseModel):
     @field_validator("commands")
     @classmethod
     def validate_unique_command_names(cls, v: list[Command]) -> list[Command]:
-        """Ensure command names are unique."""
-        names = [cmd.name for cmd in v]
-        if len(names) != len(set(names)):
-            duplicates = [name for name in names if names.count(name) > 1]
-            raise ValueError(f"Duplicate command names found: {set(duplicates)}")
+        command_names = [cmd.name for cmd in v]
+        if len(command_names) != len(set(command_names)):
+            duplicate_names = [name for name in command_names if command_names.count(name) > 1]
+            raise ValueError(f"Duplicate command names found: {set(duplicate_names)}")
         return v
