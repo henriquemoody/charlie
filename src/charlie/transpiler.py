@@ -55,7 +55,9 @@ class CommandTranspiler:
             generation_results["commands"] = generated_command_files
 
         if mcp:
-            mcp_config_file = generate_mcp_config(self.config, agent_name, output_dir)
+            mcp_config_file = generate_mcp_config(
+                self.config, agent_name, output_dir, agent_specification, self.root_dir
+            )
             generation_results["mcp"] = [mcp_config_file]
 
         if rules and agent_name:
@@ -72,7 +74,8 @@ class CommandTranspiler:
         return generation_results
 
     def generate_mcp(self, agent_name: str, output_dir: str = ".") -> str:
-        return generate_mcp_config(self.config, agent_name, output_dir)
+        agent_specification = get_agent_spec(agent_name)
+        return generate_mcp_config(self.config, agent_name, output_dir, agent_specification, self.root_dir)
 
     def generate_rules(
         self,

@@ -6,6 +6,7 @@ from typing import Any
 import yaml
 
 from charlie.schema import AgentSpec, CharlieConfig, Command, RulesSection
+from charlie.utils import PlaceholderTransformer
 
 
 def _format_command_reference(command: Command, command_prefix: str) -> str:
@@ -59,21 +60,6 @@ def _format_frontmatter(frontmatter: dict[str, Any]) -> str:
     return f"---\n{yaml_str}---\n\n"
 
 
-def _transform_path_placeholders(text: str, agent_spec: AgentSpec, root_dir: str = ".") -> str:
-    text = text.replace("{{root}}", root_dir)
-
-    agent_dir = Path(agent_spec.command_dir).parent
-    text = text.replace("{{agent_dir}}", str(agent_dir))
-
-    commands_dir = agent_spec.command_dir
-    text = text.replace("{{commands_dir}}", commands_dir)
-
-    rules_dir = str(Path(agent_spec.rules_file).parent)
-    text = text.replace("{{rules_dir}}", rules_dir)
-
-    return text
-
-
 def _generate_merged_rules(
     config: CharlieConfig,
     agent_name: str,
@@ -83,6 +69,8 @@ def _generate_merged_rules(
 ) -> str:
     rules_path = Path(output_dir) / agent_spec.rules_file
     rules_path.parent.mkdir(parents=True, exist_ok=True)
+
+    transformer = PlaceholderTransformer(agent_spec, root_dir)
 
     manual_additions = ""
     if rules_path.exists():
@@ -122,7 +110,7 @@ def _generate_merged_rules(
         for section in sorted_sections:
             lines.append(f"## {section.title}")
             lines.append("")
-            content = _transform_path_placeholders(section.content, agent_spec, root_dir)
+            content = transformer.transform_path_placeholders(section.content)
             lines.append(content)
             lines.append("")
 
@@ -171,6 +159,8 @@ def _generate_separate_rules(
     rules_dir = Path(output_dir) / rules_file_path.parent
     rules_dir.mkdir(parents=True, exist_ok=True)
 
+    transformer = PlaceholderTransformer(agent_spec, root_dir)
+
     sorted_sections = sorted(config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title))
 
     for section in sorted_sections:
@@ -184,7 +174,7 @@ def _generate_separate_rules(
         if frontmatter:
             content_parts.append(_format_frontmatter(frontmatter))
 
-        content_text = _transform_path_placeholders(section.content, agent_spec, root_dir)
+        content_text = transformer.transform_path_placeholders(section.content)
         lines = [
             f"# {section.title}",
             "",

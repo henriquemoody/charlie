@@ -247,7 +247,7 @@ commands:
     transpiler = CommandTranspiler(str(config_file))
     output_dir = tmp_path / "output"
 
-    mcp_file = transpiler.generate_mcp(str(output_dir))
+    mcp_file = transpiler.generate_mcp("cursor", str(output_dir))
 
     assert Path(mcp_file).exists()
 

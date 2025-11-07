@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from charlie.schema import CharlieConfig, Command, MCPServer
+from charlie.schema import AgentSpec, CharlieConfig, Command, MCPServer
+from charlie.utils import PlaceholderTransformer
 
 
 def _command_to_tool_schema(command: Command, command_prefix: str | None) -> dict[str, Any]:
@@ -18,8 +19,21 @@ def _command_to_tool_schema(command: Command, command_prefix: str | None) -> dic
     }
 
 
-def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_prefix: str | None) -> dict[str, Any]:
-    config: dict[str, Any] = {"command": server.command, "args": server.args}
+def _server_to_mcp_config(
+    server: MCPServer,
+    commands: list[Command],
+    command_prefix: str | None,
+    transformer: PlaceholderTransformer | None = None,
+) -> dict[str, Any]:
+    # Transform placeholders in command and args if transformer is provided
+    command = server.command
+    args = server.args.copy() if server.args else []
+
+    if transformer:
+        command = transformer.transform_path_placeholders(command)
+        args = [transformer.transform_path_placeholders(arg) for arg in args]
+
+    config: dict[str, Any] = {"command": command, "args": args}
 
     if server.env:
         config["env"] = server.env
@@ -35,13 +49,22 @@ def _server_to_mcp_config(server: MCPServer, commands: list[Command], command_pr
     return config
 
 
-def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str) -> str:
+def generate_mcp_config(
+    config: CharlieConfig,
+    agent_name: str,
+    output_dir: str,
+    agent_spec: AgentSpec | None = None,
+    root_dir: str = ".",
+) -> str:
     if not config.mcp_servers:
         raise ValueError("No MCP servers defined in configuration")
 
     # Only require command_prefix if there are commands to expose
     command_prefix = config.project.command_prefix if config.project else None
     mcp_config: dict[str, Any] = {"mcpServers": {}}
+
+    # Create transformer if agent_spec is provided
+    transformer = PlaceholderTransformer(agent_spec, root_dir) if agent_spec else None
 
     for server in config.mcp_servers:
         # Filter commands based on what this server should expose
@@ -51,7 +74,7 @@ def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str)
             command_dict = {cmd.name: cmd for cmd in config.commands}
             server_commands = [command_dict[cmd_name] for cmd_name in server.commands if cmd_name in command_dict]
 
-        server_config = _server_to_mcp_config(server, server_commands, command_prefix)
+        server_config = _server_to_mcp_config(server, server_commands, command_prefix, transformer)
         mcp_config["mcpServers"][server.name] = server_config
 
     if agent_name == "cursor":

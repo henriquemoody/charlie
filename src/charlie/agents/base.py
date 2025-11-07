@@ -3,12 +3,14 @@ from pathlib import Path
 
 from charlie.enums import ScriptType
 from charlie.schema import AgentSpec, Command
+from charlie.utils import PlaceholderTransformer
 
 
 class BaseAgentAdapter(ABC):
     def __init__(self, agent_specification: AgentSpec, root_dir: str = "."):
         self.spec = agent_specification
         self.root_dir = root_dir
+        self.transformer = PlaceholderTransformer(agent_specification, root_dir)
 
     @abstractmethod
     def generate_command(self, command: Command, namespace: str | None, script_type: str) -> str:
@@ -42,32 +44,10 @@ class BaseAgentAdapter(ABC):
         return generated_command_files
 
     def transform_placeholders(self, text_content: str, command: Command, script_type: str) -> str:
-        transformed_text = text_content.replace("{{user_input}}", self.spec.arg_placeholder)
-
-        script_file_path = self._get_script_path(command, script_type)
-        transformed_text = transformed_text.replace("{{script}}", script_file_path)
-
-        if command.agent_scripts:
-            agent_specific_script_path = self._get_agent_script_path(command, script_type)
-            transformed_text = transformed_text.replace("{{agent_script}}", agent_specific_script_path)
-
-        transformed_text = self.transform_path_placeholders(transformed_text)
-
-        return transformed_text
+        return self.transformer.transform(text_content, command, script_type)
 
     def transform_path_placeholders(self, text_with_paths: str) -> str:
-        path_placeholders = {
-            "{{root}}": self.root_dir,
-            "{{agent_dir}}": Path(self.spec.command_dir).parent.as_posix(),
-            "{{commands_dir}}": self.spec.command_dir,
-            "{{rules_dir}}": Path(self.spec.rules_file).parent.as_posix(),
-        }
-
-        transformed_text = text_with_paths
-        for placeholder_path, replacement_value in path_placeholders.items():
-            transformed_text = transformed_text.replace(placeholder_path, replacement_value)
-
-        return transformed_text
+        return self.transformer.transform_path_placeholders(text_with_paths)
 
     def _get_script_path(self, command: Command, script_type: str) -> str:
         if not command.scripts:
