@@ -54,7 +54,7 @@ class CommandTranspiler:
 
     def generate(
         self,
-        agent: str | None = None,
+        agent_name: str,
         mcp: bool = False,
         rules: bool = False,
         rules_mode: str = "merged",
@@ -80,40 +80,37 @@ class CommandTranspiler:
         """
         results = {}
 
-        # Generate agent commands
-        if agent:
-            # Get agent spec and adapter
-            agent_spec = get_agent_spec(agent)
-            adapter = self._get_adapter(agent, agent_spec)
+        # Get agent spec and adapter
+        agent_spec = get_agent_spec(agent_name)
+        adapter = self._get_adapter(agent_name, agent_spec)
 
-            # Generate command files
-            command_prefix = self.config.project.command_prefix if self.config.project else None
-            files = adapter.generate_commands(self.config.commands, command_prefix, output_dir)
-            results["commands"] = files
+        # Generate command files
+        command_prefix = self.config.project.command_prefix if self.config.project else None
+        files = adapter.generate_commands(self.config.commands, command_prefix, output_dir)
+        results["commands"] = files
 
         # Generate MCP configs if requested
         if mcp:
-            mcp_file = generate_mcp_config(self.config, output_dir, agent)
+            mcp_file = generate_mcp_config(self.config, agent_name, output_dir)
             results["mcp"] = [mcp_file]
 
         # Generate rules if requested
-        if rules and agent:
+        if rules and agent_name:
             # Get spec for the agent
-            agent_spec = get_agent_spec(agent)
             rules_files = generate_rules_for_agents(
                 self.config,
-                [agent],
-                {agent: agent_spec},
+                [agent_name],
+                {agent_name: agent_spec},
                 output_dir,
                 mode=rules_mode,
                 root_dir=self.root_dir,
             )
             # Extract the rules paths for the single agent
-            results["rules"] = rules_files[agent]
+            results["rules"] = rules_files[agent_name]
 
         return results
 
-    def generate_mcp(self, output_dir: str = ".", agent: str | None = None) -> str:
+    def generate_mcp(self, agent_name: str, output_dir: str = ".") -> str:
         """Generate only MCP server configs.
 
         Args:
@@ -126,7 +123,7 @@ class CommandTranspiler:
         Raises:
             ValueError: If no MCP servers defined in config
         """
-        return generate_mcp_config(self.config, output_dir, agent)
+        return generate_mcp_config(self.config, agent_name, output_dir)
 
     def generate_rules(self, agent: str, output_dir: str = ".", mode: str = "merged") -> list[str]:
         """Generate only rules files for specified agent.

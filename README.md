@@ -146,7 +146,7 @@ transpiler = CommandTranspiler("charlie.yaml")
 
 # Setup for Claude with MCP and rules
 results = transpiler.generate(
-    agent="claude",
+    agent_name="claude",
     mcp=True,
     rules=True,
     output_dir="./output"
@@ -154,7 +154,7 @@ results = transpiler.generate(
 
 # Setup for Gemini with rules
 results = transpiler.generate(
-    agent="gemini",
+    agent_name="gemini",
     rules=True,
     output_dir="./output"
 )
@@ -164,7 +164,7 @@ mcp_file = transpiler.generate_mcp("./output")
 
 # Generate only rules for an agent
 rules_files = transpiler.generate_rules(
-    agent="cursor",
+    agent_name="cursor",
     output_dir="./output"
 )
 ```
@@ -563,14 +563,14 @@ transpiler = CommandTranspiler("charlie.yaml")
 
 # Setup for Claude
 transpiler.generate(
-    agent="claude",
+    agent_name="claude",
     mcp=True,
     output_dir="./dist"
 )
 
 # Setup for Copilot
 transpiler.generate(
-    agent="copilot",
+    agent_name="copilot",
     mcp=True,
     output_dir="./dist"
 )

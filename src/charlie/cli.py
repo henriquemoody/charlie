@@ -97,7 +97,7 @@ def setup(
         console.print(f"\n[bold]Setting up {agent}...[/bold]")
 
         results = transpiler.generate(
-            agent=agent,
+            agent_name=agent,
             mcp=mcp,
             rules=rules,
             rules_mode=rules_mode,

@@ -54,7 +54,7 @@ commands:
     # Generate for Claude with everything
     output_dir = tmp_path / "output"
     results = transpiler.generate(
-        agent="claude",
+        agent_name="claude",
         mcp=True,
         rules=True,
         output_dir=str(output_dir),
@@ -86,12 +86,12 @@ commands:
     assert "MANUAL ADDITIONS START" in rules_content
 
     # Generate for Gemini
-    results = transpiler.generate(agent="gemini", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="gemini", output_dir=str(output_dir))
     assert "commands" in results
     assert len(results["commands"]) == 2
 
     # Generate for Windsurf with rules
-    results = transpiler.generate(agent="windsurf", rules=True, output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="windsurf", rules=True, output_dir=str(output_dir))
     assert "commands" in results
     assert "rules" in results
 
@@ -126,7 +126,7 @@ commands:
 
     # Generate for single agent
     output_dir = tmp_path / "output"
-    results = transpiler.generate(agent="claude", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="claude", output_dir=str(output_dir))
 
     assert "commands" in results
     assert len(results["commands"]) == 1
@@ -154,7 +154,7 @@ def test_spec_kit_example_workflow(tmp_path) -> None:
     # Generate for Claude with MCP and rules
     output_dir = tmp_path / "output"
     results = transpiler.generate(
-        agent="claude",
+        agent_name="claude",
         mcp=True,
         rules=True,
         output_dir=str(output_dir),
@@ -173,8 +173,8 @@ def test_spec_kit_example_workflow(tmp_path) -> None:
     assert any("constitution" in name for name in command_names)
 
     # Generate for Copilot and Cursor
-    results = transpiler.generate(agent="copilot", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="copilot", output_dir=str(output_dir))
     assert "commands" in results
 
-    results = transpiler.generate(agent="cursor", output_dir=str(output_dir))
+    results = transpiler.generate(agent_name="cursor", output_dir=str(output_dir))
     assert "commands" in results

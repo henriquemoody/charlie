@@ -84,7 +84,7 @@ def test_generate_mcp_config(tmp_path) -> None:
         ],
     )
 
-    output_file = generate_mcp_config(config, str(tmp_path))
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
 
     # Check file was created
     assert Path(output_file).exists()
@@ -126,7 +126,7 @@ def test_generate_mcp_config_no_servers() -> None:
     )
 
     with pytest.raises(ValueError, match="No MCP servers defined"):
-        generate_mcp_config(config, "/tmp")
+        generate_mcp_config(config, "cursor", "/tmp")
 
 
 def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
@@ -151,7 +151,7 @@ def test_generate_mcp_config_multiple_commands(tmp_path) -> None:
         ],
     )
 
-    output_file = generate_mcp_config(config, str(tmp_path))
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
 
     with open(output_file) as f:
         mcp_config = json.load(f)
@@ -178,7 +178,7 @@ def test_mcp_config_json_formatting(tmp_path) -> None:
         ],
     )
 
-    output_file = generate_mcp_config(config, str(tmp_path))
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
 
     # Check that file has proper indentation and trailing newline
     content = Path(output_file).read_text()
@@ -205,7 +205,7 @@ def test_generate_mcp_config_cursor_agent(tmp_path) -> None:
         ],
     )
 
-    output_file = generate_mcp_config(config, str(tmp_path), agent="cursor")
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path))
 
     # Check file was created at .cursor/mcp.json
     assert Path(output_file).exists()
@@ -236,11 +236,11 @@ def test_generate_mcp_config_default_location(tmp_path) -> None:
     )
 
     # Test with no agent specified
-    output_file = generate_mcp_config(config, str(tmp_path), agent=None)
+    output_file = generate_mcp_config(config, "opencode", str(tmp_path))
     assert Path(output_file).exists()
     assert output_file == str(tmp_path / "mcp-config.json")
 
     # Test with claude agent
-    output_file2 = generate_mcp_config(config, str(tmp_path / "claude-test"), agent="claude")
+    output_file2 = generate_mcp_config(config, "claude", str(tmp_path / "claude-test"))
     assert Path(output_file2).exists()
     assert output_file2 == str(tmp_path / "claude-test" / "mcp-config.json")

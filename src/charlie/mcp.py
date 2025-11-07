@@ -59,7 +59,7 @@ def _server_to_mcp_config(
     return config
 
 
-def generate_mcp_config(config: CharlieConfig, output_dir: str, agent: str | None = None) -> str:
+def generate_mcp_config(config: CharlieConfig, agent_name: str, output_dir: str) -> str:
     """Generate MCP server configuration JSON from YAML definition.
 
     Args:
@@ -88,7 +88,7 @@ def generate_mcp_config(config: CharlieConfig, output_dir: str, agent: str | Non
         mcp_config["mcpServers"][server.name] = server_config
 
     # Determine output path based on agent
-    if agent == "cursor":
+    if agent_name == "cursor":
         # Cursor expects MCP config at .cursor/mcp.json
         output_path = Path(output_dir) / ".cursor" / "mcp.json"
     else:
