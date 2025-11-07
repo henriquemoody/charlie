@@ -35,6 +35,7 @@ class RulesSection(BaseModel):
     title: str = Field(..., description="Section title")
     content: str = Field(..., description="Section content (Markdown)")
     order: int | None = Field(None, description="Display order (lower numbers first)")
+    filename: str | None = Field(None, description="Original filename (for directory-based configs)")
 
 
 class RulesConfig(BaseModel):

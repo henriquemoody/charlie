@@ -1,5 +1,6 @@
 ---
 title: "Code Style Guidelines"
+description: "Standards for code formatting and best practices"
 order: 2
 alwaysApply: false
 globs:

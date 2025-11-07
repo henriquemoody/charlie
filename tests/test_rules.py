@@ -443,3 +443,262 @@ def test_generate_rules_replaces_multiple_placeholders(tmp_path) -> None:
     assert "{{agent_name}}" not in content
     assert "{{commands_dir}}" not in content
     assert "{{root}}" not in content
+
+
+def test_generate_rules_preserves_original_filename(tmp_path) -> None:
+    from charlie.schema import RulesSection
+
+    # Create sections with custom filenames (as would be loaded from directory-based config)
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                    filename="custom-style-guide.md",
+                ),
+                RulesSection(
+                    title="Commit Messages",
+                    content="Use conventional commits",
+                    order=2,
+                    filename="commit-messages.md",
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(tmp_path),
+        mode="separate",
+    )
+
+    # Should generate 2 files with the original filenames
+    assert len(rules_paths) == 2
+
+    # Check that files use the original filenames, not generated from title
+    filenames = [Path(p).name for p in rules_paths]
+    assert "custom-style-guide.md" in filenames
+    assert "commit-messages.md" in filenames
+    # These should NOT be generated
+    assert "code-style.md" not in filenames
+
+    # Verify content is correct
+    style_file = [p for p in rules_paths if "custom-style-guide" in p][0]
+    style_content = Path(style_file).read_text()
+    assert "# Code Style" in style_content
+    assert "Use Black for formatting" in style_content
+
+    commit_file = [p for p in rules_paths if "commit-messages" in p][0]
+    commit_content = Path(commit_file).read_text()
+    assert "# Commit Messages" in commit_content
+    assert "Use conventional commits" in commit_content
+
+
+def test_generate_rules_preserves_description_field_in_frontmatter(tmp_path) -> None:
+    from charlie.schema import RulesSection
+
+    # Create sections with description fields (as supported by Cursor)
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                    description="Guidelines for code formatting and style",
+                    alwaysApply=True,
+                ),
+                RulesSection(
+                    title="Testing",
+                    content="Write tests for all features",
+                    order=2,
+                    description="Testing requirements and standards",
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(tmp_path),
+        mode="separate",
+    )
+
+    # Check that description is in frontmatter, not in body
+    style_file = [p for p in rules_paths if "code-style" in p][0]
+    style_content = Path(style_file).read_text()
+
+    # Description should be in the frontmatter
+    assert "description: Guidelines for code formatting and style" in style_content
+    # Make sure it's in the frontmatter section (before the first ---...--- block ends)
+    frontmatter_end = style_content.find("---\n\n")
+    assert frontmatter_end > 0
+    assert style_content[:frontmatter_end].count("description: Guidelines for code formatting and style") == 1
+
+    # Verify title is in the body as a heading
+    assert "# Code Style" in style_content
+    assert "Use Black for formatting" in style_content
+
+
+def test_load_and_regenerate_rules_preserves_description(tmp_path) -> None:
+    """Test that loading rules from files and regenerating them preserves description field."""
+    from charlie.parser import load_directory_config
+
+    # Create a .charlie/rules directory with a rule that has description
+    charlie_dir = tmp_path / ".charlie"
+    rules_dir = charlie_dir / "rules"
+    rules_dir.mkdir(parents=True)
+
+    # Create a rule file with description in frontmatter
+    rule_file = rules_dir / "code-style.md"
+    rule_content = """---
+title: "Code Style"
+description: "Guidelines for code formatting and style"
+order: 1
+alwaysApply: true
+---
+
+Use Black for formatting with line length 100.
+"""
+    rule_file.write_text(rule_content)
+
+    # Load the config (which will parse the rule)
+    config = load_directory_config(tmp_path)
+
+    # Verify the rule was loaded with description
+    assert config.rules is not None
+    assert len(config.rules.sections) == 1
+    section = config.rules.sections[0]
+    assert section.title == "Code Style"
+    assert section.description == "Guidelines for code formatting and style"
+    assert section.order == 1
+    assert section.alwaysApply is True
+
+    # Now regenerate the rules
+    agent_spec = get_agent_spec("cursor")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(output_dir),
+        mode="separate",
+    )
+
+    # Check the regenerated file
+    generated_file = rules_paths[0]
+    generated_content = Path(generated_file).read_text()
+
+    # Description should still be in frontmatter
+    assert "description: Guidelines for code formatting and style" in generated_content
+    # Verify it's in the frontmatter section
+    lines = generated_content.split("\n")
+    in_frontmatter = False
+    found_description = False
+    for i, line in enumerate(lines):
+        if i == 0 and line == "---":
+            in_frontmatter = True
+        elif in_frontmatter and line == "---":
+            in_frontmatter = False
+        elif in_frontmatter and "description: Guidelines for code formatting and style" in line:
+            found_description = True
+
+    assert found_description, "Description should be in frontmatter"
+
+
+def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
+    """Test that description field is preserved in merged mode frontmatter."""
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                    description="Guidelines for code formatting and style",
+                    alwaysApply=True,
+                ),
+                RulesSection(
+                    title="Testing",
+                    content="Write tests for all features",
+                    order=2,
+                    description="Testing requirements",
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(tmp_path),
+        mode="merged",
+    )
+
+    # Should generate 1 merged file
+    assert len(rules_paths) == 1
+
+    content = Path(rules_paths[0]).read_text()
+
+    # In merged mode, only the first section's extra fields go in frontmatter
+    # Check that description from first section is in frontmatter
+    assert "description: Guidelines for code formatting and style" in content
+
+    # Verify it's in the frontmatter at the top of the file
+    lines = content.split("\n")
+    in_frontmatter = False
+    found_description_in_frontmatter = False
+
+    for i, line in enumerate(lines):
+        if i == 0 and line == "---":
+            in_frontmatter = True
+        elif in_frontmatter and line == "---":
+            break  # End of frontmatter
+        elif in_frontmatter and "description:" in line:
+            found_description_in_frontmatter = True
+
+    assert found_description_in_frontmatter, "Description should be in frontmatter for merged mode"

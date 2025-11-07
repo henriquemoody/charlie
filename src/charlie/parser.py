@@ -242,6 +242,9 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     for rules_file_path in discovered_config_files["rules"]:
         try:
             rules_section = parse_single_file(rules_file_path, RulesSection)
+            # Preserve the original filename
+            if not rules_section.filename:
+                rules_section.filename = rules_file_path.name
             parsed_rules_sections.append(rules_section)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading rule from {rules_file_path}: {e}")

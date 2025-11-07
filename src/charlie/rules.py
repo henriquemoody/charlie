@@ -46,7 +46,7 @@ def _extract_manual_additions(existing_content: str) -> str:
 def _extract_frontmatter_fields(section: RulesSection) -> dict[str, Any]:
     section_dict = section.model_dump()
 
-    core_fields = {"title", "content", "order"}
+    core_fields = {"title", "content", "order", "filename"}
     frontmatter = {k: v for k, v in section_dict.items() if k not in core_fields and v is not None}
 
     return frontmatter
@@ -163,7 +163,11 @@ def _generate_separate_rules(
     sorted_sections = sorted(config.rules.sections, key=lambda s: (s.order if s.order is not None else 999, s.title))
 
     for section in sorted_sections:
-        filename = section.title.lower().replace(" ", "-").replace("/", "-") + ".md"
+        # Use the original filename if available, otherwise generate from title
+        if section.filename:
+            filename = section.filename
+        else:
+            filename = section.title.lower().replace(" ", "-").replace("/", "-") + ".md"
         section_path = rules_dir / filename
 
         frontmatter = _extract_frontmatter_fields(section)

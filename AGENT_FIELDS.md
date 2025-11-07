@@ -92,6 +92,9 @@ These are Charlie's core rules fields and are always processed:
 #### Cursor
 
 ```yaml
+# Metadata
+description: "Guidelines for code formatting and style"
+
 # Control when rules apply
 alwaysApply: true # or false
 globs:
@@ -104,6 +107,7 @@ globs:
 
 **Behavior:**
 
+- `description` - Short description of the rule's purpose
 - `alwaysApply: true` - Rule applies to all files
 - `alwaysApply: false` - Rule applies only to files matching globs
 - `globs` - Array of glob patterns (supports negation with `!`)
