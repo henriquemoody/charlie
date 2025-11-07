@@ -324,6 +324,7 @@ Charlie supports these universal placeholders in commands, rules, and MCP config
 - `{{user_input}}` → Replaced with agent-specific input placeholder (`$ARGUMENTS` or `{{args}}`)
 - `{{script}}` → Replaced with the appropriate script path based on platform
 - `{{agent_script}}` → Replaced with optional agent-specific script path
+- `{{agent_name}}` → Replaced with the agent's name (e.g., `Cursor`, `Claude Code`, `GitHub Copilot`)
 
 **Path Placeholders:**
 

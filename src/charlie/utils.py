@@ -22,6 +22,12 @@ class PlaceholderTransformer:
         if env_file.exists():
             load_dotenv(env_file)
 
+    def transform_agent_placeholders(self, text: str) -> str:
+        transformed_text = text.replace("{{user_input}}", self.agent_spec.arg_placeholder)
+        transformed_text = transformed_text.replace("{{agent_name}}", self.agent_spec.name)
+
+        return transformed_text
+
     def transform_env_placeholders(self, text: str) -> str:
         pattern = r"\{\{env:([A-Za-z_][A-Za-z0-9_]*)\}\}"
 
@@ -52,11 +58,9 @@ class PlaceholderTransformer:
 
         return transformed_text
 
-    def transform_content_placeholders(self, text: str, command: Command, script_type: str) -> str:
-        transformed_text = text.replace("{{user_input}}", self.agent_spec.arg_placeholder)
-
+    def transform_command_placeholders(self, text: str, command: Command, script_type: str) -> str:
         script_path = self._get_script_path(command, script_type)
-        transformed_text = transformed_text.replace("{{script}}", script_path)
+        transformed_text = text.replace("{{script}}", script_path)
 
         if command.agent_scripts:
             agent_script_path = self._get_agent_script_path(command, script_type)
@@ -66,8 +70,9 @@ class PlaceholderTransformer:
 
     def transform(self, text: str, command: Command | None = None, script_type: str | None = None) -> str:
         if command and script_type:
-            text = self.transform_content_placeholders(text, command, script_type)
+            text = self.transform_command_placeholders(text, command, script_type)
 
+        text = self.transform_agent_placeholders(text)
         text = self.transform_path_placeholders(text)
         text = self.transform_env_placeholders(text)
 

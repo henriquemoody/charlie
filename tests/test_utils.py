@@ -93,51 +93,65 @@ def test_transform_path_placeholders_replaces_all_placeholders(cursor_agent_spec
     assert result == "Root: /project/root, Agent: .cursor, Commands: .cursor/commands, Rules: ."
 
 
-def test_transform_content_placeholders_replaces_user_input(
-    cursor_agent_spec: AgentSpec, sample_command: Command
-) -> None:
+def test_transform_agent_placeholders_replaces_user_input(cursor_agent_spec: AgentSpec) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
 
     text = "Run with {{user_input}}"
-    result = transformer.transform_content_placeholders(text, sample_command, ScriptType.SH.value)
+    result = transformer.transform_agent_placeholders(text)
 
     assert result == "Run with {{args}}"
 
 
-def test_transform_content_placeholders_replaces_user_input_for_claude(
-    claude_agent_spec: AgentSpec, sample_command: Command
-) -> None:
+def test_transform_agent_placeholders_replaces_agent_name(cursor_agent_spec: AgentSpec) -> None:
+    transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
+
+    text = "Agent: {{agent_name}}"
+    result = transformer.transform_agent_placeholders(text)
+
+    assert result == "Agent: cursor"
+
+
+def test_transform_agent_placeholders_replaces_user_input_for_claude(claude_agent_spec: AgentSpec) -> None:
     transformer = PlaceholderTransformer(claude_agent_spec, root_dir="/project/root")
 
     text = "Run with {{user_input}}"
-    result = transformer.transform_content_placeholders(text, sample_command, ScriptType.SH.value)
+    result = transformer.transform_agent_placeholders(text)
 
     assert result == "Run with $ARGUMENTS"
 
 
-def test_transform_content_placeholders_replaces_script_sh(
+def test_transform_agent_placeholders_replaces_both(cursor_agent_spec: AgentSpec) -> None:
+    transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
+
+    text = "Agent {{agent_name}}: Run with {{user_input}}"
+    result = transformer.transform_agent_placeholders(text)
+
+    assert result == "Agent cursor: Run with {{args}}"
+
+
+def test_transform_command_placeholders_replaces_script_sh(
     cursor_agent_spec: AgentSpec, sample_command: Command
 ) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
 
     text = "Execute {{script}}"
-    result = transformer.transform_content_placeholders(text, sample_command, ScriptType.SH.value)
+    result = transformer.transform_command_placeholders(text, sample_command, ScriptType.SH.value)
 
     assert result == "Execute scripts/test.sh"
 
 
-def test_transform_content_placeholders_replaces_script_ps(
+def test_transform_command_placeholders_replaces_script_ps(
     cursor_agent_spec: AgentSpec, sample_command: Command
 ) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
 
     text = "Execute {{script}}"
-    result = transformer.transform_content_placeholders(text, sample_command, ScriptType.PS.value)
+    result = transformer.transform_command_placeholders(text, sample_command, ScriptType.PS.value)
 
     assert result == "Execute scripts/test.ps1"
 
 
-def test_transform_content_placeholders_replaces_agent_script(cursor_agent_spec: AgentSpec) -> None:
+def test_transform_command_placeholders_replaces_agent_script(cursor_agent_spec: AgentSpec) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
     command = Command(
         name="test",
@@ -148,21 +162,37 @@ def test_transform_content_placeholders_replaces_agent_script(cursor_agent_spec:
     )
 
     text = "Execute {{agent_script}}"
-    result = transformer.transform_content_placeholders(text, command, ScriptType.SH.value)
+    result = transformer.transform_command_placeholders(text, command, ScriptType.SH.value)
 
     assert result == "Execute scripts/agent-test.sh"
 
 
-def test_transform_content_placeholders_no_agent_script_leaves_placeholder(
+def test_transform_command_placeholders_no_agent_script_leaves_placeholder(
     cursor_agent_spec: AgentSpec, sample_command: Command
 ) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
 
     text = "Execute {{agent_script}}"
-    result = transformer.transform_content_placeholders(text, sample_command, ScriptType.SH.value)
+    result = transformer.transform_command_placeholders(text, sample_command, ScriptType.SH.value)
 
     # When there are no agent scripts, the placeholder should remain unchanged
     assert result == "Execute {{agent_script}}"
+
+
+def test_transform_command_placeholders_replaces_both_script_placeholders(cursor_agent_spec: AgentSpec) -> None:
+    transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
+    command = Command(
+        name="test",
+        description="Test",
+        prompt="Test",
+        scripts=CommandScripts(sh="scripts/test.sh"),
+        agent_scripts=CommandScripts(sh="scripts/agent-test.sh"),
+    )
+
+    text = "Run {{script}} then {{agent_script}}"
+    result = transformer.transform_command_placeholders(text, command, ScriptType.SH.value)
+
+    assert result == "Run scripts/test.sh then scripts/agent-test.sh"
 
 
 def test_transform_replaces_all_placeholders_with_command(
@@ -176,13 +206,23 @@ def test_transform_replaces_all_placeholders_with_command(
     assert result == "Root: /project/root, Input: {{args}}, Script: scripts/test.sh"
 
 
-def test_transform_replaces_only_path_placeholders_without_command(cursor_agent_spec: AgentSpec) -> None:
+def test_transform_applies_agent_and_path_placeholders_without_command(cursor_agent_spec: AgentSpec) -> None:
     transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
 
-    text = "Root: {{root}}, Input: {{user_input}}"
+    text = "Root: {{root}}, Input: {{user_input}}, Script: {{script}}"
     result = transformer.transform(text)
 
-    assert result == "Root: /project/root, Input: {{user_input}}"
+    # Agent and path placeholders are applied, but command placeholders ({{script}}) are not
+    assert result == "Root: /project/root, Input: {{args}}, Script: {{script}}"
+
+
+def test_transform_replaces_agent_name_without_command_context(cursor_agent_spec: AgentSpec) -> None:
+    transformer = PlaceholderTransformer(cursor_agent_spec, root_dir="/project/root")
+
+    text = "Agent: {{agent_name}}, Root: {{root}}"
+    result = transformer.transform(text)
+
+    assert result == "Agent: cursor, Root: /project/root"
 
 
 def test_get_script_path_returns_empty_when_no_scripts(cursor_agent_spec: AgentSpec) -> None:
