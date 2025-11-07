@@ -1,13 +1,42 @@
+import os
+import re
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 from charlie.enums import ScriptType
 from charlie.schema import AgentSpec, Command
+
+
+class EnvironmentVariableNotFoundError(Exception):
+    pass
 
 
 class PlaceholderTransformer:
     def __init__(self, agent_spec: AgentSpec, root_dir: str = "."):
         self.agent_spec = agent_spec
         self.root_dir = root_dir
+
+        # Load .env file from root directory if it exists
+        env_file = Path(root_dir) / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+
+    def transform_env_placeholders(self, text: str) -> str:
+        pattern = r"\{\{env:([A-Za-z_][A-Za-z0-9_]*)\}\}"
+
+        def replace_env(match: re.Match[str]) -> str:
+            var_name = match.group(1)
+            value = os.getenv(var_name)
+
+            if value is None:
+                raise EnvironmentVariableNotFoundError(
+                    f"Environment variable '{var_name}' not found. Make sure it's set in your environment or .env file."
+                )
+
+            return value
+
+        return re.sub(pattern, replace_env, text)
 
     def transform_path_placeholders(self, text: str) -> str:
         path_placeholders = {
@@ -40,6 +69,7 @@ class PlaceholderTransformer:
             text = self.transform_content_placeholders(text, command, script_type)
 
         text = self.transform_path_placeholders(text)
+        text = self.transform_env_placeholders(text)
 
         return text
 

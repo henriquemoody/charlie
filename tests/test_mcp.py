@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from charlie.agents.registry import get_agent_spec
 from charlie.mcp import _command_to_tool_schema, _server_to_mcp_config, generate_mcp_config
 from charlie.schema import CharlieConfig, Command, CommandScripts, MCPServer, ProjectConfig
 
@@ -256,6 +257,62 @@ def test_generate_mcp_config_without_command_prefix(tmp_path) -> None:
     assert "server" in mcp_config["mcpServers"]
     assert mcp_config["mcpServers"]["server"]["command"] == "node"
     assert mcp_config["mcpServers"]["server"]["args"] == ["server.js"]
+
+
+def test_mcp_server_transforms_env_placeholders(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("API_KEY", "secret123")
+    monkeypatch.setenv("SERVER_PORT", "8080")
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[
+            MCPServer(
+                name="api-server",
+                command="node",
+                args=["server.js", "--api-key={{env:API_KEY}}", "--port={{env:SERVER_PORT}}"],
+            )
+        ],
+        commands=[],
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path), agent_spec, str(tmp_path))
+
+    assert Path(output_file).exists()
+
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    server_config = mcp_config["mcpServers"]["api-server"]
+    assert server_config["command"] == "node"
+    assert server_config["args"] == ["server.js", "--api-key=secret123", "--port=8080"]
+
+
+def test_mcp_server_transforms_path_and_env_placeholders(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("DATA_DIR", "/var/data")
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        mcp_servers=[
+            MCPServer(
+                name="data-server",
+                command="python",
+                args=["{{root}}/server.py", "--data-dir={{env:DATA_DIR}}"],
+            )
+        ],
+        commands=[],
+    )
+
+    agent_spec = get_agent_spec("cursor")
+    output_file = generate_mcp_config(config, "cursor", str(tmp_path), agent_spec, str(tmp_path))
+
+    with open(output_file) as f:
+        mcp_config = json.load(f)
+
+    server_config = mcp_config["mcpServers"]["data-server"]
+    assert server_config["args"] == [f"{tmp_path}/server.py", "--data-dir=/var/data"]
 
 
 def test_generate_mcp_config_without_command_prefix_no_project(tmp_path) -> None:

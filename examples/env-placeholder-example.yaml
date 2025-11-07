@@ -1,0 +1,73 @@
+version: "1.0"
+
+project:
+  name: "env-example"
+  command_prefix: "app"
+
+# Example showing {{env:VAR}} placeholder usage
+# Environment variables can be set in:
+# 1. System environment
+# 2. .env file in the root directory
+#
+# Example .env file:
+# API_KEY=your_api_key_here
+# DATABASE_URL=postgresql://localhost/mydb
+# DEBUG=true
+
+mcp_servers:
+  - name: "api-server"
+    command: "node"
+    # Use environment variables in args
+    args: ["{{root}}/server.js", "--api-key={{env:API_KEY}}"]
+    env:
+      NODE_ENV: "production"
+
+commands:
+  - name: "deploy"
+    description: "Deploy with API credentials from environment"
+    prompt: |
+      Deploy the application using environment credentials.
+      
+      Root directory: {{root}}
+      API Key: {{env:API_KEY}}
+      Database URL: {{env:DATABASE_URL}}
+      
+      Run the deployment script with user input: {{user_input}}
+      Execute: {{script}}
+    scripts:
+      sh: "scripts/deploy.sh"
+
+  - name: "test"
+    description: "Run tests with environment configuration"
+    prompt: |
+      Run tests in {{env:TEST_ENV}} environment.
+      
+      Database: {{env:DATABASE_URL}}
+      Debug mode: {{env:DEBUG}}
+      
+      Execute tests with: {{user_input}}
+    scripts:
+      sh: "scripts/test.sh"
+
+rules:
+  title: "Environment-Aware Project Guidelines"
+  sections:
+    - title: "Environment Configuration"
+      order: 1
+      content: |
+        The project uses environment variables for configuration.
+        
+        Required environment variables:
+        - API_KEY: Your API key
+        - DATABASE_URL: Database connection string
+        - DEBUG: Enable debug mode (true/false)
+        
+        Create a .env file in {{root}} with these variables.
+        
+        Example:
+        ```
+        API_KEY=your_key_here
+        DATABASE_URL=postgresql://localhost/mydb
+        DEBUG=true
+        ```
+

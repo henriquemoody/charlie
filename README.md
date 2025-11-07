@@ -317,7 +317,7 @@ commands:
 
 ### Placeholders
 
-Charlie supports these universal placeholders in commands and rules:
+Charlie supports these universal placeholders in commands, rules, and MCP configurations:
 
 **Content Placeholders:**
 
@@ -332,7 +332,14 @@ Charlie supports these universal placeholders in commands and rules:
 - `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
 
-These path placeholders are especially useful in rules content when referencing agent-specific locations.
+**Environment Variable Placeholders:**
+
+- `{{env:VAR_NAME}}` → Replaced with the value of the environment variable
+  - Loads from system environment or `.env` file in root directory
+  - Raises `EnvironmentVariableNotFoundError` if variable doesn't exist
+  - System environment variables take precedence over `.env` file
+
+These placeholders work in commands, rules content, and MCP server configurations (command and args fields).
 
 ### Agent-Specific Fields
 

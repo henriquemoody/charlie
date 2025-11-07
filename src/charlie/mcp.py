@@ -31,7 +31,8 @@ def _server_to_mcp_config(
 
     if transformer:
         command = transformer.transform_path_placeholders(command)
-        args = [transformer.transform_path_placeholders(arg) for arg in args]
+        command = transformer.transform_env_placeholders(command)
+        args = [transformer.transform_env_placeholders(transformer.transform_path_placeholders(arg)) for arg in args]
 
     config: dict[str, Any] = {"command": command, "args": args}
 
