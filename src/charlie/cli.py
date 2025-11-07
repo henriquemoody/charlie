@@ -168,7 +168,8 @@ def info(
         "",
         f"[cyan]Format:[/cyan] {agent_specification.file_format}",
         f"[cyan]Command directory:[/cyan] {agent_specification.command_dir}",
-        f"[cyan]File extension:[/cyan] {agent_specification.file_extension}",
+        f"[cyan]Command extension:[/cyan] {agent_specification.command_extension}",
+        f"[cyan]Rules extension:[/cyan] {agent_specification.rules_extension}",
         f"[cyan]Argument placeholder:[/cyan] {agent_specification.arg_placeholder}",
         f"[cyan]Rules file:[/cyan] {agent_specification.rules_file}",
     ]

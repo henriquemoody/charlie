@@ -30,9 +30,9 @@ class BaseAgentAdapter(ABC):
                 script_type = ScriptType.PS.value
 
             if namespace:
-                output_filename = f"{namespace}.{command_definition.name}{self.spec.file_extension}"
+                output_filename = f"{namespace}.{command_definition.name}{self.spec.command_extension}"
             else:
-                output_filename = f"{command_definition.name}{self.spec.file_extension}"
+                output_filename = f"{command_definition.name}{self.spec.command_extension}"
             command_file_path = commands_output_dir / output_filename
 
             print(command_file_path)

@@ -9,7 +9,8 @@ class AgentSpec(BaseModel):
     rules_file: str
     rules_dir: str
     file_format: str
-    file_extension: str
+    command_extension: str
+    rules_extension: str
     arg_placeholder: str
 
 

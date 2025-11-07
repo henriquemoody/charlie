@@ -7,7 +7,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "CLAUDE.md",
         "rules_dir": ".claude/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "copilot": {
@@ -16,16 +17,18 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": ".github/copilot-instructions.md",
         "rules_dir": ".github",
         "file_format": "markdown",
-        "file_extension": ".prompt.md",
+        "command_extension": ".prompt.md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "cursor": {
         "name": "Cursor",
         "command_dir": ".cursor/commands",
-        "rules_file": "CURSOR.md",
+        "rules_file": ".cursorrules",
         "rules_dir": ".cursor/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".mdc",
         "arg_placeholder": "$ARGUMENTS",
     },
     "gemini": {
@@ -34,7 +37,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "GEMINI.md",
         "rules_dir": ".gemini/rules",
         "file_format": "toml",
-        "file_extension": ".toml",
+        "command_extension": ".toml",
+        "rules_extension": ".md",
         "arg_placeholder": "{{args}}",
     },
     "qwen": {
@@ -43,7 +47,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "QWEN.md",
         "rules_dir": ".qwen/rules",
         "file_format": "toml",
-        "file_extension": ".toml",
+        "command_extension": ".toml",
+        "rules_extension": ".md",
         "arg_placeholder": "{{args}}",
     },
     "windsurf": {
@@ -52,7 +57,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": ".windsurf/rules/charlie-rules.md",
         "rules_dir": ".windsurf/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "kilocode": {
@@ -61,7 +67,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": ".kilocode/rules/charlie-rules.md",
         "rules_dir": ".kilocode/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "opencode": {
@@ -70,7 +77,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "OPENCODE.md",
         "rules_dir": ".opencode/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "codex": {
@@ -79,7 +87,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "CODEX.md",
         "rules_dir": ".codex/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "auggie": {
@@ -88,7 +97,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": ".augment/rules/charlie-rules.md",
         "rules_dir": ".augment/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "roo": {
@@ -97,7 +107,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": ".roo/rules/charlie-rules.md",
         "rules_dir": ".roo/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "codebuddy": {
@@ -106,7 +117,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "CODEBUDDY.md",
         "rules_dir": ".codebuddy/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "amp": {
@@ -115,7 +127,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "AGENTS.md",
         "rules_dir": ".agents/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
     "q": {
@@ -124,7 +137,8 @@ AGENT_SPECS: dict[str, dict[str, str]] = {
         "rules_file": "AMAZONQ.md",
         "rules_dir": ".amazonq/rules",
         "file_format": "markdown",
-        "file_extension": ".md",
+        "command_extension": ".md",
+        "rules_extension": ".md",
         "arg_placeholder": "$ARGUMENTS",
     },
 }
@@ -142,7 +156,8 @@ def get_agent_spec(agent_name: str) -> AgentSpec:
         rules_file=agent_spec["rules_file"],
         rules_dir=agent_spec["rules_dir"],
         file_format=agent_spec["file_format"],
-        file_extension=agent_spec["file_extension"],
+        command_extension=agent_spec["command_extension"],
+        rules_extension=agent_spec["rules_extension"],
         arg_placeholder=agent_spec["arg_placeholder"],
     )
 

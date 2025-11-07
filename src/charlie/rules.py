@@ -165,9 +165,11 @@ def _generate_separate_rules(
     for section in sorted_sections:
         # Use the original filename if available, otherwise generate from title
         if section.filename:
-            filename = section.filename
+            # Preserve the base name but use the agent's rules extension
+            base_name = Path(section.filename).stem
+            filename = base_name + agent_spec.rules_extension
         else:
-            filename = section.title.lower().replace(" ", "-").replace("/", "-") + ".md"
+            filename = section.title.lower().replace(" ", "-").replace("/", "-") + agent_spec.rules_extension
         section_path = rules_dir / filename
 
         frontmatter = _extract_frontmatter_fields(section)

@@ -13,7 +13,8 @@ def cursor_agent_spec() -> AgentSpec:
         rules_file=".cursorrules",
         rules_dir=".cursor/rules",
         file_format="markdown",
-        file_extension=".mdc",
+        command_extension=".md",
+        rules_extension=".mdc",
         arg_placeholder="{{args}}",
     )
 
@@ -26,7 +27,8 @@ def claude_agent_spec() -> AgentSpec:
         rules_file=".claude/rules/.clinerules",
         rules_dir=".claude/rules",
         file_format="markdown",
-        file_extension=".md",
+        command_extension=".md",
+        rules_extension=".md",
         arg_placeholder="$ARGUMENTS",
     )
 

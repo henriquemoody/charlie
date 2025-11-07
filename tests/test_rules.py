@@ -487,15 +487,17 @@ def test_generate_rules_preserves_original_filename(tmp_path) -> None:
         mode="separate",
     )
 
-    # Should generate 2 files with the original filenames
+    # Should generate 2 files with the original base names but .mdc extension for Cursor
     assert len(rules_paths) == 2
 
-    # Check that files use the original filenames, not generated from title
+    # Check that files use the original base names with .mdc extension
     filenames = [Path(p).name for p in rules_paths]
-    assert "custom-style-guide.md" in filenames
-    assert "commit-messages.md" in filenames
-    # These should NOT be generated
-    assert "code-style.md" not in filenames
+    assert "custom-style-guide.mdc" in filenames
+    assert "commit-messages.mdc" in filenames
+    # These should NOT be present (wrong extension or wrong name)
+    assert "custom-style-guide.md" not in filenames
+    assert "commit-messages.md" not in filenames
+    assert "code-style.mdc" not in filenames
 
     # Verify content is correct
     style_file = [p for p in rules_paths if "custom-style-guide" in p][0]
@@ -619,6 +621,10 @@ Use Black for formatting with line length 100.
     generated_file = rules_paths[0]
     generated_content = Path(generated_file).read_text()
 
+    # Verify the filename was changed from .md to .mdc for Cursor
+    assert generated_file.endswith(".mdc"), f"Expected .mdc extension but got {generated_file}"
+    assert "code-style.mdc" in generated_file
+
     # Description should still be in frontmatter
     assert "description: Guidelines for code formatting and style" in generated_content
     # Verify it's in the frontmatter section
@@ -702,3 +708,62 @@ def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
             found_description_in_frontmatter = True
 
     assert found_description_in_frontmatter, "Description should be in frontmatter for merged mode"
+
+
+def test_cursor_uses_mdc_extension_for_rules(tmp_path) -> None:
+    """Test that Cursor generates .mdc files for rules in separate mode."""
+    from charlie.schema import RulesSection
+
+    config = CharlieConfig(
+        version="1.0",
+        project=ProjectConfig(name="test", command_prefix="test"),
+        commands=[
+            Command(
+                name="test",
+                description="Test",
+                prompt="Test",
+                scripts=CommandScripts(sh="test.sh"),
+            )
+        ],
+        rules=RulesConfig(
+            sections=[
+                RulesSection(
+                    title="Code Style",
+                    content="Use Black for formatting",
+                    order=1,
+                ),
+                RulesSection(
+                    title="Testing",
+                    content="Write tests",
+                    order=2,
+                ),
+            ]
+        ),
+    )
+
+    agent_spec = get_agent_spec("cursor")
+
+    # Verify agent spec has correct extensions
+    assert agent_spec.command_extension == ".md"
+    assert agent_spec.rules_extension == ".mdc"
+
+    rules_paths = generate_rules_for_agents(
+        config,
+        "cursor",
+        agent_spec,
+        str(tmp_path),
+        mode="separate",
+    )
+
+    # Should generate 2 files with .mdc extension
+    assert len(rules_paths) == 2
+
+    # Check that all rules files have .mdc extension
+    for path in rules_paths:
+        assert path.endswith(".mdc"), f"Expected .mdc extension but got {path}"
+        assert Path(path).exists()
+
+    # Verify the actual filenames
+    filenames = [Path(p).name for p in rules_paths]
+    assert "code-style.mdc" in filenames
+    assert "testing.mdc" in filenames
