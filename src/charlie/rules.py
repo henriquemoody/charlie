@@ -127,33 +127,6 @@ def _transform_path_placeholders(text: str, agent_spec: AgentSpec, root_dir: str
     return text
 
 
-def generate_rules_file(
-    config: CharlieConfig,
-    agent_name: str,
-    agent_spec: AgentSpec,
-    output_dir: str,
-    mode: str = "merged",
-    root_dir: str = ".",
-) -> list[str]:
-    """Generate rules file(s) for an agent.
-
-    Args:
-        config: Charlie configuration
-        agent_name: Name of the agent
-        agent_spec: Agent specification from registry
-        output_dir: Base output directory
-        mode: "merged" (single file) or "separate" (one file per section)
-        root_dir: Root directory where charlie.yaml is located
-
-    Returns:
-        List of paths to generated rules files
-    """
-    if mode == "separate" and config.rules and config.rules.sections:
-        return _generate_separate_rules(config, agent_name, agent_spec, output_dir, root_dir)
-    else:
-        return [_generate_merged_rules(config, agent_name, agent_spec, output_dir, root_dir)]
-
-
 def _generate_merged_rules(
     config: CharlieConfig,
     agent_name: str,
@@ -334,18 +307,18 @@ def _generate_separate_rules(
 
 def generate_rules_for_agents(
     config: CharlieConfig,
-    agents: list[str],
-    agent_specs: dict[str, AgentSpec],
+    agent_name: str,
+    agent_spec: AgentSpec,
     output_dir: str,
     mode: str = "merged",
     root_dir: str = ".",
-) -> dict[str, list[str]]:
+) -> list[str]:
     """Generate rules files for multiple agents.
 
     Args:
         config: Charlie configuration
-        agents: List of agent names
-        agent_specs: Dictionary of agent specifications
+        agent_name: Agent name
+        agent_spec: Agent specifications
         output_dir: Base output directory
         mode: "merged" (single file) or "separate" (one file per section)
         root_dir: Root directory where charlie.yaml is located
@@ -353,14 +326,20 @@ def generate_rules_for_agents(
     Returns:
         Dictionary mapping agent names to list of generated rules file paths
     """
-    results: dict[str, list[str]] = {}
+    """Generate rules file(s) for an agent.
 
-    for agent_name in agents:
-        if agent_name in agent_specs:
-            agent_spec = agent_specs[agent_name]
-            rules_paths = generate_rules_file(
-                config, agent_name, agent_spec, output_dir, mode=mode, root_dir=root_dir
-            )
-            results[agent_name] = rules_paths
+    Args:
+        config: Charlie configuration
+        agent_name: Name of the agent
+        agent_spec: Agent specification from registry
+        output_dir: Base output directory
+        mode: "merged" (single file) or "separate" (one file per section)
+        root_dir: Root directory where charlie.yaml is located
 
-    return results
+    Returns:
+        List of paths to generated rules files
+    """
+    if mode == "separate" and config.rules and config.rules.sections:
+        return _generate_separate_rules(config, agent_name, agent_spec, output_dir, root_dir)
+    else:
+        return [_generate_merged_rules(config, agent_name, agent_spec, output_dir, root_dir)]

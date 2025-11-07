@@ -99,14 +99,14 @@ class CommandTranspiler:
             # Get spec for the agent
             rules_files = generate_rules_for_agents(
                 self.config,
-                [agent_name],
-                {agent_name: agent_spec},
+                agent_name,
+                agent_spec,
                 output_dir,
                 mode=rules_mode,
                 root_dir=self.root_dir,
             )
             # Extract the rules paths for the single agent
-            results["rules"] = rules_files[agent_name]
+            results["rules"] = rules_files
 
         return results
 
@@ -125,7 +125,12 @@ class CommandTranspiler:
         """
         return generate_mcp_config(self.config, agent_name, output_dir)
 
-    def generate_rules(self, agent: str, output_dir: str = ".", mode: str = "merged") -> list[str]:
+    def generate_rules(
+        self,
+        agent_name: str,
+        output_dir: str = ".",
+        mode: str = "merged",
+    ) -> list[str]:
         """Generate only rules files for specified agent.
 
         Args:
@@ -136,11 +141,16 @@ class CommandTranspiler:
         Returns:
             List of generated rules file paths
         """
-        agent_spec = get_agent_spec(agent)
-        rules_files = generate_rules_for_agents(
-            self.config, [agent], {agent: agent_spec}, output_dir, mode=mode, root_dir=self.root_dir
+        agent_spec = get_agent_spec(agent_name)
+
+        return generate_rules_for_agents(
+            self.config,
+            agent_name,
+            agent_spec,
+            output_dir,
+            mode=mode,
+            root_dir=self.root_dir
         )
-        return rules_files[agent]
 
     def _get_adapter(self, agent_name: str, agent_spec: AgentSpec) -> BaseAgentAdapter:
         """Get adapter instance for an agent.
