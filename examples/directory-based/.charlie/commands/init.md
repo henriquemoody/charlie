@@ -6,9 +6,12 @@ tags:
   - initialization
   - setup
 category: "project-management"
-scripts:
-  sh: "scripts/init-feature.sh"
-  ps: "scripts/Init-Feature.ps1"
+replacements:
+  script:
+    discriminator: shell
+    options:
+      bash: "{{assets_dir}}/init.sh"
+      powershell: "{{assets_dir}}/init.ps1"
 ---
 
 ## User Input
@@ -22,4 +25,3 @@ Initialize a new feature based on the user's description.
 1. Create necessary directory structure
 2. Generate boilerplate files
 3. Run: {{script}}
-

@@ -1,21 +1,7 @@
-# MCP server for local development tools
 name: "local-tools"
 command: "node"
 args:
-  - "dist/mcp-server.js"
-
+  - "{{assets_dir}}/mcp-server.js"
 env:
   DEBUG: "true"
   LOG_LEVEL: "info"
-
-# Commands this server exposes
-commands:
-  - init
-  - deploy
-
-# Server configuration
-config:
-  timeout: 30000
-  retry: 3
-  port: 3000
-

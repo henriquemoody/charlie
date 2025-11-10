@@ -1,25 +1,34 @@
-version: "1.0"
-
 # Simple example configuration
 project:
   name: "my-project"
-  command_prefix: "myapp"
+  namespace: "myapp"
+
+variables:
+  mcp_api_token: ~ # It will ask the user to provide an API token
 
 # MCP server definitions
 mcp_servers:
-  - name: "myapp-commands"
+  - name: "local"
+    transport: "stdio"
     command: "node"
-    args: ["dist/mcp-server.js"]
+    args: ["{{assets_dir}}/mcp-server.js"]
     env:
       PROJECT_ROOT: "${PROJECT_ROOT}"
       DEBUG: "false"
 
+  - name: "remote"
+    url: "https://example.com/mcp"
+    headers:
+      Authorization: "Bearer {{var:mcp_api_token}}"
+      Content-Type: "application/json"
+
 # Rules configuration
 rules:
-  title: "Development Guidelines"
-  include_commands: true
-  include_tech_stack: true
-  preserve_manual: true
+  - title: "Commit message standards"
+    prompt: "Use the {{env:LANG}} language in [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format"
+
+  - title: "Coding standards"
+    prompt: "All code should follow PEP 8"
 
 # Command definitions
 commands:
@@ -27,36 +36,28 @@ commands:
     description: "Initialize a new feature"
     prompt: |
       ## User Input
-      
+
       {{user_input}}
-      
+
       ## Instructions
-      
+
       1. Parse the feature description
       2. Create necessary files
-      3. Run initialization script: {{script}}
-      
+      3. Run initialization script
+
       ## Guidelines
-      
+
       - Be clear and concise
       - Focus on what the user needs
-    scripts:
-      sh: "scripts/init.sh --json"
-      ps: "scripts/init.ps1 -Json"
 
   - name: "plan"
     description: "Create implementation plan"
     prompt: |
       ## Task
-      
+
       Create a technical implementation plan for: {{user_input}}
-      
+
       ## Steps
-      
+
       1. Analyze requirements
       2. Design architecture
-      3. Execute: {{script}}
-    scripts:
-      sh: "scripts/plan.sh"
-      ps: "scripts/plan.ps1"
-
