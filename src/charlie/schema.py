@@ -17,8 +17,8 @@ class AgentSpec(BaseModel):
 
 class ProjectConfig(BaseModel):
     name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
-    command_prefix: str | None = Field(None, description="Command prefix for slash commands")
-    dir: str = Field(default=".", description="Project root directory")
+    command_prefix: str | None = Field(None, description="Namespace prefix for commands and rules")
+    root_directory: str = Field(default=".", description="Project root directory")
 
 
 class Variable(BaseModel):
