@@ -137,40 +137,56 @@ charlie info gemini
 Use Charlie programmatically in Python:
 
 ```python
+from charlie import AgentConfigurator, AgentSpecRegistry
+from charlie.config_reader import parse_config
+
+# Parse configuration
+config = parse_config("charlie.yaml")
+
+# Get agent specification
+registry = AgentSpecRegistry()
+agent_spec = registry.get("claude")
+
+# Create configurator
+configurator = AgentConfigurator.create(
+    agent_spec=agent_spec,
+    project_config=config.project,
+    root_dir="."
+)
+
+# Generate commands
+command_files = configurator.commands(config.commands, output_dir="./output")
+
+# Generate MCP configuration
+mcp_file = configurator.mcp_servers(config, output_dir="./output")
+
+# Generate rules
+rules_files = configurator.rules(config, output_dir="./output", mode="merged")
+
+# Copy assets (if .charlie/assets exists)
+asset_files = configurator.assets(output_dir="./output")
+```
+
+#### Backward Compatibility
+
+The legacy `CommandTranspiler` API is still available for backward compatibility:
+
+```python
 from charlie import CommandTranspiler
 
-# Initialize with config
 transpiler = CommandTranspiler("charlie.yaml")
 
-# Setup for Claude with all artifacts (explicit in Python API)
+# All-in-one generation
 results = transpiler.generate(
     agent_name="claude",
-    commands=True,  # Default: True
-    mcp=True,       # Default: False
-    rules=True,     # Default: False
-    output_dir="./output"
-)
-
-# Setup for Gemini with selective generation
-results = transpiler.generate(
-    agent_name="gemini",
     commands=True,
-    mcp=False,
+    mcp=True,
     rules=True,
-    output_dir="./output"
-)
-
-# Generate only MCP config
-mcp_file = transpiler.generate_mcp("./output")
-
-# Generate only rules for an agent
-rules_files = transpiler.generate_rules(
-    agent_name="cursor",
     output_dir="./output"
 )
 ```
 
-**Note:** The Python API defaults to `commands=True, mcp=False, rules=False`, while the CLI generates all artifacts by default. Use explicit parameters in Python for fine-grained control.
+**Note:** The new API provides better separation of concerns and follows SOLID principles. The `CommandTranspiler` wraps the new API internally.
 
 ## Supported Agents
 
@@ -564,23 +580,34 @@ charlie setup windsurf --no-commands
 Setup agent-specific configs during build:
 
 ```python
+from charlie import AgentConfigurator, AgentSpecRegistry
+from charlie.config_reader import parse_config
+
+# Parse configuration
+config = parse_config("charlie.yaml")
+
+# Setup for Claude
+registry = AgentSpecRegistry()
+claude_spec = registry.get("claude")
+configurator = AgentConfigurator.create(
+    agent_spec=claude_spec,
+    project_config=config.project,
+    root_dir="."
+)
+
+configurator.commands(config.commands, output_dir="./dist")
+configurator.mcp_servers(config, output_dir="./dist")
+configurator.rules(config, output_dir="./dist")
+configurator.assets(output_dir="./dist")
+
+# Or use the legacy API for simplicity
 from charlie import CommandTranspiler
 
 transpiler = CommandTranspiler("charlie.yaml")
-
-# Setup for Claude (all artifacts by default)
 transpiler.generate(
     agent_name="claude",
-    mcp=True,
-    rules=True,
-    output_dir="./dist"
-)
-
-# Setup for Copilot with selective generation
-transpiler.generate(
-    agent_name="copilot",
     commands=True,
-    mcp=False,
+    mcp=True,
     rules=True,
     output_dir="./dist"
 )
