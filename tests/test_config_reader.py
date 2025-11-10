@@ -1,6 +1,6 @@
 import pytest
 
-from charlie.parser import (
+from charlie.config_reader import (
     ConfigParseError,
     discover_config_files,
     find_config_file,

@@ -5,9 +5,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from charlie.agents.registry import get_agent_spec, list_supported_agents
-from charlie.parser import ConfigParseError, find_config_file, parse_config
-from charlie.transpiler import CommandTranspiler
+from charlie.agents.registry import AgentSpecRegistry
+from charlie.config_reader import ConfigParseError, find_config_file, parse_config
+from charlie.configurator import AgentConfigurator
 
 app = typer.Typer(
     name="charlie",
@@ -56,18 +56,50 @@ def setup(
 
         console.print(f"[cyan]Using configuration:[/cyan] {resolved_config_file}")
 
-        command_transpiler = CommandTranspiler(str(resolved_config_file))
+        charlie_config = parse_config(str(resolved_config_file))
+
+        resolved_path = resolved_config_file.resolve()
+        if resolved_path.is_dir():
+            if resolved_path.name == ".charlie":
+                root_dir = str(resolved_path.parent)
+            else:
+                root_dir = str(resolved_path)
+        else:
+            root_dir = str(resolved_path.parent)
+
+        agent_registry = AgentSpecRegistry()
+        agent_spec = agent_registry.get(agent_name)
+
+        if charlie_config.project is None:
+            from charlie.schema import ProjectConfig
+
+            charlie_config.project = ProjectConfig(name="unknown", command_prefix=None)
+
+        configurator = AgentConfigurator.create(
+            agent_spec=agent_spec,
+            project_config=charlie_config.project,
+            root_dir=root_dir,
+        )
 
         console.print(f"\n[bold]Setting up {agent_name}...[/bold]")
 
-        generation_results = command_transpiler.generate(
-            agent_name=agent_name,
-            commands=not no_commands,
-            mcp=not no_mcp,
-            rules=not no_rules,
-            rules_mode=rules_generation_mode,
-            output_dir=output_dir_path,
-        )
+        generation_results: dict[str, list[str]] = {}
+
+        if not no_commands:
+            generated_commands = configurator.commands(charlie_config.commands, output_dir_path)
+            generation_results["commands"] = generated_commands
+
+        if not no_mcp and charlie_config.mcp_servers:
+            mcp_file = configurator.mcp_servers(charlie_config, output_dir_path)
+            generation_results["mcp"] = [mcp_file]
+
+        if not no_rules:
+            rules_files = configurator.rules(charlie_config, output_dir_path, rules_generation_mode)
+            generation_results["rules"] = rules_files
+
+        assets_files = configurator.assets(output_dir_path)
+        if assets_files:
+            generation_results["assets"] = assets_files
 
         console.print(f"\n[green]✓ Setup complete for {agent_name}![/green]\n")
 
@@ -132,7 +164,8 @@ def validate(
 
 @app.command("list-agents")
 def list_agents() -> None:
-    supported_agent_names = list_supported_agents()
+    agent_registry = AgentSpecRegistry()
+    supported_agent_names = agent_registry.list()
 
     console.print("\n[bold]Supported AI Agents:[/bold]\n")
 
@@ -143,7 +176,7 @@ def list_agents() -> None:
     agents_table.add_column("Command Directory")
 
     for agent_name in supported_agent_names:
-        agent_specification = get_agent_spec(agent_name)
+        agent_specification = agent_registry.get(agent_name)
         agents_table.add_row(
             agent_name, agent_specification.name, agent_specification.file_format, agent_specification.command_dir
         )
@@ -157,7 +190,8 @@ def info(
     agent_name: str = typer.Argument(..., help="Agent name to show information for"),
 ) -> None:
     try:
-        agent_specification = get_agent_spec(agent_name)
+        agent_registry = AgentSpecRegistry()
+        agent_specification = agent_registry.get(agent_name)
     except ValueError:
         console.print(f"[red]Error:[/red] Unknown agent '{agent_name}'")
         console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")

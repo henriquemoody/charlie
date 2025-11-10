@@ -572,7 +572,7 @@ def test_generate_rules_preserves_description_field_in_frontmatter(tmp_path) -> 
 
 def test_load_and_regenerate_rules_preserves_description(tmp_path) -> None:
     """Test that loading rules from files and regenerating them preserves description field."""
-    from charlie.parser import load_directory_config
+    from charlie.config_reader import load_directory_config
 
     # Create a .charlie/rules directory with a rule that has description
     charlie_dir = tmp_path / ".charlie"

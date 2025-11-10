@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from charlie.parser import ConfigParseError
+from charlie.config_reader import ConfigParseError
 from charlie.transpiler import CommandTranspiler
 
 
