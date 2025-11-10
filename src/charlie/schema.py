@@ -125,6 +125,7 @@ class CharlieConfig(BaseModel):
 # New API names for prototype compatibility
 # These currently alias to existing types; implementation will be migrated incrementally
 CommandConfig = Command
+RuleConfig = RulesSection
 
 
 class NewCommandConfig(BaseModel):
@@ -135,6 +136,3 @@ class NewCommandConfig(BaseModel):
     prompt: str = Field(..., description="Command prompt template")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Command metadata")
     replacements: dict[str, str] = Field(default_factory=dict, description="String replacements")
-
-
-RuleConfig = RulesSection
