@@ -17,3 +17,4 @@ Analyze the context above and:
 1. Summarize the intent of the changes.
 2. Explain why those changes are important
 3. Commit the changes `git commit -m "<generated message>"`.
+4. Add `Assisted-by: {{agent_name}} (<Model>)`
