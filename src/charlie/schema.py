@@ -127,3 +127,9 @@ class CharlieConfig(BaseModel):
             duplicate_names = [name for name in command_names if command_names.count(name) > 1]
             raise ValueError(f"Duplicate command names found: {set(duplicate_names)}")
         return v
+
+
+# New API names for prototype compatibility
+# These currently alias to existing types; implementation will be migrated incrementally
+CommandConfig = Command
+RuleConfig = RulesSection
