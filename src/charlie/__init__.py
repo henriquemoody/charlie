@@ -1,7 +1,7 @@
 __version__ = "0.1.0"
 
 from charlie.agents.registry import AgentSpecRegistry
-from charlie.configurator import AgentConfigurator
+from charlie.configurator import AgentConfigurator, AgentConfiguratorFactory
 from charlie.schema import (
     Command,
     CommandConfig,
@@ -17,6 +17,7 @@ from charlie.variable_collector import VariableCollector
 
 __all__ = [
     "AgentConfigurator",
+    "AgentConfiguratorFactory",
     "AgentSpecRegistry",
     "Command",
     "CommandConfig",

@@ -11,6 +11,7 @@ from charlie.enums import FileFormat
 from charlie.mcp import generate_mcp_config
 from charlie.rules import generate_rules_for_agents
 from charlie.schema import AgentSpec, CharlieConfig, Command, ProjectConfig
+from charlie.tracker import Tracker
 
 AGENT_ADAPTER_CLASSES: dict[str, type[BaseAgentAdapter]] = {
     "claude": ClaudeAdapter,
@@ -22,14 +23,22 @@ AGENT_ADAPTER_CLASSES: dict[str, type[BaseAgentAdapter]] = {
 
 
 class AgentConfigurator:
+    """Orchestrates agent configuration generation.
+
+    Follows the new architecture where tracker is injected for progress monitoring.
+    The factory pattern is used to create configurators with proper dependencies.
+    """
+
     def __init__(
         self,
         agent_spec: AgentSpec,
         project_config: ProjectConfig,
+        tracker: Tracker,
         root_dir: str = ".",
     ):
         self.agent_spec = agent_spec
         self.project_config = project_config
+        self.tracker = tracker
         self.root_dir = root_dir
         self._adapter = self._create_adapter()
 
@@ -40,7 +49,11 @@ class AgentConfigurator:
         project_config: ProjectConfig,
         root_dir: str = ".",
     ) -> "AgentConfigurator":
-        return cls(agent_spec, project_config, root_dir)
+        """Backward compatibility factory method.
+
+        Use AgentConfiguratorFactory.create() for new code.
+        """
+        return cls(agent_spec, project_config, Tracker(), root_dir)
 
     def commands(self, commands: list[Command], output_dir: str = ".") -> list[str]:
         command_prefix = self.project_config.command_prefix
@@ -103,3 +116,36 @@ class AgentConfigurator:
             return ClaudeAdapter(self.agent_spec, self.root_dir)
 
         raise ValueError(f"No adapter found for agent: {self.agent_spec.name}")
+
+
+class AgentConfiguratorFactory:
+    """Factory for creating AgentConfigurator instances.
+
+    Centralizes configurator creation following the factory pattern from the prototype.
+    Provides proper dependency injection for tracker and project configuration.
+    """
+
+    @staticmethod
+    def create(
+        agent_spec: AgentSpec,
+        project_config: ProjectConfig,
+        tracker: Tracker,
+        root_dir: str = ".",
+    ) -> AgentConfigurator:
+        """Create an AgentConfigurator with all dependencies.
+
+        Args:
+            agent_spec: Agent specification from registry
+            project_config: Project configuration
+            tracker: Tracker for progress monitoring
+            root_dir: Project root directory
+
+        Returns:
+            Configured AgentConfigurator instance
+        """
+        return AgentConfigurator(
+            agent_spec=agent_spec,
+            project_config=project_config,
+            tracker=tracker,
+            root_dir=root_dir,
+        )
