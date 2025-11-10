@@ -4,6 +4,7 @@ from charlie.agents.registry import AgentSpecRegistry
 from charlie.configurator import AgentConfigurator
 from charlie.tracker import Tracker
 from charlie.utils import EnvironmentVariableNotFoundError, PlaceholderTransformer
+from charlie.variable_collector import VariableCollector
 
 __all__ = [
     "AgentConfigurator",
@@ -11,5 +12,6 @@ __all__ = [
     "EnvironmentVariableNotFoundError",
     "PlaceholderTransformer",
     "Tracker",
+    "VariableCollector",
     "__version__",
 ]

@@ -18,6 +18,13 @@ class AgentSpec(BaseModel):
 class ProjectConfig(BaseModel):
     name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
     command_prefix: str | None = Field(None, description="Command prefix for slash commands")
+    dir: str = Field(default=".", description="Project root directory")
+
+
+class Variable(BaseModel):
+    env: str | None = Field(None, description="Environment variable name")
+    choices: list[str] | None = Field(None, description="Available choices for the variable")
+    default: str | None = Field(None, description="Default value")
 
 
 class MCPServer(BaseModel):
@@ -78,6 +85,7 @@ class Command(BaseModel):
 class CharlieConfig(BaseModel):
     version: str = Field(default="1.0", description="Schema version")
     project: ProjectConfig | None = Field(None, description="Project configuration")
+    variables: dict[str, Variable | None] = Field(default_factory=dict, description="Variable definitions")
     mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
     rules: RulesConfig | None = Field(default=None, description="Rules configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
