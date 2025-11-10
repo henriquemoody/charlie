@@ -158,9 +158,6 @@ class PlaceholderTransformer:
                 command=transformed_command,
                 args=transformed_args,
                 env=transformed_env,
-                commands=server.commands,
-                config=server.config,
-                **{k: v for k, v in server.model_extra.items()} if server.model_extra else {},
             )
         else:  # MCPServerHttpConfig
             transformed_url = self.transform_path_placeholders(server.url)
@@ -173,7 +170,4 @@ class PlaceholderTransformer:
                 transport=server.transport,
                 url=transformed_url,
                 headers=transformed_headers,
-                commands=server.commands,
-                config=server.config,
-                **{k: v for k, v in server.model_extra.items()} if server.model_extra else {},
             )

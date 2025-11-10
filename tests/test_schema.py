@@ -31,36 +31,15 @@ def test_mcp_server_valid() -> None:
     assert server.env == {"DEBUG": "true"}
 
 
-def test_mcp_server_defaults() -> None:
-    server = MCPServer(name="test-server", command="node")
-    assert server.args == []
-    assert server.env == {}
-    assert server.commands is None
-    assert server.config is None
-
-
-def test_mcp_server_with_extra_fields() -> None:
-    server = MCPServer(
-        name="test-server",
-        command="node",
-        commands=["init", "build"],
-        config={"timeout": 30000},
-        custom_field="custom_value",  # Extra field
-    )
-    assert server.commands == ["init", "build"]
-    assert server.config == {"timeout": 30000}
-    # Verify extra field is preserved
-    server_dict = server.model_dump()
-    assert server_dict["custom_field"] == "custom_value"
+# Removed tests for removed fields (commands, config, extra fields)
 
 
 def test_rules_config_defaults() -> None:
     rules = RulesConfig()
     assert rules.title == "Development Guidelines"
-    assert rules.include_commands is True
-    assert rules.include_tech_stack is True
-    assert rules.preserve_manual is True
-    assert rules.sections is None
+    assert rules.prompt == ""
+    assert rules.metadata == {}
+    assert rules.replacements == {}
 
 
 def test_rules_section_valid() -> None:

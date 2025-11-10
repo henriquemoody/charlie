@@ -30,28 +30,20 @@ class Variable(BaseModel):
 class MCPServerStdioConfig(BaseModel):
     """MCP server configuration for stdio transport."""
 
-    model_config = ConfigDict(extra="allow")
-
     name: str = Field(..., description="Server name")
     transport: str = Field(default="stdio", description="Transport type (stdio)")
     command: str = Field(..., description="Command to run the server")
     args: list[str] = Field(default_factory=list, description="Command arguments")
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
-    commands: list[str] | None = Field(None, description="Command names this server should expose")
-    config: dict[str, Any] | None = Field(None, description="Server-specific configuration")
 
 
 class MCPServerHttpConfig(BaseModel):
     """MCP server configuration for HTTP transport."""
 
-    model_config = ConfigDict(extra="allow")
-
     name: str = Field(..., description="Server name")
     transport: str = Field(default="http", description="Transport type (http)")
     url: str = Field(..., description="Server URL")
     headers: dict[str, str] = Field(default_factory=dict, description="HTTP headers")
-    commands: list[str] | None = Field(None, description="Command names this server should expose")
-    config: dict[str, Any] | None = Field(None, description="Server-specific configuration")
 
 
 # Backward compatibility: MCPServer is now MCPServerStdioConfig
@@ -68,11 +60,12 @@ class RulesSection(BaseModel):
 
 
 class RulesConfig(BaseModel):
+    """Rules configuration matching prototype.i.py structure."""
+
     title: str = Field(default="Development Guidelines", description="Rules file title")
-    include_commands: bool = Field(default=True, description="Include commands reference")
-    include_tech_stack: bool = Field(default=True, description="Include technology stack info")
-    preserve_manual: bool = Field(default=True, description="Preserve manual additions between markers")
-    sections: list[RulesSection] | None = Field(None, description="Custom rule sections (from directory-based config)")
+    prompt: str = Field(default="", description="Rules prompt template")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Rules metadata")
+    replacements: dict[str, str] = Field(default_factory=dict, description="String replacements")
 
 
 class CommandScripts(BaseModel):
@@ -132,4 +125,16 @@ class CharlieConfig(BaseModel):
 # New API names for prototype compatibility
 # These currently alias to existing types; implementation will be migrated incrementally
 CommandConfig = Command
+
+
+class NewCommandConfig(BaseModel):
+    """Command configuration matching prototype.i.py structure."""
+
+    name: str = Field(..., description="Command name")
+    description: str = Field(..., description="Command description")
+    prompt: str = Field(..., description="Command prompt template")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Command metadata")
+    replacements: dict[str, str] = Field(default_factory=dict, description="String replacements")
+
+
 RuleConfig = RulesSection

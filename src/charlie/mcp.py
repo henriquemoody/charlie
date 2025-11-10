@@ -87,14 +87,8 @@ def generate_mcp_config(
     transformer = PlaceholderTransformer(agent_spec, root_dir) if agent_spec else None
 
     for server in config.mcp_servers:
-        # Filter commands based on what this server should expose
-        server_commands: list[Command] = []
-        if server.commands:
-            # Only include commands that are specified in the server's commands list
-            command_dict = {cmd.name: cmd for cmd in config.commands}
-            server_commands = [command_dict[cmd_name] for cmd_name in server.commands if cmd_name in command_dict]
-
-        server_config = _server_to_mcp_config(server, server_commands, command_prefix, transformer)
+        # All commands are available to all servers (no commands field anymore)
+        server_config = _server_to_mcp_config(server, config.commands, command_prefix, transformer)
         mcp_config["mcpServers"][server.name] = server_config
 
     # Use the mcp_config_path from agent_spec, or fallback to default

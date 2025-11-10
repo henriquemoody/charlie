@@ -58,7 +58,11 @@ class AgentConfigurator:
         output_dir: str = ".",
         mode: str = "merged",
     ) -> list[str]:
-        section_count = len(config.rules.sections) if config.rules and config.rules.sections else 0
+        section_count = (
+            len(config.rules.sections)
+            if config.rules and hasattr(config.rules, "sections") and config.rules.sections
+            else 0
+        )
         self.tracker.track("Generating rules", agent=self.agent_spec.name, mode=mode, sections=section_count)
         generated_files = generate_rules_for_agents(
             config,
