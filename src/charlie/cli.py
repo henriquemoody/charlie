@@ -7,7 +7,6 @@ from rich.table import Table
 
 from charlie.agents.registry import AgentSpecRegistry
 from charlie.config_reader import ConfigParseError, find_config_file, parse_config
-from charlie.configurator import AgentConfigurator
 
 app = typer.Typer(
     name="charlie",
@@ -75,9 +74,14 @@ def setup(
 
             charlie_config.project = ProjectConfig(name="unknown", command_prefix=None)
 
-        configurator = AgentConfigurator.create(
+        from charlie.configurator import AgentConfiguratorFactory
+        from charlie.tracker import Tracker
+
+        tracker = Tracker()
+        configurator = AgentConfiguratorFactory.create(
             agent_spec=agent_spec,
             project_config=charlie_config.project,
+            tracker=tracker,
             root_dir=root_dir,
         )
 
