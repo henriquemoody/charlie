@@ -14,6 +14,7 @@ class AgentSpec(BaseModel):
     arg_placeholder: str
     mcp_config_path: str
 
+
 class ProjectConfig(BaseModel):
     name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
     command_prefix: str | None = Field(None, description="Command prefix for slash commands")

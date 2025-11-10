@@ -167,26 +167,6 @@ rules_files = configurator.rules(config, output_dir="./output", mode="merged")
 asset_files = configurator.assets(output_dir="./output")
 ```
 
-#### Backward Compatibility
-
-The legacy `CommandTranspiler` API is still available for backward compatibility:
-
-```python
-from charlie import CommandTranspiler
-
-transpiler = CommandTranspiler("charlie.yaml")
-
-# All-in-one generation
-results = transpiler.generate(
-    agent_name="claude",
-    commands=True,
-    mcp=True,
-    rules=True,
-    output_dir="./output"
-)
-```
-
-**Note:** The new API provides better separation of concerns and follows SOLID principles. The `CommandTranspiler` wraps the new API internally.
 
 ## Supported Agents
 
@@ -535,16 +515,16 @@ pytest --cov=charlie
 
 ```
 charlie/
-├── src/charlie/          # Main package
-│   ├── agents/           # Agent adapters
-│   ├── cli.py            # CLI interface
-│   ├── transpiler.py     # Core engine
-│   ├── mcp.py            # MCP generator
-│   ├── rules.py          # Rules generator
-│   ├── parser.py         # YAML parser
-│   └── schema.py         # Pydantic schemas
-├── tests/                # Test suite
-├── examples/             # Example configurations
+├── src/charlie/           # Main package
+│   ├── agents/            # Agent adapters
+│   ├── cli.py             # CLI interface
+│   ├── configurator.py    # Core configurator
+│   ├── mcp.py             # MCP generator
+│   ├── rules.py           # Rules generator
+│   ├── config_reader.py   # Configuration parser
+│   └── schema.py          # Pydantic schemas
+├── tests/                 # Test suite
+├── examples/              # Example configurations
 └── README.md
 ```
 
@@ -599,18 +579,6 @@ configurator.commands(config.commands, output_dir="./dist")
 configurator.mcp_servers(config, output_dir="./dist")
 configurator.rules(config, output_dir="./dist")
 configurator.assets(output_dir="./dist")
-
-# Or use the legacy API for simplicity
-from charlie import CommandTranspiler
-
-transpiler = CommandTranspiler("charlie.yaml")
-transpiler.generate(
-    agent_name="claude",
-    commands=True,
-    mcp=True,
-    rules=True,
-    output_dir="./dist"
-)
 ```
 
 ## Contributing
