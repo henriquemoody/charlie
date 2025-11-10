@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from charlie.schema import AgentSpec, CharlieConfig, Command, MCPServer
+from charlie.schema import AgentSpec, CharlieConfig, Command, MCPServerHttpConfig, MCPServerStdioConfig
 from charlie.utils import PlaceholderTransformer
 
 
@@ -20,24 +20,43 @@ def _command_to_tool_schema(command: Command, command_prefix: str | None) -> dic
 
 
 def _server_to_mcp_config(
-    server: MCPServer,
+    server: MCPServerStdioConfig | MCPServerHttpConfig,
     commands: list[Command],
     command_prefix: str | None,
     transformer: PlaceholderTransformer | None = None,
 ) -> dict[str, Any]:
-    # Transform placeholders in command and args if transformer is provided
-    command = server.command
-    args = server.args.copy() if server.args else []
+    config: dict[str, Any] = {}
 
-    if transformer:
-        command = transformer.transform_path_placeholders(command)
-        command = transformer.transform_env_placeholders(command)
-        args = [transformer.transform_env_placeholders(transformer.transform_path_placeholders(arg)) for arg in args]
+    if isinstance(server, MCPServerStdioConfig):
+        # Transform placeholders in command and args if transformer is provided
+        command = server.command
+        args = server.args.copy() if server.args else []
 
-    config: dict[str, Any] = {"command": command, "args": args}
+        if transformer:
+            command = transformer.transform_path_placeholders(command)
+            command = transformer.transform_env_placeholders(command)
+            args = [
+                transformer.transform_env_placeholders(transformer.transform_path_placeholders(arg)) for arg in args
+            ]
 
-    if server.env:
-        config["env"] = server.env
+        config = {"command": command, "args": args}
+
+        if server.env:
+            config["env"] = server.env
+
+    elif isinstance(server, MCPServerHttpConfig):
+        # Transform placeholders in URL and headers if transformer is provided
+        url = server.url
+        headers = server.headers.copy() if server.headers else {}
+
+        if transformer:
+            url = transformer.transform_path_placeholders(url)
+            url = transformer.transform_env_placeholders(url)
+            headers = {k: transformer.transform_env_placeholders(v) for k, v in headers.items()}
+
+        config = {"url": url}
+        if headers:
+            config["headers"] = headers
 
     if commands:
         config["capabilities"] = {

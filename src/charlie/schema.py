@@ -27,15 +27,35 @@ class Variable(BaseModel):
     default: str | None = Field(None, description="Default value")
 
 
-class MCPServer(BaseModel):
+class MCPServerStdioConfig(BaseModel):
+    """MCP server configuration for stdio transport."""
+
     model_config = ConfigDict(extra="allow")
 
     name: str = Field(..., description="Server name")
+    transport: str = Field(default="stdio", description="Transport type (stdio)")
     command: str = Field(..., description="Command to run the server")
     args: list[str] = Field(default_factory=list, description="Command arguments")
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
     commands: list[str] | None = Field(None, description="Command names this server should expose")
     config: dict[str, Any] | None = Field(None, description="Server-specific configuration")
+
+
+class MCPServerHttpConfig(BaseModel):
+    """MCP server configuration for HTTP transport."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str = Field(..., description="Server name")
+    transport: str = Field(default="http", description="Transport type (http)")
+    url: str = Field(..., description="Server URL")
+    headers: dict[str, str] = Field(default_factory=dict, description="HTTP headers")
+    commands: list[str] | None = Field(None, description="Command names this server should expose")
+    config: dict[str, Any] | None = Field(None, description="Server-specific configuration")
+
+
+# Backward compatibility: MCPServer is now MCPServerStdioConfig
+MCPServer = MCPServerStdioConfig
 
 
 class RulesSection(BaseModel):
@@ -86,7 +106,9 @@ class CharlieConfig(BaseModel):
     version: str = Field(default="1.0", description="Schema version")
     project: ProjectConfig | None = Field(None, description="Project configuration")
     variables: dict[str, Variable | None] = Field(default_factory=dict, description="Variable definitions")
-    mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
+    mcp_servers: list[MCPServerStdioConfig | MCPServerHttpConfig] = Field(
+        default_factory=list, description="MCP server definitions"
+    )
     rules: RulesConfig | None = Field(default=None, description="Rules configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
 
