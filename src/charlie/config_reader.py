@@ -254,11 +254,11 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         all_content = []
         for section in parsed_rules_sections:
             all_content.append(f"## {section.title}\n\n{section.content}")
-        
+
         merged_config_data["rules"] = {
             "prompt": "\n\n".join(all_content),
             "metadata": {"sections": [s.model_dump() for s in parsed_rules_sections]},
-            "replacements": {}
+            "replacements": {},
         }
 
     for mcp_server_file_path in discovered_config_files["mcp_servers"]:

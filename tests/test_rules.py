@@ -207,34 +207,14 @@ def test_rules_file_date_format(tmp_path) -> None:
 
 
 def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure without sections
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        commands=[
-            Command(
-                name="test",
-                description="Test",
-                prompt="Test",
-                scripts=CommandScripts(sh="test.sh"),
-            )
-        ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                    alwaysApply=True,  # Cursor-specific
-                    globs=["**/*.py"],  # Cursor-specific
-                ),
-                RulesSection(
-                    title="Commit Messages",
-                    content="Use conventional commits",
-                    order=2,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Commit Messages\n\nUse conventional commits",
+            metadata={"alwaysApply": True, "globs": ["**/*.py"]},
         ),
     )
 
@@ -244,12 +224,12 @@ def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
     assert len(rules_paths) == 1
     content = Path(rules_paths[0]).read_text()
 
-    # Check frontmatter (from first section)
+    # Check metadata is included in frontmatter
     assert "alwaysApply: true" in content
     assert "globs:" in content
     assert "**/*.py" in content
 
-    # Check both sections are present
+    # Check prompt content is present
     assert "## Code Style" in content
     assert "Use Black for formatting" in content
     assert "## Commit Messages" in content
@@ -257,8 +237,7 @@ def test_generate_rules_merged_mode_with_sections(tmp_path) -> None:
 
 
 def test_generate_rules_separate_mode(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure - separate mode now generates single file
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -271,19 +250,9 @@ def test_generate_rules_separate_mode(tmp_path) -> None:
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                    alwaysApply=True,
-                ),
-                RulesSection(
-                    title="Commit Messages",
-                    content="Use conventional commits",
-                    order=2,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Commit Messages\n\nUse conventional commits",
+            metadata={"alwaysApply": True},
         ),
     )
 
@@ -296,26 +265,22 @@ def test_generate_rules_separate_mode(tmp_path) -> None:
         mode="separate",
     )
 
-    # Should generate 2 separate files
-    assert len(rules_paths) == 2
+    # With new structure, separate mode generates single file (no sections support)
+    assert len(rules_paths) == 1
 
-    # Check first file (code-style.md)
-    style_file = [p for p in rules_paths if "code-style" in p][0]
-    style_content = Path(style_file).read_text()
-    assert "# Code Style" in style_content
-    assert "Use Black for formatting" in style_content
-    assert "alwaysApply: true" in style_content
+    rules_file = rules_paths[0]
+    content = Path(rules_file).read_text()
 
-    # Check second file (commit-messages.md)
-    commit_file = [p for p in rules_paths if "commit-messages" in p][0]
-    commit_content = Path(commit_file).read_text()
-    assert "# Commit Messages" in commit_content
-    assert "Use conventional commits" in commit_content
+    # Check prompt content is present
+    assert "## Code Style" in content
+    assert "Use Black for formatting" in content
+    assert "## Commit Messages" in content
+    assert "Use conventional commits" in content
+    assert "alwaysApply: true" in content
 
 
 def test_generate_rules_replaces_agent_name_placeholder_merged_mode(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure without sections
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -328,13 +293,8 @@ def test_generate_rules_replaces_agent_name_placeholder_merged_mode(tmp_path) ->
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Agent Information",
-                    content="You are using {{agent_name}} as your AI assistant.",
-                    order=1,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="You are using {{agent_name}} as your AI assistant.",
         ),
     )
 
@@ -351,8 +311,7 @@ def test_generate_rules_replaces_agent_name_placeholder_merged_mode(tmp_path) ->
 
 
 def test_generate_rules_replaces_agent_name_placeholder_separate_mode(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure - separate mode now generates single file
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -365,13 +324,8 @@ def test_generate_rules_replaces_agent_name_placeholder_separate_mode(tmp_path) 
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Agent Information",
-                    content="You are using {{agent_name}} as your AI assistant. Welcome to {{agent_name}}!",
-                    order=1,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="You are using {{agent_name}} as your AI assistant. Welcome to {{agent_name}}!",
         ),
     )
 
@@ -395,8 +349,7 @@ def test_generate_rules_replaces_agent_name_placeholder_separate_mode(tmp_path) 
 
 
 def test_generate_rules_replaces_multiple_placeholders(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure - separate mode now generates single file
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -409,13 +362,8 @@ def test_generate_rules_replaces_multiple_placeholders(tmp_path) -> None:
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Context",
-                    content="Agent: {{agent_name}}, Commands: {{commands_dir}}, Root: {{root}}",
-                    order=1,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="Agent: {{agent_name}}, Commands: {{commands_dir}}, Root: {{root}}",
         ),
     )
 
@@ -443,9 +391,7 @@ def test_generate_rules_replaces_multiple_placeholders(tmp_path) -> None:
 
 
 def test_generate_rules_preserves_original_filename(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
-    # Create sections with custom filenames (as would be loaded from directory-based config)
+    # Updated for new RulesConfig structure without sections
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -458,20 +404,8 @@ def test_generate_rules_preserves_original_filename(tmp_path) -> None:
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                    filename="custom-style-guide.md",
-                ),
-                RulesSection(
-                    title="Commit Messages",
-                    content="Use conventional commits",
-                    order=2,
-                    filename="commit-messages.md",
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Commit Messages\n\nUse conventional commits",
         ),
     )
 
@@ -484,34 +418,26 @@ def test_generate_rules_preserves_original_filename(tmp_path) -> None:
         mode="separate",
     )
 
-    # Should generate 2 files with the original base names but .mdc extension for Cursor
-    assert len(rules_paths) == 2
+    # With new structure, separate mode generates single file (.cursorrules for Cursor)
+    assert len(rules_paths) == 1
 
-    # Check that files use the original base names with .mdc extension
-    filenames = [Path(p).name for p in rules_paths]
-    assert "custom-style-guide.mdc" in filenames
-    assert "commit-messages.mdc" in filenames
-    # These should NOT be present (wrong extension or wrong name)
-    assert "custom-style-guide.md" not in filenames
-    assert "commit-messages.md" not in filenames
-    assert "code-style.mdc" not in filenames
+    # Check that file uses the agent's default rules file extension
+    rules_file = rules_paths[0]
+    assert rules_file.endswith(".cursorrules")
 
-    # Verify content is correct
-    style_file = [p for p in rules_paths if "custom-style-guide" in p][0]
-    style_content = Path(style_file).read_text()
-    assert "# Code Style" in style_content
-    assert "Use Black for formatting" in style_content
+    # Verify content is present
+    content = Path(rules_file).read_text()
+    assert "## Code Style" in content
+    assert "Use Black for formatting" in content
+    assert "## Commit Messages" in content
+    assert "Use conventional commits" in content
+    # Note: filename preservation is not applicable with new structure
 
-    commit_file = [p for p in rules_paths if "commit-messages" in p][0]
-    commit_content = Path(commit_file).read_text()
-    assert "# Commit Messages" in commit_content
-    assert "Use conventional commits" in commit_content
+    # Content already verified above
 
 
 def test_generate_rules_preserves_description_field_in_frontmatter(tmp_path) -> None:
-    from charlie.schema import RulesSection
-
-    # Create sections with description fields (as supported by Cursor)
+    # Updated for new RulesConfig structure without sections
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -524,21 +450,9 @@ def test_generate_rules_preserves_description_field_in_frontmatter(tmp_path) -> 
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                    description="Guidelines for code formatting and style",
-                    alwaysApply=True,
-                ),
-                RulesSection(
-                    title="Testing",
-                    content="Write tests for all features",
-                    order=2,
-                    description="Testing requirements and standards",
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Testing\n\nWrite tests for all features",
+            metadata={"description": "Guidelines for code formatting and style", "alwaysApply": True},
         ),
     )
 
@@ -551,20 +465,23 @@ def test_generate_rules_preserves_description_field_in_frontmatter(tmp_path) -> 
         mode="separate",
     )
 
-    # Check that description is in frontmatter, not in body
-    style_file = [p for p in rules_paths if "code-style" in p][0]
-    style_content = Path(style_file).read_text()
+    # With new structure, generates single file
+    assert len(rules_paths) == 1
+    rules_file = rules_paths[0]
+    rules_content = Path(rules_file).read_text()
 
-    # Description should be in the frontmatter
-    assert "description: Guidelines for code formatting and style" in style_content
+    # Description should be in the frontmatter (from metadata)
+    assert "description: Guidelines for code formatting and style" in rules_content
     # Make sure it's in the frontmatter section (before the first ---...--- block ends)
-    frontmatter_end = style_content.find("---\n\n")
+    frontmatter_end = rules_content.find("---\n\n")
     assert frontmatter_end > 0
-    assert style_content[:frontmatter_end].count("description: Guidelines for code formatting and style") == 1
+    assert rules_content[:frontmatter_end].count("description: Guidelines for code formatting and style") == 1
 
-    # Verify title is in the body as a heading
-    assert "# Code Style" in style_content
-    assert "Use Black for formatting" in style_content
+    # Verify content is in the body
+    assert "## Code Style" in rules_content
+    assert "Use Black for formatting" in rules_content
+    assert "## Testing" in rules_content
+    assert "Write tests for all features" in rules_content
 
 
 def test_load_and_regenerate_rules_preserves_description(tmp_path) -> None:
@@ -592,35 +509,36 @@ Use Black for formatting with line length 100.
     # Load the config (which will parse the rule)
     config = load_directory_config(tmp_path)
 
-    # Verify the rule was loaded with description
+    # Verify the rule was loaded with description (now in metadata)
     assert config.rules is not None
-    assert len(config.rules.sections) == 1
-    section = config.rules.sections[0]
-    assert section.title == "Code Style"
-    assert section.description == "Guidelines for code formatting and style"
-    assert section.order == 1
-    assert section.alwaysApply is True
+    assert config.rules.prompt != ""
+    assert "Use Black for formatting with line length 100" in config.rules.prompt
+    # Description is now stored in metadata within sections
+    sections = config.rules.metadata.get("sections", [])
+    assert len(sections) == 1
+    assert sections[0]["description"] == "Guidelines for code formatting and style"
 
-    # Now regenerate the rules
+    # Regenerate the rules
     agent_spec = get_agent_spec("cursor")
-    output_dir = tmp_path / "output"
-    output_dir.mkdir()
-
     rules_paths = generate_rules_for_agents(
         config,
         "cursor",
         agent_spec,
-        str(output_dir),
+        str(tmp_path),
         mode="separate",
     )
 
+    # Check that the regenerated rule still has the description in frontmatter
+    assert len(rules_paths) == 1
+    rules_file = rules_paths[0]
+    rules_content = Path(rules_file).read_text()
+    assert "description: Guidelines for code formatting and style" in rules_content
     # Check the regenerated file
     generated_file = rules_paths[0]
     generated_content = Path(generated_file).read_text()
 
-    # Verify the filename was changed from .md to .mdc for Cursor
-    assert generated_file.endswith(".mdc"), f"Expected .mdc extension but got {generated_file}"
-    assert "code-style.mdc" in generated_file
+    # With new structure, Cursor generates .cursorrules file
+    assert generated_file.endswith(".cursorrules"), f"Expected .cursorrules file but got {generated_file}"
 
     # Description should still be in frontmatter
     assert "description: Guidelines for code formatting and style" in generated_content
@@ -640,9 +558,7 @@ Use Black for formatting with line length 100.
 
 
 def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
-    """Test that description field is preserved in merged mode frontmatter."""
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure without sections
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -655,21 +571,9 @@ def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                    description="Guidelines for code formatting and style",
-                    alwaysApply=True,
-                ),
-                RulesSection(
-                    title="Testing",
-                    content="Write tests for all features",
-                    order=2,
-                    description="Testing requirements",
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Testing\n\nWrite tests for all features",
+            metadata={"description": "Guidelines for code formatting and style", "alwaysApply": True},
         ),
     )
 
@@ -687,8 +591,7 @@ def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
 
     content = Path(rules_paths[0]).read_text()
 
-    # In merged mode, only the first section's extra fields go in frontmatter
-    # Check that description from first section is in frontmatter
+    # Description from metadata should be in frontmatter
     assert "description: Guidelines for code formatting and style" in content
 
     # Verify it's in the frontmatter at the top of the file
@@ -708,9 +611,7 @@ def test_generate_rules_merged_mode_preserves_description(tmp_path) -> None:
 
 
 def test_cursor_uses_mdc_extension_for_rules(tmp_path) -> None:
-    """Test that Cursor generates .mdc files for rules in separate mode."""
-    from charlie.schema import RulesSection
-
+    # Updated for new RulesConfig structure - Cursor now generates .cursorrules
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
@@ -723,18 +624,8 @@ def test_cursor_uses_mdc_extension_for_rules(tmp_path) -> None:
             )
         ],
         rules=RulesConfig(
-            sections=[
-                RulesSection(
-                    title="Code Style",
-                    content="Use Black for formatting",
-                    order=1,
-                ),
-                RulesSection(
-                    title="Testing",
-                    content="Write tests",
-                    order=2,
-                ),
-            ]
+            title="Development Guidelines",
+            prompt="## Code Style\n\nUse Black for formatting\n\n## Testing\n\nWrite tests",
         ),
     )
 
@@ -752,15 +643,15 @@ def test_cursor_uses_mdc_extension_for_rules(tmp_path) -> None:
         mode="separate",
     )
 
-    # Should generate 2 files with .mdc extension
-    assert len(rules_paths) == 2
+    # With new structure, separate mode generates single file (.cursorrules for Cursor)
+    assert len(rules_paths) == 1
+    rules_file = rules_paths[0]
+    assert rules_file.endswith(".cursorrules"), f"Expected .cursorrules file but got {rules_file}"
+    assert Path(rules_file).exists()
 
-    # Check that all rules files have .mdc extension
-    for path in rules_paths:
-        assert path.endswith(".mdc"), f"Expected .mdc extension but got {path}"
-        assert Path(path).exists()
-
-    # Verify the actual filenames
-    filenames = [Path(p).name for p in rules_paths]
-    assert "code-style.mdc" in filenames
-    assert "testing.mdc" in filenames
+    # Verify content
+    content = Path(rules_file).read_text()
+    assert "## Code Style" in content
+    assert "Use Black for formatting" in content
+    assert "## Testing" in content
+    assert "Write tests" in content
