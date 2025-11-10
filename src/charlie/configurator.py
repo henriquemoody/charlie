@@ -23,12 +23,6 @@ AGENT_ADAPTER_CLASSES: dict[str, type[BaseAgentAdapter]] = {
 
 
 class AgentConfigurator:
-    """Orchestrates agent configuration generation.
-
-    Follows the new architecture where tracker is injected for progress monitoring.
-    The factory pattern is used to create configurators with proper dependencies.
-    """
-
     def __init__(
         self,
         agent_spec: AgentSpec,
@@ -49,22 +43,9 @@ class AgentConfigurator:
         project_config: ProjectConfig,
         root_dir: str = ".",
     ) -> "AgentConfigurator":
-        """Backward compatibility factory method.
-
-        Use AgentConfiguratorFactory.create() for new code.
-        """
         return cls(agent_spec, project_config, Tracker(), root_dir)
 
     def commands(self, commands: list[Command], output_dir: str = ".") -> list[str]:
-        """Generate command files for the agent.
-
-        Args:
-            commands: List of command configurations
-            output_dir: Output directory for generated files
-
-        Returns:
-            List of paths to generated command files
-        """
         self.tracker.track("Generating commands", agent=self.agent_spec.name, count=len(commands))
         command_prefix = self.project_config.command_prefix
         generated_files = self._adapter.generate_commands(commands, command_prefix, output_dir)
@@ -77,16 +58,6 @@ class AgentConfigurator:
         output_dir: str = ".",
         mode: str = "merged",
     ) -> list[str]:
-        """Generate rules files for the agent.
-
-        Args:
-            config: Charlie configuration
-            output_dir: Output directory for generated files
-            mode: Rules generation mode ("merged" or "separate")
-
-        Returns:
-            List of paths to generated rules files
-        """
         section_count = len(config.rules.sections) if config.rules and config.rules.sections else 0
         self.tracker.track("Generating rules", agent=self.agent_spec.name, mode=mode, sections=section_count)
         generated_files = generate_rules_for_agents(
@@ -101,15 +72,6 @@ class AgentConfigurator:
         return generated_files
 
     def mcp_servers(self, config: CharlieConfig, output_dir: str = ".") -> str:
-        """Generate MCP server configuration for the agent.
-
-        Args:
-            config: Charlie configuration
-            output_dir: Output directory for generated files
-
-        Returns:
-            Path to generated MCP configuration file
-        """
         server_count = len(config.mcp_servers)
         self.tracker.track("Generating MCP config", agent=self.agent_spec.name, servers=server_count)
         config_path = generate_mcp_config(
@@ -123,14 +85,6 @@ class AgentConfigurator:
         return config_path
 
     def assets(self, output_dir: str = ".") -> list[str]:
-        """Copy assets to the agent's directory.
-
-        Args:
-            output_dir: Output directory for assets
-
-        Returns:
-            List of paths to copied asset files
-        """
         source_assets_dir = Path(self.root_dir) / ".charlie" / "assets"
 
         if not source_assets_dir.exists() or not source_assets_dir.is_dir():
@@ -170,12 +124,6 @@ class AgentConfigurator:
 
 
 class AgentConfiguratorFactory:
-    """Factory for creating AgentConfigurator instances.
-
-    Centralizes configurator creation following the factory pattern from the prototype.
-    Provides proper dependency injection for tracker and project configuration.
-    """
-
     @staticmethod
     def create(
         agent_spec: AgentSpec,
@@ -183,17 +131,6 @@ class AgentConfiguratorFactory:
         tracker: Tracker,
         root_dir: str = ".",
     ) -> AgentConfigurator:
-        """Create an AgentConfigurator with all dependencies.
-
-        Args:
-            agent_spec: Agent specification from registry
-            project_config: Project configuration
-            tracker: Tracker for progress monitoring
-            root_dir: Project root directory
-
-        Returns:
-            Configured AgentConfigurator instance
-        """
         return AgentConfigurator(
             agent_spec=agent_spec,
             project_config=project_config,

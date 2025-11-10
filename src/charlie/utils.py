@@ -20,12 +20,6 @@ class EnvironmentVariableNotFoundError(Exception):
 
 
 class PlaceholderTransformer:
-    """Transforms placeholders in configuration entities.
-
-    The new API provides entity-specific transformation methods that return
-    immutable transformed copies, separating transformation concerns by entity type.
-    """
-
     def __init__(
         self,
         agent_spec: AgentSpec,
@@ -38,7 +32,6 @@ class PlaceholderTransformer:
         self.variables = variables or {}
         self.project_config = project_config
 
-        # Load .env file from root directory if it exists
         env_file = Path(root_dir) / ".env"
         if env_file.exists():
             load_dotenv(env_file)
@@ -100,7 +93,6 @@ class PlaceholderTransformer:
         return text
 
     def _get_script_path(self, command: Command, script_type: str) -> str:
-        """Get the appropriate script path for the command and script type."""
         if not command.scripts:
             return ""
 
@@ -112,7 +104,6 @@ class PlaceholderTransformer:
         return command.scripts.sh or command.scripts.ps or ""
 
     def _get_agent_script_path(self, command: Command, script_type: str) -> str:
-        """Get the appropriate agent-specific script path for the command and script type."""
         if not command.agent_scripts:
             return ""
 
@@ -124,15 +115,6 @@ class PlaceholderTransformer:
         return command.agent_scripts.sh or command.agent_scripts.ps or ""
 
     def command(self, cmd: Command, script_type: str = "sh") -> Command:
-        """Transform placeholders in a command and return a new instance.
-
-        Args:
-            cmd: Command to transform
-            script_type: Script type for platform-specific transformations
-
-        Returns:
-            New Command instance with transformed placeholders
-        """
         transformed_prompt = self.transform(cmd.prompt, cmd, script_type)
 
         return Command(
@@ -145,14 +127,6 @@ class PlaceholderTransformer:
         )
 
     def rule(self, rule_section: RulesSection) -> RulesSection:
-        """Transform placeholders in a rule section and return a new instance.
-
-        Args:
-            rule_section: Rule section to transform
-
-        Returns:
-            New RulesSection instance with transformed placeholders
-        """
         transformed_content = self.transform_agent_placeholders(rule_section.content)
         transformed_content = self.transform_path_placeholders(transformed_content)
         transformed_content = self.transform_env_placeholders(transformed_content)
@@ -168,14 +142,6 @@ class PlaceholderTransformer:
     def mcp_server(
         self, server: MCPServerStdioConfig | MCPServerHttpConfig
     ) -> MCPServerStdioConfig | MCPServerHttpConfig:
-        """Transform placeholders in an MCP server config and return a new instance.
-
-        Args:
-            server: MCP server configuration to transform
-
-        Returns:
-            New MCP server instance with transformed placeholders
-        """
         if isinstance(server, MCPServerStdioConfig):
             transformed_command = self.transform_path_placeholders(server.command)
             transformed_command = self.transform_env_placeholders(transformed_command)
