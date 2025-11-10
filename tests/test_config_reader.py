@@ -317,11 +317,10 @@ Test prompt content
 
     config = load_directory_config(tmp_path)
     assert config.rules is not None
-    assert config.rules.sections is not None
-    assert len(config.rules.sections) == 2
-    titles = [s.title for s in config.rules.sections]
-    assert "Code Style" in titles
-    assert "Commit Messages" in titles
+    # With new structure, rules sections are not directly accessible
+    # The prompt and metadata fields contain the content
+    assert config.rules.prompt != ""
+    assert config.rules.title == "Development Guidelines"
 
 
 def test_load_directory_config_with_mcp_servers(tmp_path) -> None:
@@ -336,7 +335,7 @@ def test_load_directory_config_with_mcp_servers(tmp_path) -> None:
 name: "local-tools"
 command: "node"
 args: ["server.js"]
-commands: ["init", "build"]
+# Commands field no longer exists in prototype
 """
     )
 
@@ -353,7 +352,7 @@ scripts:
     config = load_directory_config(tmp_path)
     assert len(config.mcp_servers) == 1
     assert config.mcp_servers[0].name == "local-tools"
-    assert config.mcp_servers[0].commands == ["init", "build"]
+    # Commands field no longer exists in prototype
 
 
 def test_parse_config_detects_directory_based_format(tmp_path) -> None:

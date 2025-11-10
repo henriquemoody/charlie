@@ -118,15 +118,8 @@ def test_generate_rules_for_agents_without_commands(tmp_path) -> None:
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        rules=RulesConfig(include_commands=False),
-        commands=[
-            Command(
-                name="test",
-                description="Test",
-                prompt="Test",
-                scripts=CommandScripts(sh="test.sh"),
-            )
-        ],
+        rules=RulesConfig(),  # Default behavior - commands are now always included
+        commands=[],  # No commands defined
     )
 
     agent_spec = get_agent_spec("claude")
@@ -139,10 +132,12 @@ def test_generate_rules_for_agents_without_commands(tmp_path) -> None:
 
 
 def test_generate_rules_for_agents_without_preserve(tmp_path) -> None:
+    # Manual preservation is now always enabled
+    # This test is no longer applicable as preserve_manual was removed
     config = CharlieConfig(
         version="1.0",
         project=ProjectConfig(name="test", command_prefix="test"),
-        rules=RulesConfig(preserve_manual=False),
+        rules=RulesConfig(),
         commands=[
             Command(
                 name="test",
@@ -158,7 +153,9 @@ def test_generate_rules_for_agents_without_preserve(tmp_path) -> None:
     rules_path = rules_paths[0]
 
     content = Path(rules_path).read_text()
-    assert "MANUAL ADDITIONS START" not in content
+    # Manual additions are now always preserved
+    assert "<!-- MANUAL ADDITIONS START -->" in content
+    assert "<!-- MANUAL ADDITIONS END -->" in content
 
 
 def test_generate_rules_for_agents(tmp_path) -> None:

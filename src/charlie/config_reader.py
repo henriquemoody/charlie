@@ -250,7 +250,16 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
             raise ConfigParseError(f"Error loading rule from {rules_file_path}: {e}")
 
     if parsed_rules_sections:
-        merged_config_data["rules"] = {"sections": [s.model_dump() for s in parsed_rules_sections]}
+        # For backward compatibility, store sections in metadata and create a prompt from all sections
+        all_content = []
+        for section in parsed_rules_sections:
+            all_content.append(f"## {section.title}\n\n{section.content}")
+        
+        merged_config_data["rules"] = {
+            "prompt": "\n\n".join(all_content),
+            "metadata": {"sections": [s.model_dump() for s in parsed_rules_sections]},
+            "replacements": {}
+        }
 
     for mcp_server_file_path in discovered_config_files["mcp_servers"]:
         try:
