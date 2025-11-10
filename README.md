@@ -1,8 +1,8 @@
-# Charlie - Universal Command Transpiler
+# Charlie - Universal Agent Config Generator
 
-**Define slash commands, MCP servers, and agent rules once in YAML. Generate for any AI agent.**
+**Define once in YAML/Markdown. Generate agent-specific commands, MCP config, and rules.**
 
-Charlie is a universal command definition system that transpiles YAML configurations into agent-specific formats for AI assistants, MCP servers, and IDE rules.
+Charlie is a universal agent configuration generator that produces agent-specific commands, MCP configurations, and rules from a single YAML/Markdown spec.
 
 [![Tests](https://img.shields.io/badge/tests-94%20passed-green)]()
 [![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)]()
@@ -15,7 +15,6 @@ Charlie is a universal command definition system that transpiles YAML configurat
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
 - 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` or `.charlie/` directory
-- 🚀 **Zero Config**: Works without any configuration file - infers project name from directory
 - ⚡ **Runtime Targeting**: Choose which agents to generate for at runtime
 - 📦 **Library & CLI**: Use as CLI tool or import as Python library
 
@@ -28,8 +27,6 @@ pip install charlie-agents
 ```
 
 ### Create Configuration (Optional)
-
-Charlie works without any configuration file! It will infer your project name from the directory name. 
 
 For advanced features, create `charlie.yaml` in your project:
 
@@ -199,8 +196,6 @@ Charlie supports 15+ AI agents with built-in knowledge of their requirements:
 Run `charlie list-agents` for the complete list.
 
 ## Configuration
-
-Charlie is **zero-config by default** - it works without any configuration file and infers the project name from your directory name.
 
 For advanced features, Charlie supports two configuration approaches:
 
