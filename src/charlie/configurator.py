@@ -56,8 +56,20 @@ class AgentConfigurator:
         return cls(agent_spec, project_config, Tracker(), root_dir)
 
     def commands(self, commands: list[Command], output_dir: str = ".") -> list[str]:
+        """Generate command files for the agent.
+
+        Args:
+            commands: List of command configurations
+            output_dir: Output directory for generated files
+
+        Returns:
+            List of paths to generated command files
+        """
+        self.tracker.track("Generating commands", agent=self.agent_spec.name, count=len(commands))
         command_prefix = self.project_config.command_prefix
-        return self._adapter.generate_commands(commands, command_prefix, output_dir)
+        generated_files = self._adapter.generate_commands(commands, command_prefix, output_dir)
+        self.tracker.track("Commands generated", files=generated_files)
+        return generated_files
 
     def rules(
         self,
@@ -65,7 +77,19 @@ class AgentConfigurator:
         output_dir: str = ".",
         mode: str = "merged",
     ) -> list[str]:
-        return generate_rules_for_agents(
+        """Generate rules files for the agent.
+
+        Args:
+            config: Charlie configuration
+            output_dir: Output directory for generated files
+            mode: Rules generation mode ("merged" or "separate")
+
+        Returns:
+            List of paths to generated rules files
+        """
+        section_count = len(config.rules.sections) if config.rules and config.rules.sections else 0
+        self.tracker.track("Generating rules", agent=self.agent_spec.name, mode=mode, sections=section_count)
+        generated_files = generate_rules_for_agents(
             config,
             self.agent_spec.name,
             self.agent_spec,
@@ -73,21 +97,47 @@ class AgentConfigurator:
             mode=mode,
             root_dir=self.root_dir,
         )
+        self.tracker.track("Rules generated", files=generated_files)
+        return generated_files
 
     def mcp_servers(self, config: CharlieConfig, output_dir: str = ".") -> str:
-        return generate_mcp_config(
+        """Generate MCP server configuration for the agent.
+
+        Args:
+            config: Charlie configuration
+            output_dir: Output directory for generated files
+
+        Returns:
+            Path to generated MCP configuration file
+        """
+        server_count = len(config.mcp_servers)
+        self.tracker.track("Generating MCP config", agent=self.agent_spec.name, servers=server_count)
+        config_path = generate_mcp_config(
             config,
             self.agent_spec.name,
             output_dir,
             self.agent_spec,
             self.root_dir,
         )
+        self.tracker.track("MCP config generated", file=config_path)
+        return config_path
 
     def assets(self, output_dir: str = ".") -> list[str]:
+        """Copy assets to the agent's directory.
+
+        Args:
+            output_dir: Output directory for assets
+
+        Returns:
+            List of paths to copied asset files
+        """
         source_assets_dir = Path(self.root_dir) / ".charlie" / "assets"
 
         if not source_assets_dir.exists() or not source_assets_dir.is_dir():
+            self.tracker.track("No assets to copy", source=str(source_assets_dir))
             return []
+
+        self.tracker.track("Copying assets", agent=self.agent_spec.name, source=str(source_assets_dir))
 
         agent_base_dir = Path(self.agent_spec.command_dir).parent
         target_assets_dir = Path(output_dir) / agent_base_dir / "assets"
@@ -102,6 +152,7 @@ class AgentConfigurator:
             if file_path.is_file():
                 copied_files.append(str(file_path))
 
+        self.tracker.track("Assets copied", files=copied_files)
         return copied_files
 
     def _create_adapter(self) -> BaseAgentAdapter:
