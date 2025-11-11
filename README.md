@@ -11,7 +11,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 ## Features
 
 - ✨ **Single Definition**: Write settings once in YAML or Markdown
-- 🤖 **Multi-Agent Support**: Generate for different AI agents (only Claude and Cursor supported for now)
+- 🤖 **Multi-Agent Support**: Generate for different AI agents (Claude, Cursor, and GitHub Copilot supported)
 - ⚙️ **Slash Commands Integration**: Generate slash commands from a single definition.
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
@@ -342,6 +342,7 @@ Charlie currently supports the following AI agents:
 
 - **Claude Code** (`claude`) - Claude's AI coding assistant
 - **Cursor** (`cursor`) - AI-powered code editor
+- **GitHub Copilot** (`copilot`) - GitHub's AI pair programmer
 
 Run `charlie list-agents` to see all available agents.
 

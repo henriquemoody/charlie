@@ -30,6 +30,19 @@ class AgentRegistry:
             rules_extension="md",
             mcp_file=".cursor/mcp.json",
         ),
+        Agent(
+            name="GitHub Copilot",
+            shortname="copilot",
+            dir=".github",
+            default_format=FileFormat.MARKDOWN,
+            commands_dir=".github/prompts",
+            commands_extension="prompt.md",
+            commands_shorthand_injection="$ARGUMENTS",
+            rules_file="copilot-instructions.md",
+            rules_dir=".github/instructions",
+            rules_extension="md",
+            mcp_file=".github/copilot/mcp.json",
+        ),
     ]
 
     def get(self, agent_name: str) -> Agent:
