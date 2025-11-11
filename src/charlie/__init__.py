@@ -1,4 +1,6 @@
-__version__ = "0.3.0"
+from importlib.metadata import version
+
+__version__ = version("charlie-agents")
 
 from charlie.agent_registry import AgentRegistry
 from charlie.configurators import AgentConfigurator, AgentConfiguratorFactory

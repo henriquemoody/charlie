@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "charlie-agents"
-version = "0.3.0"
+dynamic = ["version"]
 description = "Universal command transpiler for AI agents, MCP servers, and rules"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -77,6 +77,9 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 ignore = []
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build]
 packages = ["src/charlie"]
