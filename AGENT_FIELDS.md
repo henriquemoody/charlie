@@ -9,6 +9,7 @@ This document lists known metadata fields that specific agents support, but you 
 Charlie currently supports:
 - **Claude Code** (`claude`)
 - **Cursor** (`cursor`)
+- **GitHub Copilot** (`copilot`)
 
 ## Command Fields
 
@@ -70,6 +71,23 @@ metadata:
 
 **Documentation:** [Cursor Commands](https://cursor.com/docs)
 
+#### GitHub Copilot
+
+GitHub Copilot supports the following metadata fields:
+
+```yaml
+metadata:
+  # Organization
+  tags: ["git", "vcs"]
+  category: "source-control"
+```
+
+**Output Format:** YAML frontmatter in generated `.github/prompts/*.prompt.md` files.
+
+**Documentation:** [GitHub Copilot Prompt Files](https://docs.github.com/en/copilot/tutorials/customization-library/prompt-files/your-first-prompt-file)
+
+**Note:** GitHub Copilot doesn't have native slash command support like Claude or Cursor. Instead, Charlie generates prompt files and creates an instructions file that lists available commands for reference.
+
 ## Rule Fields (Rules)
 
 ### Core Fields (All Agents)
@@ -126,6 +144,30 @@ metadata:
 #### Claude Code
 
 Claude Code doesn't currently support special metadata for rules. Rules are stored as `.claude/rules/*.md` files or in the `CLAUDE.md` file at the project root.
+
+#### GitHub Copilot
+
+GitHub Copilot supports instructions files (files matching the pattern `*instructions.md`):
+
+```yaml
+metadata:
+  # File pattern matching
+  applyTo: "**/*.ts,**/*.tsx"
+
+  # Organization
+  description: "Coding standards for this project"
+```
+
+**Output Format:**
+- **Merged mode**: Single `copilot-instructions.md` file with all rules
+- **Separate mode**: Individual `*-instructions.md` files in `.github/instructions/` directory
+
+**Behavior:**
+- `applyTo` - Comma-separated string of glob patterns that control which files this instruction applies to (e.g., `"**/*.ts,**/*.tsx"`)
+
+**Documentation:** [GitHub Copilot Repository Instructions](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions)
+
+**Note:** GitHub Copilot scans the repository for files matching the pattern `*instructions.md`. When using separate mode, Charlie creates individual instruction files and a main instruction file that references them.
 
 ## MCP Server Fields
 
