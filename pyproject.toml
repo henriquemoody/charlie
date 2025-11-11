@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "charlie-agents"
-version = "0.2.0"
+version = "0.3.0"
 description = "Universal command transpiler for AI agents, MCP servers, and rules"
 readme = "README.md"
 requires-python = ">=3.11"
