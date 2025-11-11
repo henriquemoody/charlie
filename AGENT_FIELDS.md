@@ -1,8 +1,14 @@
 # Agent-Specific Fields Reference
 
-Charlie supports **pass-through fields** - any field you add to commands or rules that isn't a core Charlie field will be passed through to the generated agent-specific output.
+Charlie supports **pass-through metadata** - any metadata field you add to commands or rules that isn't a core Charlie field will be passed through to the generated agent-specific output.
 
-This document lists known fields that specific agents support, but you can add any custom field and Charlie will include it in the output.
+This document lists known metadata fields that specific agents support, but you can add any custom metadata field and Charlie will include it in the output.
+
+## Supported Agents
+
+Charlie currently supports:
+- **Claude Code** (`claude`)
+- **Cursor** (`cursor`)
 
 ## Command Fields
 
@@ -10,186 +16,174 @@ This document lists known fields that specific agents support, but you can add a
 
 These are Charlie's core command fields and are always processed:
 
-- `name` - Command name
-- `description` - Command description
-- `prompt` - Command prompt template
-- `scripts` - Platform-specific scripts (sh, ps)
-- `agent_scripts` - Optional agent-specific scripts
+- `name` - Command name (required)
+- `description` - Command description (required)
+- `prompt` - Command prompt template (required)
+- `metadata` - Dictionary of agent-specific metadata fields (optional)
+- `replacements` - Custom placeholder replacements (optional)
 
-### Agent-Specific Fields
+### Agent-Specific Metadata Fields
+
+Metadata fields are added under the `metadata` key in your command definition:
+
+```yaml
+commands:
+  - name: "commit"
+    description: "Create a git commit"
+    prompt: "Commit your changes..."
+    metadata:
+      # Agent-specific fields go here
+      allowed-tools: "Bash(git add:*), Bash(git status:*)"
+      tags: ["git", "vcs"]
+```
 
 #### Claude Code
 
-```yaml
-# Security restrictions
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+Claude Code supports the following metadata fields:
 
-# Organization
-tags: ["git", "vcs"]
-category: "source-control"
+```yaml
+metadata:
+  # Security restrictions
+  allowed-tools: "Bash(git add:*), Bash(git status:*), Bash(git commit:*)"
+  
+  # Organization
+  tags: ["git", "vcs"]
+  category: "source-control"
 ```
 
 **Output Format:** YAML frontmatter in generated `.claude/commands/*.md` files.
 
 **Documentation:** [Claude Code Skills](https://docs.anthropic.com/en/docs/claude-code/skills)
 
-#### GitHub Copilot
-
-```yaml
-# Organization
-tags: ["deployment", "ops"]
-category: "operations"
-```
-
-**Output Format:** YAML frontmatter in generated `.github/prompts/*.prompt.md` files.
-
-**Note:** Copilot's command system is primarily for organization; most fields are for metadata only.
-
 #### Cursor
 
+Cursor supports the following metadata fields:
+
 ```yaml
-# Organization
-tags: ["init", "setup"]
-category: "project-management"
+metadata:
+  # Organization
+  tags: ["init", "setup"]
+  category: "project-management"
 ```
 
 **Output Format:** YAML frontmatter in generated `.cursor/commands/*.md` files.
 
-#### Gemini CLI / Qwen Code
+**Documentation:** [Cursor Commands](https://cursor.com/docs)
 
-```yaml
-# Organization
-tags: ["build", "compile"]
-category: "development"
-```
-
-**Output Format:** TOML key-value pairs in generated `.gemini/commands/*.toml` or `.qwen/commands/*.toml` files.
-
-**Example Output:**
-
-```toml
-description = "Build project"
-tags = ["build", "compile"]
-category = "development"
-
-prompt = """
-Build instructions here
-"""
-```
-
-## Rules Fields
+## Rule Fields (Rules)
 
 ### Core Fields (All Agents)
 
-These are Charlie's core rules fields and are always processed:
+These are Charlie's core rule fields and are always processed:
 
-- `title` - Section title
-- `content` - Section content (Markdown)
-- `order` - Display order (lower numbers first)
+- `name` - Rule name (required, auto-generated from description if omitted)
+- `description` - Rule description/title (required)
+- `prompt` - Rule content in Markdown (required)
+- `metadata` - Dictionary of agent-specific metadata fields (optional)
+- `replacements` - Custom placeholder replacements (optional)
 
-### Agent-Specific Fields
+### Agent-Specific Metadata Fields
+
+Metadata fields are added under the `metadata` key in your rule definition:
+
+```yaml
+rules:
+  - name: "coding-standards"
+    description: "Coding standards"
+    prompt: "All code should follow PEP 8..."
+    metadata:
+      # Agent-specific fields go here
+      alwaysApply: true
+      globs: ["**/*.py"]
+```
 
 #### Cursor
 
-```yaml
-# Metadata
-description: "Guidelines for code formatting and style"
+Cursor supports the following metadata fields for rules (rules):
 
-# Control when rules apply
-alwaysApply: true # or false
-globs:
-  - "**/*.py"
-  - "**/*.ts"
-  - "!**/test_*.py" # Exclusion pattern
+```yaml
+metadata:
+  # Control when rules apply
+  alwaysApply: true  # Rule applies to all files (default: false)
+  
+  # File pattern matching
+  globs:
+    - "**/*.py"
+    - "**/*.ts"
+    - "!**/test_*.py"  # Exclusion pattern
 ```
 
 **Output Format:** YAML frontmatter at top of generated `.cursor/rules/*.md` files.
 
 **Behavior:**
 
-- `description` - Short description of the rule's purpose
-- `alwaysApply: true` - Rule applies to all files
-- `alwaysApply: false` - Rule applies only to files matching globs
-- `globs` - Array of glob patterns (supports negation with `!`)
+- `alwaysApply: true` - Rule applies to all files in the workspace
+- `alwaysApply: false` - Rule applies only to files matching the `globs` patterns
+- `globs` - Array of glob patterns (supports negation with `!` prefix)
 
-#### Windsurf
+**Documentation:** [Cursor Rules](https://cursor.com/docs)
 
-```yaml
-# Priority and organization
-priority: "high" # or "medium", "low"
-categories:
-  - "style"
-  - "formatting"
-  - "best-practices"
-```
+#### Claude Code
 
-**Output Format:** Metadata in generated `.windsurf/workflows/*.md` files.
-
-**Behavior:**
-
-- `priority` - Determines rule importance
-- `categories` - Tags for organizing rules
-
-#### Kilo Code
-
-```yaml
-# Scope control
-enabled: true
-scope: "workspace" # or "file", "selection"
-```
-
-**Output Format:** Metadata in generated `.kilocode/workflows/*.md` files.
+Claude Code doesn't currently support special metadata for rules. Rules are stored as `.claude/rules/*.md` files or in the `CLAUDE.md` file at the project root.
 
 ## MCP Server Fields
 
 ### Core Fields (All Agents)
 
-- `name` - Server name
-- `command` - Command to run
-- `args` - Command arguments (array)
-- `env` - Environment variables (dict)
-- `commands` - Commands this server exposes (array)
-- `config` - Server-specific configuration (dict)
+MCP servers support two transport types:
 
-### Extension Fields
-
-You can add any additional fields to MCP server definitions:
+#### stdio Transport
 
 ```yaml
-name: "my-server"
-command: "node"
-args: ["server.js"]
-
-# Custom fields
-timeout: 30000
-retry: 3
-port: 3000
-version: "1.0.0"
+mcp_servers:
+  - name: "my-server"          # Server name (required)
+    transport: "stdio"          # Transport type (default: "stdio")
+    command: "node"             # Command to run (required)
+    args: ["server.js"]         # Command arguments (optional, default: [])
+    env:                        # Environment variables (optional, default: {})
+      API_KEY: "value"
 ```
 
-These fields are preserved in the generated `mcp-config.json` as custom metadata.
+#### http Transport
+
+```yaml
+mcp_servers:
+  - name: "remote-server"      # Server name (required)
+    transport: "http"           # Transport type
+    url: "https://example.com"  # Server URL (required)
+    headers:                    # HTTP headers (optional, default: {})
+      Authorization: "Bearer token"
+      Content-Type: "application/json"
+```
+
+**Output Format:** Generated as JSON in `.claude/mcp.json` or `.cursor/mcp.json`
+
+**Note:** Charlie doesn't support custom metadata fields for MCP servers. All fields are part of the MCP specification.
 
 ## Field Discovery
 
-Charlie doesn't validate or restrict agent-specific fields - if an agent supports a field, add it to your YAML and Charlie will pass it through.
+Charlie doesn't validate or restrict agent-specific metadata fields - if an agent supports a metadata field, add it to your YAML and Charlie will pass it through.
 
-### Testing New Fields
+### Testing New Metadata Fields
 
-1. Check agent's documentation for supported fields
-2. Add field to your command/rule YAML
-3. Generate output: `charlie setup <agent>`
+1. Check agent's documentation for supported metadata fields
+2. Add field to your command/rule `metadata` section
+3. Generate output: `charlie generate <agent>`
 4. Verify field appears in generated output
 
-### Example: Adding New Field
+### Example: Adding New Metadata Field
 
-If you discover a new Cursor field like `experimental-feature`:
+If you discover a new Cursor metadata field like `experimental-feature`:
 
 ```yaml
 # .charlie/rules/my-rule.yaml
-title: "My Rule"
-content: "Rule content"
-alwaysApply: true
-experimental-feature: true # New field
+name: "my-rule"
+description: "My Rule"
+prompt: "Rule content here..."
+metadata:
+  alwaysApply: true
+  experimental-feature: true  # New metadata field
 ```
 
 Charlie will include it in the output:
@@ -202,48 +196,59 @@ experimental-feature: true
 
 # My Rule
 
-Rule content
+Rule content here...
 ```
 
 ## Limitations and Notes
 
-### Field Name Conversion
+### Metadata Field Name Preservation
 
-Charlie preserves field names as-is, including case:
+Charlie preserves metadata field names as-is, including case:
 
 - `alwaysApply` → `alwaysApply` (camelCase preserved)
 - `allowed_tools` → `allowed_tools` (snake_case preserved)
 - `allowed-tools` → `allowed-tools` (kebab-case preserved)
 
-### YAML vs TOML Format
+### Output Format
 
-**Markdown agents** (Claude, Copilot, Cursor, etc.):
+**Both Claude and Cursor** use Markdown format:
 
-- Extra fields become YAML frontmatter
+- Metadata fields become YAML frontmatter
 - Lists formatted as YAML arrays
 - Dicts formatted as YAML objects
 
-**TOML agents** (Gemini, Qwen):
+Example:
 
-- Extra fields become TOML key-value pairs
-- Lists formatted as TOML arrays: `[item1, item2]`
-- Dicts formatted as inline tables: `{key1 = value1, key2 = value2}`
+```yaml
+# Input
+metadata:
+  tags: ["python", "testing"]
+  alwaysApply: true
 
-### Unsupported Fields
+# Output (YAML frontmatter)
+---
+tags:
+  - python
+  - testing
+alwaysApply: true
+---
+```
 
-If an agent doesn't support a field, it will still appear in the output but may be ignored by the agent. This is by design—Charlie acts as a universal transpiler without enforcing agent-specific validation.
+### Unsupported Metadata Fields
+
+If an agent doesn't support a metadata field, it will still appear in the output but may be ignored by the agent. This is by design—Charlie acts as a universal transpiler without enforcing agent-specific validation.
 
 ## Contributing
 
-Found a new agent-specific field? Please contribute:
+Found a new agent-specific metadata field? Please contribute:
 
-1. Document the field in this file
+1. Document the metadata field in this file under the appropriate agent section
 2. Add example to [`examples/directory-based/`](examples/directory-based/)
 3. Submit a pull request
 
 ## Resources
 
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code/)
-- [Cursor Rules Documentation](https://cursor.com/docs)
-- [GitHub Copilot Prompts](https://docs.github.com/en/copilot)
-- [Gemini CLI](https://ai.google.dev/gemini-api/docs)
+- [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [Cursor Documentation](https://cursor.com/docs)
+- [MCP (Model Context Protocol) Documentation](https://modelcontextprotocol.io/)

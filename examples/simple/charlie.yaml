@@ -1,0 +1,62 @@
+# Simple example configuration
+project:
+  name: "Simple Project"
+
+variables:
+  mcp_api_token: ~ # It will ask the user to provide an API token
+
+# MCP server definitions
+mcp_servers:
+  - name: "local"
+    transport: "stdio"
+    command: "node"
+    args: ["{{assets_dir}}/mcp-server.js"]
+    env:
+      PROJECT_ROOT: "${PROJECT_ROOT}"
+      DEBUG: "false"
+
+  - name: "remote"
+    url: "https://example.com/mcp"
+    headers:
+      Authorization: "Bearer {{var:mcp_api_token}}"
+      Content-Type: "application/json"
+
+# Rules configuration
+rules:
+  - description: "Commit message standards"
+    prompt: "Use the {{env:LANG}} language in [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format"
+
+  - description: "Coding standards"
+    prompt: "All code should follow PEP 8"
+
+# Command definitions
+commands:
+  - name: "init"
+    description: "Initialize a new feature"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Rules
+
+      1. Parse the feature description
+      2. Create necessary files
+      3. Run initialization script
+
+      ## Guidelines
+
+      - Be clear and concise
+      - Focus on what the user needs
+
+  - name: "plan"
+    description: "Create implementation plan"
+    prompt: |
+      ## Task
+
+      Create a technical implementation plan for: {{commands_shorthand_injection}}
+
+      ## Steps
+
+      1. Analyze requirements
+      2. Design architecture

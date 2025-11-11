@@ -1,0 +1,22 @@
+---
+description: "Commit messages guidelines"
+---
+
+- Title
+  - Contains 5-116 characters
+  - Start with capital letter (A-Z)
+  - Use imperative mood ("Add feature" not "Added feature")
+  - No ticket numbers (use footer instead)
+  - No trailing whitespace
+- Body
+  - Explain WHY and maybe a bit of HOW
+  - Empty line required between title and body
+  - Max 116 characters per line (except URLs, code blocks, footer annotations)
+  - Minimum 5 characters
+- Footer
+  - Use trailers:
+    - `Reference: https://example.com`
+    - `Assisted-by: Tool/Agent (<Model/Version>)`
+- AI attribution
+  - Add `Assisted-by: {{agent_name}} (<Model/Version>)`
+  - If you're not sure which model is being used, ask the user or don't mention it.

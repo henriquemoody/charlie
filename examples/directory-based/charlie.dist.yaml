@@ -1,0 +1,11 @@
+# Charlie Configuration (Directory-Based)
+# Commands, rules, and MCP servers are defined in separate files under .charlie/
+project:
+  name: "example-project"
+  namespace: "dir"
+
+variables:
+  shell:
+    choices:
+      - bash
+      - powershell

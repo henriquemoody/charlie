@@ -11,7 +11,7 @@ replacements:
 
 ## Deployment Request
 
-{{user_input}}
+{{commands_shorthand_injection}}
 
 ## Safety Checks
 

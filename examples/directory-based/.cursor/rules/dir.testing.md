@@ -1,9 +1,5 @@
 ---
-description: "Testing Requirements"
-order: 3
-globs:
-  - "src/**/*"
-  - "tests/**/*"
+description: Testing Requirements
 ---
 
 ## Test Coverage

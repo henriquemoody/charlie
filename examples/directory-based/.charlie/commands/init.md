@@ -16,7 +16,7 @@ replacements:
 
 ## User Input
 
-{{user_input}}
+{{commands_shorthand_injection}}
 
 ## Task
 

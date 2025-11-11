@@ -1,17 +1,5 @@
 ---
-description: "Code Style Guidelines"
-order: 2
-alwaysApply: false
-globs:
-  - "**/*.py"
-  - "**/*.ts"
-  - "**/*.js"
-  - "!**/test_*.py"
-  - "!**/*.test.ts"
-priority: "high"
-categories:
-  - style
-  - formatting
+description: Code Style Guidelines
 ---
 
 ## Python Style

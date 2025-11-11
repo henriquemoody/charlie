@@ -2,14 +2,14 @@ import pytest
 
 from charlie.config_reader import (
     ConfigParseError,
-    discover_config_files,
+    discover_charlie_files,
     find_config_file,
     load_directory_config,
     parse_config,
     parse_frontmatter,
     parse_single_file,
 )
-from charlie.schema import Command, RulesSection
+from charlie.schema import Command
 
 
 def test_parse_valid_config_with_project_and_commands(tmp_path) -> None:
@@ -19,13 +19,11 @@ def test_parse_valid_config_with_project_and_commands(tmp_path) -> None:
 version: "1.0"
 project:
   name: "test-project"
-  command_prefix: "test"
+  namespace: "test"
 commands:
   - name: "init"
     description: "Initialize"
     prompt: "Test prompt"
-    scripts:
-      sh: "init.sh"
 """
     )
 
@@ -84,14 +82,6 @@ def test_find_config_charlie_yaml_file(tmp_path) -> None:
     assert found == config_file
 
 
-def test_find_config_hidden_charlie_yaml_file(tmp_path) -> None:
-    config_file = tmp_path / ".charlie.yaml"
-    config_file.write_text("test")
-
-    found = find_config_file(tmp_path)
-    assert found == config_file
-
-
 def test_find_config_prefers_non_hidden_over_hidden(tmp_path) -> None:
     visible = tmp_path / "charlie.yaml"
     hidden = tmp_path / ".charlie.yaml"
@@ -114,7 +104,7 @@ def test_parse_config_with_mcp_servers(tmp_path) -> None:
 version: "1.0"
 project:
   name: "test"
-  command_prefix: "test"
+  namespace: "test"
 mcp_servers:
   - name: "server1"
     command: "node"
@@ -125,8 +115,6 @@ commands:
   - name: "test"
     description: "Test"
     prompt: "Prompt"
-    scripts:
-      sh: "test.sh"
 """
     )
 
@@ -134,50 +122,6 @@ commands:
     assert len(config.mcp_servers) == 1
     assert config.mcp_servers[0].name == "server1"
     assert config.mcp_servers[0].env["DEBUG"] == "true"
-
-
-def test_parse_single_file_command_with_scripts(tmp_path) -> None:
-    command_file = tmp_path / "init.yaml"
-    command_file.write_text(
-        """
-name: "init"
-description: "Initialize project"
-prompt: "Initialize with {{user_input}}"
-scripts:
-  sh: "init.sh"
-  ps: "init.ps1"
-"""
-    )
-
-    command = parse_single_file(command_file, Command)
-    assert command.name == "init"
-    assert command.description == "Initialize project"
-    assert command.scripts.sh == "init.sh"
-
-
-def test_parse_single_file_rules_section_with_pass_through_fields(tmp_path) -> None:
-    rules_file = tmp_path / "code-style.yaml"
-    rules_file.write_text(
-        """
-title: "Code Style"
-content: |
-  Use Black for formatting
-  Max line length: 100
-order: 1
-alwaysApply: true
-globs:
-  - "**/*.py"
-"""
-    )
-
-    section = parse_single_file(rules_file, RulesSection)
-    assert section.title == "Code Style"
-    assert "Black" in section.content
-    assert section.order == 1
-    # Verify pass-through fields
-    section_dict = section.model_dump()
-    assert section_dict["alwaysApply"] is True
-    assert section_dict["globs"] == ["**/*.py"]
 
 
 def test_parse_single_file_invalid_raises_config_parse_error(tmp_path) -> None:
@@ -189,7 +133,7 @@ def test_parse_single_file_invalid_raises_config_parse_error(tmp_path) -> None:
 
 
 def test_discover_config_files_empty_when_charlie_dir_not_exist(tmp_path) -> None:
-    result = discover_config_files(tmp_path)
+    result = discover_charlie_files(tmp_path)
     assert result["commands"] == []
     assert result["rules"] == []
     assert result["mcp_servers"] == []
@@ -211,7 +155,7 @@ def test_discover_config_files_complete_directory_structure(tmp_path) -> None:
     (rules_dir / "style.md").write_text("test")
     (mcp_dir / "server.yaml").write_text("test")
 
-    result = discover_config_files(tmp_path)
+    result = discover_charlie_files(tmp_path)
     assert len(result["commands"]) == 2
     assert len(result["rules"]) == 1
     assert len(result["mcp_servers"]) == 1
@@ -227,8 +171,6 @@ def test_load_directory_config_minimal_with_inferred_project_name(tmp_path) -> N
         """---
 name: "test"
 description: "Test command"
-scripts:
-  sh: "test.sh"
 ---
 
 Test prompt content
@@ -250,7 +192,7 @@ def test_load_directory_config_with_project_metadata(tmp_path) -> None:
 version: "1.0"
 project:
   name: "my-project"
-  command_prefix: "myapp"
+  namespace: "myapp"
 """
     )
 
@@ -261,8 +203,6 @@ project:
         """---
 name: "init"
 description: "Init"
-scripts:
-  sh: "init.sh"
 ---
 
 Init prompt content
@@ -272,55 +212,8 @@ Init prompt content
     config = load_directory_config(tmp_path)
     assert config.project is not None
     assert config.project.name == "my-project"
-    assert config.project.command_prefix == "myapp"
+    assert config.project.namespace == "myapp"
     assert len(config.commands) == 1
-
-
-def test_load_directory_config_with_rules_sections(tmp_path) -> None:
-    charlie_dir = tmp_path / ".charlie"
-    rules_dir = charlie_dir / "rules"
-    commands_dir = charlie_dir / "commands"
-    rules_dir.mkdir(parents=True)
-    commands_dir.mkdir(parents=True)
-
-    (rules_dir / "style.md").write_text(
-        """---
-title: "Code Style"
-order: 1
----
-
-Use Black
-"""
-    )
-
-    (rules_dir / "commits.md").write_text(
-        """---
-title: "Commit Messages"
-order: 2
----
-
-Use conventional commits
-"""
-    )
-
-    (commands_dir / "test.md").write_text(
-        """---
-name: "test"
-description: "Test"
-scripts:
-  sh: "test.sh"
----
-
-Test prompt content
-"""
-    )
-
-    config = load_directory_config(tmp_path)
-    assert config.rules is not None
-    # With new structure, rules sections are not directly accessible
-    # The prompt and metadata fields contain the content
-    assert config.rules.prompt != ""
-    assert config.rules.title == "Development Guidelines"
 
 
 def test_load_directory_config_with_mcp_servers(tmp_path) -> None:
@@ -344,8 +237,6 @@ args: ["server.js"]
 name: "init"
 description: "Init"
 prompt: "Init"
-scripts:
-  sh: "init.sh"
 """
     )
 
@@ -364,8 +255,6 @@ def test_parse_config_detects_directory_based_format(tmp_path) -> None:
         """---
 name: "test"
 description: "Test"
-scripts:
-  sh: "test.sh"
 ---
 
 Test prompt content
@@ -377,7 +266,7 @@ Test prompt content
 version: "1.0"
 project:
   name: "test"
-  command_prefix: "test"
+  namespace: "test"
 """
     )
 
@@ -393,13 +282,11 @@ def test_parse_config_fallback_to_monolithic_without_charlie_dir(tmp_path) -> No
 version: "1.0"
 project:
   name: "test"
-  command_prefix: "test"
+  namespace: "test"
 commands:
   - name: "init"
     description: "Init"
     prompt: "Init"
-    scripts:
-      sh: "init.sh"
 """
     )
 
@@ -482,42 +369,3 @@ No closing delimiter
 """
     with pytest.raises(ConfigParseError, match="closing delimiter"):
         parse_frontmatter(content)
-
-
-def test_parse_single_file_markdown_command_with_frontmatter(tmp_path) -> None:
-    md_file = tmp_path / "test.md"
-    md_file.write_text(
-        """---
-name: "test"
-description: "Test command"
-scripts:
-  sh: "test.sh"
----
-
-Test prompt content
-"""
-    )
-
-    command = parse_single_file(md_file, Command)
-    assert command.name == "test"
-    assert command.description == "Test command"
-    assert command.prompt == "Test prompt content"
-    assert command.scripts.sh == "test.sh"
-
-
-def test_parse_single_file_markdown_rules_with_frontmatter(tmp_path) -> None:
-    md_file = tmp_path / "test.md"
-    md_file.write_text(
-        """---
-title: "Test Rule"
-order: 1
----
-
-Rule content here
-"""
-    )
-
-    rules = parse_single_file(md_file, RulesSection)
-    assert rules.title == "Test Rule"
-    assert rules.order == 1
-    assert rules.content == "Rule content here"

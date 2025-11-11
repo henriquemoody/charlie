@@ -1,0 +1,34 @@
+---
+description: "Testing guidelines"
+---
+
+- Favour testing behaviour over implementation.
+- Do not use docstrings to document the test, but instead has very descriptive names.
+- Use the SHOULD-WHEN naming convention for test names:
+  - Pattern: `test_should_<expected_behavior>_when_<condition>`
+  - Makes tests read like specifications of expected behavior
+  - Examples:
+    - `test_should_create_directory_when_it_does_not_exist`
+    - `test_should_apply_namespace_to_filename_when_namespace_is_present`
+    - `test_should_return_early_when_no_items_provided`
+    - `test_should_filter_metadata_to_allowed_fields_when_using_separate_mode`
+- Test structure and independence:
+  - Each test should be self-contained and independent
+  - Use pytest fixtures for common setup (prefer fixtures over helper functions)
+  - Use `tmp_path` fixture for file system operations to ensure isolation
+  - Group related tests together (e.g., all tests for a method/feature)
+  - Follow arrange-act-assert pattern for clarity
+- Assertions:
+  - Make assertions clear and focused on observable behavior
+  - Avoid asserting on implementation details
+  - Prefer multiple simple assertions over complex compound assertions when testing multiple aspects
+- Test doubles (mocks, fakes, stubs):
+  - Prefer concrete classes and real objects whenever possible
+  - Create simple fake implementations for collaborators (e.g., in-memory repository, fake tracker)
+  - Only use mocks when concrete implementations are impractical (e.g., external APIs, slow operations)
+  - Never mock the system under test
+  - Avoid "mockhell" - excessive mocking makes tests brittle and hard to maintain
+- Coverage:
+  - Test different scenarios: happy path, edge cases, error conditions
+  - Test with and without optional parameters (e.g., namespace present/absent)
+  - Test empty inputs when applicable (ensure early returns work correctly)

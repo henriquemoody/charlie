@@ -2,15 +2,19 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 
-from charlie.agents.registry import AgentSpecRegistry
+from charlie.agent_registry import AgentRegistry
 from charlie.config_reader import ConfigParseError, find_config_file, parse_config
+from charlie.configurators.agent_configurator_factory import AgentConfiguratorFactory
+from charlie.enums import RuleMode
+from charlie.placeholder_transformer import PlaceholderTransformer
+from charlie.tracker import Tracker
+from charlie.variable_collector import VariableCollector
 
 app = typer.Typer(
     name="charlie",
-    help="Universal command transpiler for AI agents, MCP servers, and rules",
+    help="Universal Agent Config Generator",
     add_completion=False,
 )
 console = Console()
@@ -31,7 +35,7 @@ def _resolve_config_file(config_path: str | None) -> Path:
 
 
 @app.command()
-def setup(
+def generate(
     agent_name: str = typer.Argument(..., help="Agent name to generate configuration for"),
     config_path: str | None = typer.Option(
         None,
@@ -43,9 +47,9 @@ def setup(
     no_mcp: bool = typer.Option(False, "--no-mcp", help="Skip MCP server configuration"),
     no_rules: bool = typer.Option(False, "--no-rules", help="Skip rules file generation"),
     rules_generation_mode: str = typer.Option(
-        "merged",
+        "separate",
         "--rules-mode",
-        help="Rules generation mode: 'merged' (single file) or 'separate' (one file per section)",
+        help="Rules generation mode: 'separate' (single file) or 'separate' (one file per section)",
     ),
     output_dir_path: str = typer.Option(".", "--output", "-o", help="Output directory"),
     verbose_output: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
@@ -57,78 +61,59 @@ def setup(
 
         charlie_config = parse_config(str(resolved_config_file))
 
-        resolved_path = resolved_config_file.resolve()
-        if resolved_path.is_dir():
-            if resolved_path.name == ".charlie":
-                root_dir = str(resolved_path.parent)
-            else:
-                root_dir = str(resolved_path)
-        else:
-            root_dir = str(resolved_path.parent)
-
-        agent_registry = AgentSpecRegistry()
-        agent_spec = agent_registry.get(agent_name)
-
-        if charlie_config.project is None:
-            from charlie.schema import ProjectConfig
-
-            charlie_config.project = ProjectConfig(name="unknown", command_prefix=None)
-
-        from charlie.configurator import AgentConfiguratorFactory
-        from charlie.tracker import Tracker
+        agent_registry = AgentRegistry()
+        agent = agent_registry.get(agent_name)
 
         tracker = Tracker()
         configurator = AgentConfiguratorFactory.create(
-            agent_spec=agent_spec,
-            project_config=charlie_config.project,
+            agent=agent,
+            project=charlie_config.project,
             tracker=tracker,
-            root_dir=root_dir,
         )
 
-        console.print(f"\n[bold]Setting up {agent_name}...[/bold]")
+        variable_collector = VariableCollector()
+        variables = variable_collector.collect(charlie_config.variables)
 
-        generation_results: dict[str, list[str]] = {}
+        transformer = PlaceholderTransformer(
+            agent=agent,
+            variables=variables,
+            project=charlie_config.project,
+        )
+
+        console.print(f"\n[bold]Setting up {agent.name}...[/bold]\n")
 
         if not no_commands:
-            generated_commands = configurator.commands(charlie_config.commands, output_dir_path)
-            generation_results["commands"] = generated_commands
+            configurator.commands([transformer.command(command) for command in charlie_config.commands])
 
         if not no_mcp and charlie_config.mcp_servers:
-            mcp_file = configurator.mcp_servers(charlie_config, output_dir_path)
-            generation_results["mcp"] = [mcp_file]
+            configurator.mcp_servers([transformer.mcp_server(mcp_server) for mcp_server in charlie_config.mcp_servers])
 
         if not no_rules:
-            rules_files = configurator.rules(charlie_config, output_dir_path, rules_generation_mode)
-            generation_results["rules"] = rules_files
+            configurator.rules(
+                [transformer.rule(rule) for rule in charlie_config.rules],
+                RuleMode(rules_generation_mode),
+            )
 
-        assets_files = configurator.assets(output_dir_path)
-        if assets_files:
-            generation_results["assets"] = assets_files
+        if charlie_config.assets:
+            configurator.assets(charlie_config.assets)
+
+        for record in tracker.records:
+            console.print(f" • {record['event']}")
 
         console.print(f"\n[green]✓ Setup complete for {agent_name}![/green]\n")
-
-        for target_category, generated_files in generation_results.items():
-            console.print(f"[cyan]{target_category}:[/cyan]")
-            for file_path in generated_files:
-                if verbose_output:
-                    console.print(f"  • {file_path}")
-                else:
-                    try:
-                        relative_path = Path(file_path).relative_to(Path(output_dir_path).resolve())
-                    except ValueError:
-                        relative_path = Path(file_path)
-                    console.print(f"  • {relative_path}")
 
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
     except ConfigParseError as e:
         console.print(f"[red]Configuration Error:[/red]\n{e}")
+        # pint(e)
         raise typer.Exit(1)
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
     except Exception as e:
+        print(e)
         console.print(f"[red]Unexpected Error:[/red] {e}")
         if verbose_output:
             import traceback
@@ -152,9 +137,9 @@ def validate(
 
         console.print("\n[green]✓ Configuration is valid![/green]\n")
         project_name = validated_config.project.name if validated_config.project else "unknown"
-        command_prefix = validated_config.project.command_prefix if validated_config.project else None
+        namespace = validated_config.project.namespace if validated_config.project else None
         console.print(f"  Project: {project_name}")
-        console.print(f"  Command prefix: {command_prefix or '(none)'}")
+        console.print(f"  Namespace: {namespace or '(none)'}")
         console.print(f"  Commands: {len(validated_config.commands)}")
         console.print(f"  MCP servers: {len(validated_config.mcp_servers)}")
 
@@ -168,22 +153,18 @@ def validate(
 
 @app.command("list-agents")
 def list_agents() -> None:
-    agent_registry = AgentSpecRegistry()
+    agent_registry = AgentRegistry()
     supported_agent_names = agent_registry.list()
 
     console.print("\n[bold]Supported AI Agents:[/bold]\n")
 
     agents_table = Table(show_header=True, header_style="bold cyan")
-    agents_table.add_column("Agent Name", style="cyan")
+    agents_table.add_column("Shortname", style="cyan")
     agents_table.add_column("Display Name")
-    agents_table.add_column("Format")
-    agents_table.add_column("Command Directory")
 
     for agent_name in supported_agent_names:
-        agent_specification = agent_registry.get(agent_name)
-        agents_table.add_row(
-            agent_name, agent_specification.name, agent_specification.file_format, agent_specification.command_dir
-        )
+        agent = agent_registry.get(agent_name)
+        agents_table.add_row(agent_name, agent.name)
 
     console.print(agents_table)
     console.print(f"\n[dim]Total: {len(supported_agent_names)} agents[/dim]\n")
@@ -194,28 +175,22 @@ def info(
     agent_name: str = typer.Argument(..., help="Agent name to show information for"),
 ) -> None:
     try:
-        agent_registry = AgentSpecRegistry()
-        agent_specification = agent_registry.get(agent_name)
+        agent_registry = AgentRegistry()
+        agent = agent_registry.get(agent_name)
     except ValueError:
         console.print(f"[red]Error:[/red] Unknown agent '{agent_name}'")
         console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
         raise typer.Exit(1)
 
-    agent_info_lines = [
-        f"[bold]Agent:[/bold] {agent_specification.name}",
-        "",
-        f"[cyan]Format:[/cyan] {agent_specification.file_format}",
-        f"[cyan]Command directory:[/cyan] {agent_specification.command_dir}",
-        f"[cyan]Command extension:[/cyan] {agent_specification.command_extension}",
-        f"[cyan]Rules extension:[/cyan] {agent_specification.rules_extension}",
-        f"[cyan]Argument placeholder:[/cyan] {agent_specification.arg_placeholder}",
-        f"[cyan]Rules file:[/cyan] {agent_specification.rules_file}",
-    ]
+    # Display all fields from Agent as a table
+    agent_info_table = Table(show_header=True, header_style="bold cyan")
+    agent_info_table.add_column("Field", style="cyan")
+    agent_info_table.add_column("Value")
 
-    info_panel = Panel("\n".join(agent_info_lines), title=f"[bold]{agent_name}[/bold]", border_style="cyan")
+    for key, value in agent.__dict__.items():
+        agent_info_table.add_row(key, str(value))
 
-    console.print()
-    console.print(info_panel)
+    console.print(agent_info_table)
     console.print()
 
 

@@ -1,0 +1,247 @@
+version: "1.0"
+
+# Spec-kit inspired configuration
+project:
+  name: "Spec Kit"
+  namespace: "speckit"
+
+variables:
+  shell:
+    env: PROJECT_SHELL
+    choices:
+      - bash
+      - powershell
+
+# MCP servers for spec-kit commands and filesystem access
+mcp_servers:
+  - name: "speckit-commands"
+    transport: "stdio"
+    command: "node"
+    args: ["{{project_dir}}/.speckit/speckit-mcp-server.js"]
+    env:
+      SPEC_KIT_ROOT: "{{project_dir}}"
+
+  - name: "speckit-filesystem"
+    transport: "stdio"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "{{project_dir}}"]
+
+# Spec-kit slash commands
+commands:
+  - name: "constitution"
+    description: "Establish project principles and development guidelines"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      You MUST consider the user input before proceeding (if not empty).
+
+      ## Task
+
+      Create project constitution that establishes:
+
+      1. Core principles and values
+      2. Development standards
+      3. Code quality requirements
+      4. Testing expectations
+      5. User experience guidelines
+
+      Execute: {{script}}
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/create-constitution.sh"
+          powershell: ".specify/scripts/powershell/create-constitution.ps1"
+
+  - name: "specify"
+    description: "Create or update feature specification from natural language"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Outline
+
+      The text after `/speckit.specify` is the feature description.
+
+      Given that description:
+
+      1. Generate a concise short name (2-4 words)
+      2. Check for existing branches
+      3. Run script: {{script}}
+      4. Load spec template
+      5. Fill in specification sections
+      6. Write to spec file
+
+      ## Guidelines
+
+      - Focus on WHAT users need and WHY
+      - Avoid HOW to implement (no tech stack details)
+      - Written for business stakeholders
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/create-new-feature.sh --json"
+          powershell: ".specify/scripts/powershell/create-new-feature.ps1 -Json"
+
+  - name: "plan"
+    description: "Execute implementation planning workflow"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Outline
+
+      1. Setup: Run {{script}} and parse JSON output
+      2. Load context: Read feature spec and constitution
+      3. Execute plan workflow
+      4. Generate research.md, data-model.md, contracts/
+      5. Update agent context: {{agent_script}}
+      6. Report completion
+
+      ## Key Rules
+
+      - Use absolute paths
+      - ERROR on gate failures
+      - Resolve all NEEDS CLARIFICATION items
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/setup-plan.sh --json"
+          powershell: ".specify/scripts/powershell/setup-plan.ps1 -Json"
+      agent_script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/update-agent-context.sh"
+          powershell: ".specify/scripts/powershell/update-agent-context.ps1 -AgentType"
+
+  - name: "tasks"
+    description: "Generate actionable task list from implementation plan"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Task
+
+      Break down the implementation plan into discrete, actionable tasks.
+
+      Execute: {{script}}
+
+      Each task should be:
+      - Specific and measurable
+      - Independent when possible
+      - Time-boxed (< 4 hours)
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/generate-tasks.sh"
+          powershell: ".specify/scripts/powershell/generate-tasks.ps1"
+
+  - name: "implement"
+    description: "Execute implementation tasks"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Rules
+
+      Execute all tasks from the task list to implement the feature.
+
+      Run: {{script}}
+
+      For each task:
+      1. Read task description
+      2. Implement solution
+      3. Write tests
+      4. Verify completion
+      5. Mark task complete
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/implement.sh"
+          powershell: ".specify/scripts/powershell/implement.ps1"
+
+  - name: "clarify"
+    description: "Ask structured questions to clarify ambiguous requirements"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Task
+
+      Identify unclear or ambiguous aspects of the specification and
+      ask structured questions to de-risk implementation.
+
+      Execute: {{script}}
+
+      Focus on:
+      - Scope boundaries
+      - Edge cases
+      - User expectations
+      - Technical constraints
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/clarify.sh"
+          powershell: ".specify/scripts/powershell/clarify.ps1"
+
+  - name: "analyze"
+    description: "Cross-artifact consistency and alignment report"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Task
+
+      Analyze consistency and alignment across specification, plan, and tasks.
+
+      Execute: {{script}}
+
+      Check for:
+      - Requirements coverage
+      - Design consistency
+      - Task completeness
+      - Gap analysis
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/analyze.sh"
+          powershell: ".specify/scripts/powershell/analyze.ps1"
+
+  - name: "checklist"
+    description: "Generate quality checklists for requirement validation"
+    prompt: |
+      ## User Input
+
+      {{commands_shorthand_injection}}
+
+      ## Task
+
+      Generate quality checklists to validate requirements completeness,
+      clarity, and consistency.
+
+      Execute: {{script}}
+
+      Checklist categories:
+      - Content quality
+      - Requirement completeness
+      - Feature readiness
+    replacements:
+      script:
+        discriminator: shell
+        options:
+          bash: ".specify/scripts/bash/generate-checklist.sh"
+          powershell: ".specify/scripts/powershell/generate-checklist.ps1"

@@ -1,12 +1,7 @@
 from enum import Enum
 
 
-class ScriptType(Enum):
-    SH = "sh"
-    PS = "ps"
-
-
-class RulesMode(Enum):
+class RuleMode(Enum):
     MERGED = "merged"
     SEPARATE = "separate"
 
@@ -14,3 +9,4 @@ class RulesMode(Enum):
 class FileFormat(Enum):
     MARKDOWN = "markdown"
     YAML = "yaml"
+    TOML = "toml"

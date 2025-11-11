@@ -7,7 +7,8 @@ description: Analyze changes and create a high-quality git commit
 
 - Current branch: !`git branch --show-current`
 - Working tree status: !`git status --short --branch`
-- Diff (staged + unstaged): !`git diff $(git rev-parse --verify HEAD 2>/dev/null || echo --cached)`
+- Unstaged changes: !`git diff`
+- Staged changes: !`git diff --cached`
 - Recent history (if available): !`git log --oneline -10 || echo "No commits yet"`
 
 ## Your task

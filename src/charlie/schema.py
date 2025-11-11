@@ -1,109 +1,96 @@
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-
-class AgentSpec(BaseModel):
-    name: str
-    command_dir: str
-    rules_file: str
-    rules_dir: str
-    file_format: str
-    command_extension: str
-    rules_extension: str
-    arg_placeholder: str
-    mcp_config_path: str
+from charlie.enums import FileFormat
 
 
-class ProjectConfig(BaseModel):
-    name: str | None = Field(None, description="Project name (inferred from directory if not specified)")
-    command_prefix: str | None = Field(None, description="Namespace prefix for commands and rules")
-    root_directory: str = Field(default=".", description="Project root directory")
+class Agent(BaseModel):
+    name: str = Field(..., description="Name of the agent")
+    shortname: str = Field(..., description="Short version of the agent name")
+    dir: str = Field(..., description="Root directory of the agent")
+    default_format: FileFormat = Field(..., description="Default file format")
+    commands_dir: str = Field(..., description="Directory containing command files")
+    commands_extension: str = Field(..., description="Extension of command files")
+    commands_shorthand_injection: str = Field(..., description="Placeholder for shorthand injection in command files")
+    rules_dir: str = Field(..., description="Directory where rules are stored")
+    rules_file: str = Field(..., description="Default rules file")
+    rules_extension: str = Field(..., description="Default extension for rules files")
+    mcp_file: str = Field(..., description="MCP file")
 
 
-class Variable(BaseModel):
+class Project(BaseModel):
+    name: str = Field(..., description="Project name")
+    namespace: str | None = Field(None, description="Namespace for commands and rules")
+    dir: str = Field(..., description="Project directory")
+
+
+class VariableSpec(BaseModel):
     env: str | None = Field(None, description="Environment variable name")
     choices: list[str] | None = Field(None, description="Available choices for the variable")
     default: str | None = Field(None, description="Default value")
 
 
-class MCPServerStdioConfig(BaseModel):
-    """MCP server configuration for stdio transport."""
-
+class StdioMCPServer(BaseModel):
     name: str = Field(..., description="Server name")
-    transport: str = Field(default="stdio", description="Transport type (stdio)")
+    transport: Literal["stdio"] = Field(default="stdio", description="Transport type (stdio)")
     command: str = Field(..., description="Command to run the server")
     args: list[str] = Field(default_factory=list, description="Command arguments")
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
 
 
-class MCPServerHttpConfig(BaseModel):
+class HttpMCPServer(BaseModel):
     """MCP server configuration for HTTP transport."""
 
     name: str = Field(..., description="Server name")
-    transport: str = Field(default="http", description="Transport type (http)")
+    transport: Literal["http"] = Field(default="http", description="Transport type (http)")
     url: str = Field(..., description="Server URL")
     headers: dict[str, str] = Field(default_factory=dict, description="HTTP headers")
 
 
-# Backward compatibility: MCPServer is now MCPServerStdioConfig
-MCPServer = MCPServerStdioConfig
+MCPServer = StdioMCPServer | HttpMCPServer
+
+Metadata = dict[str, Any]
 
 
-class RulesSection(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    title: str = Field(..., description="Section title")
-    content: str = Field(..., description="Section content (Markdown)")
-    order: int | None = Field(None, description="Display order (lower numbers first)")
-    filename: str | None = Field(None, description="Original filename (for directory-based configs)")
+class ChoiceReplacement(BaseModel):
+    type: Literal["choice"] = Field(default="choice", description="Says that the type is choice")
+    discriminator: str = Field(..., description="Discriminator key")
+    options: dict[str, str] = Field(..., description="Available options for the variable")
 
 
-class RulesConfig(BaseModel):
-    """Rules configuration matching prototype.i.py structure."""
+class ValueReplacement(BaseModel):
+    type: Literal["value"] = Field(default="value", description="Says that the type is choice")
+    value: str | int | float | bool | None = Field(..., description="Value to replace with")
 
-    title: str = Field(default="Development Guidelines", description="Rules file title")
+
+ReplacementSpec = ChoiceReplacement | ValueReplacement
+
+
+class Rule(BaseModel):
+    name: str = Field(..., description="Name of the rule")
+    description: str = Field(..., description="Description of the rule")
     prompt: str = Field(default="", description="Rules prompt template")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Rules metadata")
-    replacements: dict[str, str] = Field(default_factory=dict, description="String replacements")
-
-
-class CommandScripts(BaseModel):
-    sh: str | None = Field(None, description="Bash script path")
-    ps: str | None = Field(None, description="PowerShell script path")
-
-    @field_validator("sh", "ps")
-    @classmethod
-    def validate_at_least_one(cls, v: str | None, info: ValidationInfo) -> str | None:
-        return v
+    metadata: Metadata = Field(default_factory=dict, description="Rules metadata")
+    replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
 
 
 class Command(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    name: str | None = Field(None, description="Command name (without prefix)")
+    name: str = Field(..., description="Command name")
     description: str = Field(..., description="Command description")
-    prompt: str = Field(default="", description="Command prompt template")
-    scripts: CommandScripts | None = Field(None, description="Platform-specific scripts")
-    agent_scripts: CommandScripts | None = Field(None, description="Optional agent-specific scripts")
-
-    @field_validator("scripts")
-    @classmethod
-    def validate_scripts(cls, v: CommandScripts | None) -> CommandScripts | None:
-        if v is not None and not v.sh and not v.ps:
-            raise ValueError("At least one script (sh or ps) must be defined")
-        return v
+    prompt: str = Field(..., description="Command prompt template")
+    metadata: Metadata = Field(default_factory=dict, description="Command metadata")
+    replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
 
 
 class CharlieConfig(BaseModel):
-    version: str = Field(default="1.0", description="Schema version")
-    project: ProjectConfig | None = Field(None, description="Project configuration")
-    variables: dict[str, Variable | None] = Field(default_factory=dict, description="Variable definitions")
-    mcp_servers: list[MCPServerStdioConfig | MCPServerHttpConfig] = Field(
-        default_factory=list, description="MCP server definitions"
-    )
-    rules: RulesConfig | None = Field(default=None, description="Rules configuration")
+    version: str = Field("1.0", description="Schema version")
+    project: Project = Field(..., description="Project configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
+    rules: list[Rule] = Field(default_factory=list, description="Rules configuration")
+    mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
+    variables: dict[str, VariableSpec | None] = Field(default_factory=dict, description="Variable definitions")
+    assets: list[str] = Field(default_factory=list, description="List of existing assets")
 
     @field_validator("version")
     @classmethod
@@ -120,19 +107,3 @@ class CharlieConfig(BaseModel):
             duplicate_names = [name for name in command_names if command_names.count(name) > 1]
             raise ValueError(f"Duplicate command names found: {set(duplicate_names)}")
         return v
-
-
-# New API names for prototype compatibility
-# These currently alias to existing types; implementation will be migrated incrementally
-CommandConfig = Command
-RuleConfig = RulesSection
-
-
-class NewCommandConfig(BaseModel):
-    """Command configuration matching prototype.i.py structure."""
-
-    name: str = Field(..., description="Command name")
-    description: str = Field(..., description="Command description")
-    prompt: str = Field(..., description="Command prompt template")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Command metadata")
-    replacements: dict[str, str] = Field(default_factory=dict, description="String replacements")

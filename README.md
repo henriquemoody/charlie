@@ -11,7 +11,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 ## Features
 
 - ✨ **Single Definition**: Write settings once in YAML or Markdown
-- 🤖 **Multi-Agent Support**: Generate for 15+ AI agents (Claude, Copilot, Cursor, Gemini, Windsurf, and more)
+- 🤖 **Multi-Agent Support**: Generate for different AI agents (only Claude and Cursor supported for now)
 - ⚙️ **Slash Commands Integration**: Generate slash commands from a single definition.
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
@@ -46,8 +46,7 @@ project:
   namespace: "my"         # Optional: Used to prefix commands, rules, and MCP servers.
 
 variables:
-  mcp_api_token:
-    env: MCP_API_TOKEN    # It will ask the user to provide an API token, if the environment variable is not set
+  mcp_api_token: ~        # It will ask the user to provide an API token, if the environment variable is not set
 
 # Command definitions
 commands:
@@ -74,21 +73,21 @@ mcp_servers:
       Authorization: "Bearer {{var:mcp_api_token}}"
       Content-Type: "application/json"
 
-# Rules configuration
+# Rules configuration (rules)
 rules:
-  - title: "Commit message standards"
+  - description: "Commit message standards"
     prompt: "Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)"
 
-  - title: "Coding standards"
+  - description: "Coding standards"
     prompt: "All code should follow PEP 8"
 ```
 
-Charlie will also read `charlie.dist.yaml`, unless you have a `charlie.yaml` in the directory. And both `*.yaml` and `*.yml` extensions are supported.
+Charlie will also read `charlie.dist.yaml`, unless you have a `charlie.yaml` in the directory.
 
 See [`examples/`](examples/) directory for complete examples:
 
-- [`examples/simple.yaml`](examples/simple.yaml) - Basic configuration
-- [`examples/speckit.yaml`](examples/speckit.yaml) - Spec-kit inspired configuration
+- [`examples/simple/`](examples/simple/) - Basic configuration
+- [`examples/speckit/`](examples/speckit/) - Spec-kit inspired configuration
 
 ### Directory-Based Configuration
 
@@ -102,7 +101,7 @@ project/
     │   ├── init.yaml             # One file per command (Markdown or YAML supported)
     │   └── deploy.md
     ├── rules/
-    │   ├── commit-messages.yaml  # One file per rule section (Markdown or YAML supported)
+    │   ├── commit-messages.yaml  # One file per rule (Markdown or YAML supported)
     │   └── code-style.md
     └── mcp-servers/
         └── local-tools.yaml      # MCP servers in YAML
@@ -129,19 +128,34 @@ charlie generate claude
 
 Charlie supports these universal placeholders in commands, rules, and MCP configurations:
 
-**Content Placeholders:**
-
-- `{{user_input}}` → Replaced with agent-specific input placeholder (`$ARGUMENTS` or `{{args}}`)
-- `{{agent_name}}` → Replaced with the agent's name (e.g., `Cursor`, `Claude Code`, `GitHub Copilot`)
-- `{{project_name}}` → Replaced with the agent's name (e.g., `Cursor`, `Claude Code`, `GitHub Copilot`)
-
-**Path Placeholders:**
+**Project Placeholders:**
 
 - `{{project_dir}}` → Resolves to the project root directory
+- `{{project_name}}` → Replaced with the project name (e.g., `My Project`)
+- `{{project_namespace}}` → Replaced with the project namespace (e.g., `my`)
+
+**Agent Placeholders:**
+
+- `{{agent_name}}` → Replaced with the agent's full name (e.g., `Claude Code`, `Cursor`)
+- `{{agent_shortname}}` → Replaced with the agent's short identifier (e.g., `claude`, `cursor`)
 - `{{agent_dir}}` → Resolves to agent's base directory (e.g., `.claude`, `.cursor`)
+- `{{commands_shorthand_injection}}` → Agent-specific command shorthand (e.g., `$ARGUMENTS` for supported agents)
+
+**Agent Path Placeholders:**
+
 - `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
-- `{{assets_dir}}` → Resolves to the path of generic assets (copied from `.charlie/assets/`).
+- `{{rules_file}}` → Resolves to agent's rules file path (e.g., `.claude/rules.md`)
+- `{{mcp_file}}` → Resolves to agent's MCP configuration file name (e.g., `mcp.json`)
+- `{{assets_dir}}` → Resolves to agent's assets directory (e.g., `.claude/assets`)
+
+**Variable Placeholders:**
+
+- `{{var:VARIABLE_NAME}}` → Replaced with the value of a variable defined in your `charlie.yaml`
+  - Variables can be defined in the `variables:` section
+  - Use `~` as value to prompt user for input if not set as environment variable
+  - Example: `{{var:mcp_api_token}}`
+  - Charlie will prompt user for input if variable is not set.
 
 **Environment Variable Placeholders:**
 
@@ -150,7 +164,12 @@ Charlie supports these universal placeholders in commands, rules, and MCP config
   - Raises `EnvironmentVariableNotFoundError` if variable doesn't exist
   - System environment variables take precedence over `.env` file
 
-These placeholders work in commands, rules content, and MCP server configurations (command and args fields).
+**Custom Replacements:**
+
+- Custom placeholders can be defined per-command or per-rule using the `replacements` field
+- See the Library API section for examples
+
+These placeholders work in commands, rules, and MCP server configurations (command, args, URL, and headers fields).
 
 ## Usage
 
@@ -167,14 +186,14 @@ charlie generate claude
 # Setup without MCP config
 charlie generate cursor --no-mcp
 
-# Setup without rules
+# Setup without rules (rules)
 charlie generate claude --no-rules
 
 # Setup without commands
-charlie generate claude --no-commandsrules
+charlie generate claude --no-commands
 
 # Explicit config file
-charlie generate gemini --config my-config.yaml
+charlie generate cursor --config my-config.yaml
 
 # Custom output directory
 charlie generate cursor --output ./build
@@ -206,7 +225,7 @@ Show detailed information about an agent:
 
 ```bash
 charlie info claude
-charlie info gemini
+charlie info cursor
 ```
 
 ### Library API
@@ -214,98 +233,117 @@ charlie info gemini
 Use Charlie programmatically in Python:
 
 ```python
-from charlie import AgentSpecRegistry, AgentConfiguratorFactory, Tracker
-from charlie.config import ProjectConfig, CommandConfig, MCPServerHttpConfig, MCPServerStdioConfig
+from charlie import AgentRegistry, AgentConfiguratorFactory, Tracker
+from charlie.schema import Project, Command, Rule, HttpMCPServer, StdioMCPServer, ValueReplacement
 from charlie.enums import RuleMode
 
-registry = AgentSpecRegistry()
+# Initialize registry and get agent
+registry = AgentRegistry()
+agent = registry.get("claude")
+
+# Create project configuration
+project = Project(
+    name="My Project",
+    namespace="my",
+    dir="/path/to/project",
+)
 
 # Create configurator
 configurator = AgentConfiguratorFactory.create(
-    agent_spec = registry.get("claude"),
-    project_config = ProjectConfig(
-        name = "My Project",
-        namespace = "my",
-        dir = "/path/to/project",
-    ),
-    tracker = Tracker()
+    agent=agent,
+    project=project,
+    tracker=Tracker()
 )
 
 # Generate commands
-command_files = configurator.commands([
-    CommandConfig(
-        name = "commit",
-        description = "Analyze changes and create a high-quality git commit",
-        prompt = "Check what changed, and commit your changes. The body of the message explains WHY it changed",
-        metadata = {
+configurator.commands([
+    Command(
+        name="commit",
+        description="Analyze changes and create a high-quality git commit",
+        prompt="Check what changed, and commit your changes. The body of the message explains WHY it changed",
+        metadata={
             "allowed-tools": "Bash(git add:*), Bash(git status:*), Bash(git commit:*)"
         },
-        replacements = {}
+        replacements={}
     ),
-    CommandConfig(
-        name = "commit",
-        description = "Analyze changes and create a high-quality git commit",
-        prompt = "Run {{script}}",
-        metadata = {},
-        replacements = {
-          "script": ".claude/assets/script.sh"
+    Command(
+        name="deploy",
+        description="Deploy the application",
+        prompt="Run {{script}}",
+        metadata={},
+        replacements={
+            "script": ValueReplacement(
+                type="value",
+                value=".claude/assets/deploy.sh"
+            )
         }
     )
 ])
 
 # Generate MCP configuration
 configurator.mcp_servers([
-    MCPServerHttpConfig(
-        name = "my-mcp-server",
-        transport = "http",
-        url = "https://example.com/mcp",
-        headers = {
+    HttpMCPServer(
+        name="my-http-server",
+        transport="http",
+        url="https://example.com/mcp",
+        headers={
             "Authorization": "Bearer F8417EA8-94F3-447C-A108-B0AD7E428BE6",
             "Content-Type": "application/json"
         },
     ),
-    MCPServerStdioConfig(
-        name = "my-mcp-server",
-        transport = "stdio",
-        command = "node",
-        args = ["npx", "my-command"],
-        env = {
+    StdioMCPServer(
+        name="my-stdio-server",
+        transport="stdio",
+        command="node",
+        args=["server.js"],
+        env={
             "API_TOKEN": "84EBB71B-0FF8-49D8-84C8-55FF9550CA2C"
         },
     ),
 ])
 
-# Generate rules
+# Generate rules (rules)
 configurator.rules(
     [
-        RuleConfig(
-            title = "Commit message standards",
-            prompt = "Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)",
-            metadata = {
+        Rule(
+            name="commit-messages",
+            description="Commit message standards",
+            prompt="Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)",
+            metadata={
                 "alwaysApply": True,
-            }
+            },
+            replacements={}
         ),
-        RuleConfig(
-            title = "Coding standards",
-            prompt = "All code should follow {{standard}}",
-            metadata = {},
-            replacements = {
-                "standard": "PEP 8"
+        Rule(
+            name="coding-standards",
+            description="Coding standards",
+            prompt="All code should follow {{standard}}",
+            metadata={},
+            replacements={
+                "standard": ValueReplacement(
+                    type="value",
+                    value="PEP 8"
+                )
             }
         )
     ],
     RuleMode.MERGED
 )
 
-# Copy assets (if .charlie/assets exists)
-configurator.assets()
+# Copy assets to the agent's directory
+configurator.assets([
+    ".charlie/assets/deploy.sh",
+])
 ```
 
 ## Supported Agents
 
-Charlie supports 15+ AI agents with built-in knowledge of their requirements:
+Charlie currently supports the following AI agents:
 
-Run `charlie list-agents` for the complete list.
+- **Claude Code** (`claude`) - Claude's AI coding assistant
+- **Cursor** (`cursor`) - AI-powered code editor
+
+Run `charlie list-agents` to see all available agents.
 
 ### Metadata support
 
@@ -315,7 +353,7 @@ Charlie extracts these fields and includes them in agent-specific output (YAML f
 
 ### Rules Generation Modes
 
-Rules are generated by default in two modes:
+Rules (rules) can be generated in two modes:
 
 **Merged Mode** (default) - Single file with all sections:
 

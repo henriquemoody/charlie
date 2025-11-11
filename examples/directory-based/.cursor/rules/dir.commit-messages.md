@@ -1,9 +1,5 @@
 ---
-description: "Commit Message Format"
-order: 1
-alwaysApply: true
-globs:
-  - "**/*"
+description: Commit Message Format
 ---
 
 ## Conventional Commits

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "local-tools": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "/opt/charlie/examples/directory-based/.cursor/assets/mcp-server.js"
+      ],
+      "env": {
+        "DEBUG": "true",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}

@@ -28,6 +28,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "rich>=13.0.0",
     "python-dotenv>=1.0.0",
+    "python-slugify (>=8.0.4,<9.0.0)",
 ]
 
 [project.optional-dependencies]
@@ -76,3 +77,6 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 ignore = []
+
+[tool.hatch.build]
+packages = ["src/charlie"]
