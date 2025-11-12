@@ -23,8 +23,41 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 
 ### Installation
 
+#### Install via pip
+
 ```bash
 pip install charlie-agents
+```
+
+#### Use Docker
+
+Charlie is available as a Docker image, so you don't need to install Python dependencies:
+
+```bash
+# Pull the image from GitHub Container Registry
+docker pull ghcr.io/henriquemoody/charlie:latest
+
+# Run charlie commands (mount your project directory)
+docker run --rm -v $(pwd):/workspace ghcr.io/henriquemoody/charlie list-agents
+
+# Generate configuration
+docker run --rm -v $(pwd):/workspace ghcr.io/henriquemoody/charlie generate claude
+```
+
+**Create an alias for convenience:**
+
+Add to your `.bashrc` or `.zshrc`:
+
+```bash
+alias charlie='docker run --rm -v $(pwd):/workspace ghcr.io/henriquemoody/charlie'
+```
+
+Then use it like the native CLI:
+
+```bash
+charlie generate claude
+charlie validate
+charlie list-agents
 ```
 
 ## Configuration
