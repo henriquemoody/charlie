@@ -372,17 +372,34 @@ Use merged mode for simple projects, separate mode for better organization in co
 
 ## Development
 
-### Running Tests
+### Use Dev Container (optional)
+
+Open the project in VS Code with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers):
+
+1. Open the project in VS Code
+2. Press `F1` and select "Dev Containers: Reopen in Container"
+3. Wait for the container to build (first time only)
+4. Start coding with all tools pre-configured (pytest, mypy, ruff)
+
+The Dev Container provides a consistent development environment with all dependencies and VS Code extensions pre-installed.
+
+### Developer commands
 
 ```bash
 # Install dev dependencies
 pip install -e ".[dev]"
 
 # Run tests
-pytest
+pytest # or `make test`
 
 # Run with coverage
-pytest --cov=charlie
+pytest --cov=charlie # or `make test-coverage`
+
+# Run ruff
+ruff check . # or `make lint` (`make format` to format the code)
+
+# Run mypy
+mypy --install-types --non-interactive src/charlie # or `make analyze`
 ```
 
 ## Contributing
