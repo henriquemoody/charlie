@@ -27,7 +27,7 @@ class AgentRegistry:
             commands_shorthand_injection="$ARGUMENTS",
             rules_file=".cursor/rules",
             rules_dir=".cursor/rules",
-            rules_extension="md",
+            rules_extension="mdc",
             mcp_file=".cursor/mcp.json",
         ),
         Agent(
