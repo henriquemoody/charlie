@@ -228,6 +228,10 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
         if not raw_data:
             raise ConfigParseError(f"File is empty: {file_path}")
 
+        if str(model_class).find("MCPServer") != -1:
+            if "name" not in raw_data:
+                raw_data["name"] = slugify(file_path.stem)
+
     try:
         # Check if model_class is a union type
         if get_origin(model_class) is None:

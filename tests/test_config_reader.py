@@ -246,6 +246,34 @@ prompt: "Init"
     # Commands field no longer exists in prototype
 
 
+def test_should_infer_mcp_server_name_from_filename_when_name_not_provided(tmp_path) -> None:
+    charlie_dir = tmp_path / ".charlie"
+    mcp_dir = charlie_dir / "mcp-servers"
+    commands_dir = charlie_dir / "commands"
+    mcp_dir.mkdir(parents=True)
+    commands_dir.mkdir(parents=True)
+
+    (mcp_dir / "my-custom-server.yaml").write_text(
+        """
+command: "node"
+args: ["server.js"]
+"""
+    )
+
+    (commands_dir / "init.yaml").write_text(
+        """
+name: "init"
+description: "Init"
+prompt: "Init"
+"""
+    )
+
+    config = load_directory_config(tmp_path)
+
+    assert len(config.mcp_servers) == 1
+    assert config.mcp_servers[0].name == "my-custom-server"
+
+
 def test_parse_config_detects_directory_based_format(tmp_path) -> None:
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
