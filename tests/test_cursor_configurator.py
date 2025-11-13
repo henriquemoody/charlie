@@ -7,6 +7,7 @@ import pytest
 from charlie.configurators.cursor_configurator import CursorConfigurator
 from charlie.enums import FileFormat, RuleMode
 from charlie.markdown_generator import MarkdownGenerator
+from charlie.mcp_server_generator import MCPServerGenerator
 from charlie.schema import Agent, Command, HttpMCPServer, Project, Rule, StdioMCPServer
 
 
@@ -48,10 +49,19 @@ def markdown_generator() -> MarkdownGenerator:
 
 
 @pytest.fixture
+def mcp_server_generator(tracker: Mock) -> MCPServerGenerator:
+    return MCPServerGenerator(tracker)
+
+
+@pytest.fixture
 def configurator(
-    agent: Agent, project: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
 ) -> CursorConfigurator:
-    return CursorConfigurator(agent, project, tracker, markdown_generator)
+    return CursorConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator)
 
 
 def test_should_create_commands_directory_when_it_does_not_exist(
@@ -123,9 +133,13 @@ def test_should_include_name_in_frontmatter_when_creating_command(
 
 
 def test_should_apply_namespace_to_filename_when_namespace_is_present(
-    agent: Agent, project_with_namespace: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project_with_namespace: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
 ) -> None:
-    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator)
+    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator)
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
@@ -135,9 +149,13 @@ def test_should_apply_namespace_to_filename_when_namespace_is_present(
 
 
 def test_should_apply_namespace_to_name_in_frontmatter_when_namespace_is_present(
-    agent: Agent, project_with_namespace: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project_with_namespace: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
 ) -> None:
-    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator)
+    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator)
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
@@ -309,9 +327,13 @@ def test_should_include_description_in_frontmatter_when_using_separate_mode(
 
 
 def test_should_apply_namespace_to_filename_when_using_separate_mode_with_namespace(
-    agent: Agent, project_with_namespace: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project_with_namespace: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
 ) -> None:
-    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator)
+    configurator = CursorConfigurator(agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator)
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
     configurator.rules(rules, RuleMode.SEPARATE)
@@ -444,7 +466,7 @@ def test_should_handle_http_servers_when_processing_mcp_servers(
     server_config = data["mcpServers"]["http-server"]
     assert server_config["url"] == "https://example.com"
     assert server_config["headers"] == {"Authorization": "Bearer token"}
-    assert server_config["transport"] == "http"
+    assert server_config["type"] == "http"
 
 
 def test_should_track_created_file_when_processing_mcp_servers(

@@ -8,7 +8,7 @@ variables:
 # MCP server definitions
 mcp_servers:
   - name: "local"
-    transport: "stdio"
+    type: "stdio"
     command: "node"
     args: ["{{assets_dir}}/mcp-server.js"]
     env:

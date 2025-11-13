@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "local": {
-      "transport": "stdio",
+      "type": "stdio",
       "command": "node",
       "args": [
         "/opt/charlie/examples/simple/.claude/assets/mcp-server.js"
@@ -12,7 +12,7 @@
       }
     },
     "remote": {
-      "transport": "http",
+      "type": "http",
       "url": "https://example.com/mcp",
       "headers": {
         "Authorization": "Bearer 65672965-C141-4A26-A15B-3A0155085F0B",

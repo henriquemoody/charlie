@@ -94,7 +94,7 @@ commands:
 # MCP server definitions
 mcp_servers:
   - name: "local_server"
-    transport: "stdio"
+    type: "stdio"
     command: "node"
     args: ["server.js"]
     env:
@@ -317,7 +317,7 @@ configurator.commands([
 configurator.mcp_servers([
     HttpMCPServer(
         name="my-http-server",
-        transport="http",
+        type="http",
         url="https://example.com/mcp",
         headers={
             "Authorization": "Bearer F8417EA8-94F3-447C-A108-B0AD7E428BE6",
@@ -326,7 +326,7 @@ configurator.mcp_servers([
     ),
     StdioMCPServer(
         name="my-stdio-server",
-        transport="stdio",
+        type="stdio",
         command="node",
         args=["server.js"],
         env={

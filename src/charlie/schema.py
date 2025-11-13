@@ -2,7 +2,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from charlie.enums import FileFormat
+from charlie.enums import FileFormat, TransportType
 
 
 class Agent(BaseModel):
@@ -33,17 +33,17 @@ class VariableSpec(BaseModel):
 
 class StdioMCPServer(BaseModel):
     name: str = Field(..., description="Server name")
-    transport: Literal["stdio"] = Field(default="stdio", description="Transport type (stdio)")
+    type: TransportType = Field(default=TransportType.STDIO, description="Transport type (stdio)")
     command: str = Field(..., description="Command to run the server")
     args: list[str] = Field(default_factory=list, description="Command arguments")
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
 
 
 class HttpMCPServer(BaseModel):
-    """MCP server configuration for HTTP transport."""
+    """MCP server configuration for HTTP type."""
 
     name: str = Field(..., description="Server name")
-    transport: Literal["http"] = Field(default="http", description="Transport type (http)")
+    type: TransportType = Field(default=TransportType.HTTP, description="Transport type (http)")
     url: str = Field(..., description="Server URL")
     headers: dict[str, str] = Field(default_factory=dict, description="HTTP headers")
 

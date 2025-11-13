@@ -1,4 +1,3 @@
-import json
 import shutil
 from pathlib import Path
 from typing import final
@@ -6,6 +5,7 @@ from typing import final
 from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
+from charlie.mcp_server_generator import MCPServerGenerator
 from charlie.schema import Agent, Command, MCPServer, Project, Rule
 from charlie.tracker import Tracker
 
@@ -15,11 +15,19 @@ class ClaudeConfigurator(AgentConfigurator):
     __ALLOWED_COMMAND_METADATA = ["description", "allowed-tools", "argument-hint", "model", "disable-model-invocation"]
     __ALLOWED_INSTRUCTION_METADATA = ["description"]
 
-    def __init__(self, agent: Agent, project: Project, tracker: Tracker, markdown_generator: MarkdownGenerator):
+    def __init__(
+        self,
+        agent: Agent,
+        project: Project,
+        tracker: Tracker,
+        markdown_generator: MarkdownGenerator,
+        mcp_server_generator: MCPServerGenerator,
+    ):
         self.agent = agent
         self.project = project
         self.tracker = tracker
         self.markdown_generator = markdown_generator
+        self.mcp_server_generator = mcp_server_generator
 
     def commands(self, commands: list[Command]) -> None:
         commands_dir = Path(self.project.dir) / self.agent.commands_dir
@@ -86,22 +94,8 @@ class ClaudeConfigurator(AgentConfigurator):
         self.tracker.track(f"Created {rules_file}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
-        if not mcp_servers:
-            return
-
         file = Path(self.project.dir) / Path(self.agent.mcp_file)
-        file.parent.mkdir(parents=True, exist_ok=True)
-        servers: dict[str, object] = {}
-
-        for mcp_server in mcp_servers:
-            server = mcp_server.__dict__.copy()
-            del server["name"]
-            servers[mcp_server.name] = server
-
-        with open(file, "w", encoding="utf-8") as open_file:
-            json.dump({"mcpServers": servers}, open_file, indent=2)
-            open_file.write("\n")
-            self.tracker.track(f"Created {file}")
+        self.mcp_server_generator.generate(file, mcp_servers)
 
     def assets(self, assets: list[str]) -> None:
         for asset in assets:

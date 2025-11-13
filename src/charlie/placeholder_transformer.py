@@ -66,17 +66,17 @@ class PlaceholderTransformer:
         )
 
     def mcp_server(self, mcp_server: MCPServer) -> MCPServer:
-        if mcp_server.transport == "http":
+        if isinstance(mcp_server, HttpMCPServer):
             return HttpMCPServer(
                 name=mcp_server.name,
-                transport=mcp_server.transport,
+                type=mcp_server.type,
                 url=self.__fixed(mcp_server.url),
                 headers={k: self.__fixed(v) for k, v in mcp_server.headers.items()},
             )
 
         return StdioMCPServer(
             name=mcp_server.name,
-            transport=mcp_server.transport,
+            type=mcp_server.type,
             command=self.__fixed(mcp_server.command),
             args=[self.__fixed(arg) for arg in mcp_server.args],
             env={variable: self.__fixed(value) for variable, value in mcp_server.env.items()},

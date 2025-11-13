@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "speckit-commands": {
-      "transport": "stdio",
+      "type": "stdio",
       "command": "node",
       "args": [
         "/opt/charlie/examples/speckit/.speckit/speckit-mcp-server.js"
@@ -11,7 +11,7 @@
       }
     },
     "speckit-filesystem": {
-      "transport": "stdio",
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",

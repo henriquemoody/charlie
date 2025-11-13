@@ -179,8 +179,8 @@ MCP servers support two transport types:
 
 ```yaml
 mcp_servers:
-  - name: "my-server"          # Server name (required)
-    transport: "stdio"          # Transport type (default: "stdio")
+  - name: "my-server"           # Server name (required)
+    type: "stdio"               # Transport type (default: "stdio")
     command: "node"             # Command to run (required)
     args: ["server.js"]         # Command arguments (optional, default: [])
     env:                        # Environment variables (optional, default: {})
@@ -191,8 +191,8 @@ mcp_servers:
 
 ```yaml
 mcp_servers:
-  - name: "remote-server"      # Server name (required)
-    transport: "http"           # Transport type
+  - name: "remote-server"       # Server name (required)
+    type: "http"                # Transport type
     url: "https://example.com"  # Server URL (required)
     headers:                    # HTTP headers (optional, default: {})
       Authorization: "Bearer token"

@@ -15,14 +15,14 @@ variables:
 # MCP servers for spec-kit commands and filesystem access
 mcp_servers:
   - name: "speckit-commands"
-    transport: "stdio"
+    type: "stdio"
     command: "node"
     args: ["{{project_dir}}/.speckit/speckit-mcp-server.js"]
     env:
       SPEC_KIT_ROOT: "{{project_dir}}"
 
   - name: "speckit-filesystem"
-    transport: "stdio"
+    type: "stdio"
     command: "npx"
     args: ["-y", "@modelcontextprotocol/server-filesystem", "{{project_dir}}"]
 
