@@ -48,9 +48,6 @@ Documentation = "https://github.com/henriquemoody/charlie#readme"
 Repository = "https://github.com/henriquemoody/charlie"
 Issues = "https://github.com/henriquemoody/charlie/issues"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/charlie"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -81,5 +78,13 @@ ignore = []
 [tool.hatch.version]
 source = "vcs"
 
-[tool.hatch.build]
+[tool.hatch.build.targets.wheel]
 packages = ["src/charlie"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+]
