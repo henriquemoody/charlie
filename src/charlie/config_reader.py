@@ -183,13 +183,40 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
             if name is None:
                 name = slugify(file_path.stem)
 
-            raw_data = {**parsed_frontmatter, "name": name, "prompt": content_body.strip()}
+            # Separate known Command fields from metadata
+            known_fields = {"name", "description", "prompt", "metadata", "replacements"}
+            metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
+
+            raw_data = {
+                "name": name,
+                "description": parsed_frontmatter.get("description", ""),
+                "prompt": content_body.strip(),
+                "metadata": {**parsed_frontmatter.get("metadata", {}), **metadata},
+            }
+
+            # Include replacements if present
+            if "replacements" in parsed_frontmatter:
+                raw_data["replacements"] = parsed_frontmatter["replacements"]
+
         elif model_class.__name__ == "Rule":
             name = parsed_frontmatter.get("name")
             if name is None:
                 name = slugify(file_path.stem)
 
-            raw_data = {**parsed_frontmatter, "name": name, "prompt": content_body.strip()}
+            # Separate known Rule fields from metadata
+            known_fields = {"name", "description", "prompt", "metadata", "replacements"}
+            metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
+
+            raw_data = {
+                "name": name,
+                "description": parsed_frontmatter.get("description", ""),
+                "prompt": content_body.strip(),
+                "metadata": {**parsed_frontmatter.get("metadata", {}), **metadata},
+            }
+
+            # Include replacements if present
+            if "replacements" in parsed_frontmatter:
+                raw_data["replacements"] = parsed_frontmatter["replacements"]
         else:
             raw_data = parsed_frontmatter
     else:
