@@ -90,20 +90,41 @@ class PlaceholderTransformer:
         return text
 
     def __static(self, text: str) -> str:
-        placeholders = {
-            "{{project_dir}}": self.project.dir,
-            "{{project_name}}": self.project.name,
-            "{{project_namespace}}": self.project.namespace or "",
-            "{{agent_name}}": self.agent.name,
-            "{{agent_shortname}}": self.agent.shortname,
-            "{{agent_dir}}": self.project.dir + "/" + self.agent.dir,
-            "{{commands_dir}}": self.project.dir + "/" + self.agent.commands_dir,
-            "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
-            "{{rules_dir}}": self.project.dir + "/" + self.agent.rules_dir,
-            "{{rules_file}}": self.project.dir + "/" + self.agent.rules_file,
-            "{{mcp_file}}": self.agent.mcp_file,
-            "{{assets_dir}}": self.project.dir + "/" + self.agent.dir + "/assets",
-        }
+        # Use relative paths if project_dir is the current working directory
+        cwd = os.path.abspath(os.getcwd())
+        project_dir_abs = os.path.abspath(self.project.dir)
+        use_relative = cwd == project_dir_abs
+
+        if use_relative:
+            placeholders = {
+                "{{project_dir}}": ".",
+                "{{project_name}}": self.project.name,
+                "{{project_namespace}}": self.project.namespace or "",
+                "{{agent_name}}": self.agent.name,
+                "{{agent_shortname}}": self.agent.shortname,
+                "{{agent_dir}}": self.agent.dir,
+                "{{commands_dir}}": self.agent.commands_dir,
+                "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
+                "{{rules_dir}}": self.agent.rules_dir,
+                "{{rules_file}}": self.agent.rules_file,
+                "{{mcp_file}}": self.agent.mcp_file,
+                "{{assets_dir}}": self.agent.dir + "/assets",
+            }
+        else:
+            placeholders = {
+                "{{project_dir}}": self.project.dir,
+                "{{project_name}}": self.project.name,
+                "{{project_namespace}}": self.project.namespace or "",
+                "{{agent_name}}": self.agent.name,
+                "{{agent_shortname}}": self.agent.shortname,
+                "{{agent_dir}}": self.project.dir + "/" + self.agent.dir,
+                "{{commands_dir}}": self.project.dir + "/" + self.agent.commands_dir,
+                "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
+                "{{rules_dir}}": self.project.dir + "/" + self.agent.rules_dir,
+                "{{rules_file}}": self.project.dir + "/" + self.agent.rules_file,
+                "{{mcp_file}}": self.agent.mcp_file,
+                "{{assets_dir}}": self.project.dir + "/" + self.agent.dir + "/assets",
+            }
 
         for placeholder, replacement in placeholders.items():
             text = text.replace(placeholder, replacement)
