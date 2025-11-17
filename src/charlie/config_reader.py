@@ -131,6 +131,25 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
 
     raw_config_data["variables"] = raw_config_data.get("variables") or {}
 
+    # Merge ignore patterns from YAML and .charlieignore
+    # Always include .charlie directory as the first pattern
+    default_patterns = [".charlie"]
+    yaml_patterns = raw_config_data.get("ignore_patterns") or []
+    file_patterns = read_ignore_patterns(base_directory)
+
+    # Combine all sources: defaults first, then YAML, then file patterns
+    # Remove duplicates while preserving order
+    all_patterns = default_patterns + yaml_patterns + file_patterns
+    seen = set()
+    unique_patterns = []
+    for pattern in all_patterns:
+        if pattern not in seen:
+            seen.add(pattern)
+            unique_patterns.append(pattern)
+
+    if unique_patterns:
+        raw_config_data["ignore_patterns"] = unique_patterns
+
     try:
         parsed_config = CharlieConfig(**raw_config_data)
         parsed_config = _ensure_project_name(parsed_config, base_directory)
@@ -280,6 +299,36 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
     return discovered_files
 
 
+def read_ignore_patterns(base_dir: Path) -> list[str]:
+    """Read ignore patterns from .charlieignore file.
+
+    Args:
+        base_dir: Base directory to search for .charlieignore file
+
+    Returns:
+        List of patterns from .charlieignore file, or empty list if file doesn't exist
+    """
+    charlieignore_file = base_dir / ".charlieignore"
+
+    if not charlieignore_file.exists():
+        return []
+
+    try:
+        with open(charlieignore_file, encoding="utf-8") as f:
+            lines = f.readlines()
+
+        patterns = []
+        for line in lines:
+            # Strip whitespace and skip empty lines and comments
+            line = line.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line)
+
+        return patterns
+    except Exception as e:
+        raise ConfigParseError(f"Error reading {charlieignore_file}: {e}")
+
+
 def load_directory_config(base_dir: Path) -> CharlieConfig:
     default_project = {"name": base_dir.stem, "dir": str(base_dir)}
     merged_config_data: dict[str, Any] = {
@@ -304,6 +353,8 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
                         merged_config_data["version"] = main_config_content["version"]
                     if "variables" in main_config_content:
                         merged_config_data["variables"] = main_config_content["variables"]
+                    if "ignore_patterns" in main_config_content:
+                        merged_config_data["ignore_patterns"] = main_config_content["ignore_patterns"]
         except Exception as e:
             raise ConfigParseError(f"Error reading {chosen_config_file}: {e}")
 
@@ -334,6 +385,25 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
 
     merged_config_data["project"] = {**default_project, **merged_config_data["project"]}
     merged_config_data["assets"] = [str(value) for value in discovered_config_files["assets"]]
+
+    # Merge ignore patterns from .charlieignore with any already in merged_config_data
+    # Always include .charlie directory as the first pattern
+    default_patterns = [".charlie"]
+    yaml_patterns = merged_config_data.get("ignore_patterns") or []
+    file_patterns = read_ignore_patterns(base_dir)
+
+    # Combine all sources: defaults first, then YAML, then file patterns
+    # Remove duplicates while preserving order
+    all_patterns = default_patterns + yaml_patterns + file_patterns
+    seen = set()
+    unique_patterns = []
+    for pattern in all_patterns:
+        if pattern not in seen:
+            seen.add(pattern)
+            unique_patterns.append(pattern)
+
+    if unique_patterns:
+        merged_config_data["ignore_patterns"] = unique_patterns
 
     try:
         final_config = CharlieConfig(**merged_config_data)

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(.charlie)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(secrets/)",
+      "Read(dist/)",
+      "Read(build/)",
+      "Read(*.log)",
+      "Read(*.pyc)",
+      "Read(__pycache__/)",
+      "Read(node_modules/)",
+      "Read(vendor/)",
+      "Read(tmp/)",
+      "Read(temp/)",
+      "Read(*.tmp)"
+    ]
+  }
+}

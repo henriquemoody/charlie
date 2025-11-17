@@ -1,5 +1,6 @@
+import json
 from pathlib import Path
-from typing import final
+from typing import Any, final
 
 from charlie.assets_manager import AssetsManager
 from charlie.configurators.agent_configurator import AgentConfigurator
@@ -106,3 +107,54 @@ class ClaudeConfigurator(AgentConfigurator):
         source_base = Path(self.project.dir) / ".charlie" / "assets"
         destination_base = Path(self.agent.dir) / "assets"
         self.assets_manager.copy_assets(assets, source_base, destination_base)
+
+    def ignore_file(self, patterns: list[str]) -> None:
+        if self.agent.ignore_file is None:
+            return
+
+        if not patterns:
+            self.tracker.track("No ignore patterns to add for Claude Code")
+            return
+
+        settings_file_path = Path(self.project.dir) / self.agent.ignore_file
+        self.tracker.track(f"Configuring Claude Code ignore patterns in {settings_file_path}")
+
+        # Read existing settings if file exists
+        existing_settings: dict[str, Any] = {}
+        if settings_file_path.exists():
+            try:
+                with open(settings_file_path, encoding="utf-8") as f:
+                    existing_settings = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                # If file is corrupted or can't be read, start fresh
+                existing_settings = {}
+
+        # Convert patterns to Claude's permission deny format
+        deny_rules = [f"Read({pattern})" for pattern in patterns]
+
+        # Merge with existing permissions
+        if "permissions" not in existing_settings:
+            existing_settings["permissions"] = {}
+
+        if "deny" not in existing_settings["permissions"]:
+            existing_settings["permissions"]["deny"] = []
+
+        # Get existing deny rules
+        existing_deny = existing_settings["permissions"]["deny"]
+
+        # Add new rules, avoiding duplicates
+        for rule in deny_rules:
+            if rule not in existing_deny:
+                existing_deny.append(rule)
+
+        existing_settings["permissions"]["deny"] = existing_deny
+
+        # Ensure parent directory exists
+        settings_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write updated settings
+        with open(settings_file_path, "w", encoding="utf-8") as f:
+            json.dump(existing_settings, f, indent=2)
+            f.write("\n")  # Add trailing newline
+
+        self.tracker.track(f"Updated ignore patterns in {settings_file_path}")

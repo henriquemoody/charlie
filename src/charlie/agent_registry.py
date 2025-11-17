@@ -16,6 +16,7 @@ class AgentRegistry:
             rules_dir=".claude/rules",
             rules_extension="md",
             mcp_file=".claude/mcp.json",
+            ignore_file=".claude/settings.local.json",
         ),
         Agent(
             name="Cursor",
@@ -29,6 +30,7 @@ class AgentRegistry:
             rules_dir=".cursor/rules",
             rules_extension="mdc",
             mcp_file=".cursor/mcp.json",
+            ignore_file=".cursorignore",
         ),
         Agent(
             name="GitHub Copilot",
@@ -42,6 +44,7 @@ class AgentRegistry:
             rules_dir=".github/instructions",
             rules_extension="md",
             mcp_file=".github/copilot/mcp.json",
+            ignore_file=".github/.copilotignore",
         ),
     ]
 

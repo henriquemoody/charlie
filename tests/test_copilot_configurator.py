@@ -47,7 +47,11 @@ def assets_manager(tracker: Mock) -> AssetsManager:
 
 @pytest.fixture
 def configurator(
-    agent: Agent, project: Project, tracker: Mock, markdown_generator: MarkdownGenerator, assets_manager: AssetsManager
+    agent: Agent,
+    project: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    assets_manager: AssetsManager,
 ) -> CopilotConfigurator:
     return CopilotConfigurator(agent, project, tracker, markdown_generator, assets_manager)
 
@@ -509,3 +513,27 @@ def test_should_not_call_assets_manager_when_no_assets(
     configurator.assets([])
 
     configurator.assets_manager.copy_assets.assert_not_called()
+
+
+def test_should_not_create_file_when_copilot_does_not_support_ignore_files(
+    configurator: CopilotConfigurator, project: Project
+) -> None:
+    patterns = ["*.log", ".env", "secrets/"]
+
+    configurator.ignore_file(patterns)
+
+    ignore_file = Path(project.dir) / ".github/.copilotignore"
+    assert not ignore_file.exists()
+
+
+def test_should_track_skip_message_when_ignore_file_called_for_copilot(
+    configurator: CopilotConfigurator, tracker: Mock
+) -> None:
+    patterns = ["*.log"]
+
+    configurator.ignore_file(patterns)
+
+    tracker.track.assert_called_once()
+    call_args = tracker.track.call_args[0][0]
+    assert "GitHub Copilot does not support ignore files" in call_args
+    assert "Skipping" in call_args

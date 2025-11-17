@@ -1,0 +1,24 @@
+# Charlie Ignore Example
+# This file demonstrates how to exclude files from AI agent access
+
+# Sensitive files
+.env
+.env.*
+secrets/
+
+# Build artifacts
+dist/
+build/
+*.log
+*.pyc
+__pycache__/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+

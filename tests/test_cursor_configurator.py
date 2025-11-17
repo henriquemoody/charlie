@@ -26,6 +26,7 @@ def agent(tmp_path: Path) -> Agent:
         rules_file=str(tmp_path / ".cursorrules/rules.md"),
         rules_extension="md",
         mcp_file=".cursorrules/mcp.json",
+        ignore_file=".cursorignore",
     )
 
 
@@ -148,7 +149,12 @@ def test_should_apply_namespace_to_filename_when_namespace_is_present(
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator, assets_manager
+        agent,
+        project_with_namespace,
+        tracker,
+        markdown_generator,
+        mcp_server_generator,
+        assets_manager,
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
@@ -167,7 +173,12 @@ def test_should_apply_namespace_to_name_in_frontmatter_when_namespace_is_present
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator, assets_manager
+        agent,
+        project_with_namespace,
+        tracker,
+        markdown_generator,
+        mcp_server_generator,
+        assets_manager,
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
@@ -348,7 +359,12 @@ def test_should_apply_namespace_to_filename_when_using_separate_mode_with_namesp
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator, assets_manager
+        agent,
+        project_with_namespace,
+        tracker,
+        markdown_generator,
+        mcp_server_generator,
+        assets_manager,
     )
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
@@ -534,3 +550,104 @@ def test_should_not_call_assets_manager_when_no_assets(
     configurator.assets([])
 
     configurator.assets_manager.copy_assets.assert_not_called()
+
+
+def test_should_write_patterns_to_cursorignore_when_ignore_file_called(
+    configurator: CursorConfigurator, project: Project
+) -> None:
+    patterns = [".charlie", "*.log", ".env", "secrets/"]
+
+    configurator.ignore_file(patterns)
+
+    ignore_file = Path(project.dir) / ".cursorignore"
+    content = ignore_file.read_text()
+    assert ".charlie" in content
+    assert "*.log" in content
+    assert ".env" in content
+    assert "secrets/" in content
+
+
+def test_should_write_all_provided_patterns_when_ignore_file_called(
+    configurator: CursorConfigurator, project: Project
+) -> None:
+    patterns = [".charlie", "*.log"]
+
+    configurator.ignore_file(patterns)
+
+    ignore_file = Path(project.dir) / ".cursorignore"
+    content = ignore_file.read_text()
+    lines = [line.strip() for line in content.split("\n") if line.strip() and not line.startswith("#")]
+    assert ".charlie" in lines
+    assert "*.log" in lines
+
+
+def test_should_preserve_pattern_order_when_writing_ignore_file(
+    configurator: CursorConfigurator, project: Project
+) -> None:
+    patterns = [".charlie", "first.log", "second.log", "third.log"]
+
+    configurator.ignore_file(patterns)
+
+    ignore_file = Path(project.dir) / ".cursorignore"
+    content = ignore_file.read_text()
+    lines = [line.strip() for line in content.split("\n") if line.strip() and not line.startswith("#")]
+    assert lines[0] == ".charlie"
+    assert lines[1] == "first.log"
+    assert lines[2] == "second.log"
+    assert lines[3] == "third.log"
+
+
+def test_should_create_parent_directory_when_ignore_file_path_does_not_exist(
+    configurator: CursorConfigurator, project: Project
+) -> None:
+    patterns = ["*.log"]
+
+    configurator.ignore_file(patterns)
+
+    ignore_file = Path(project.dir) / ".cursorignore"
+    assert ignore_file.exists()
+    assert ignore_file.parent.exists()
+
+
+def test_should_not_create_file_when_agent_ignore_file_is_none(
+    agent: Agent,
+    project: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
+    assets_manager: AssetsManager,
+) -> None:
+    agent_without_ignore = Agent(
+        name="Test Agent",
+        shortname="test",
+        dir=".test",
+        default_format=agent.default_format,
+        commands_dir=".test/commands",
+        commands_extension="md",
+        commands_shorthand_injection="$ARGS",
+        rules_dir=".test/rules",
+        rules_file="TEST.md",
+        rules_extension="md",
+        mcp_file=".test/mcp.json",
+        ignore_file=None,
+    )
+    configurator = CursorConfigurator(
+        agent_without_ignore, project, tracker, markdown_generator, mcp_server_generator, assets_manager
+    )
+
+    configurator.ignore_file(["*.log"])
+
+    ignore_file = Path(project.dir) / ".cursorignore"
+    assert not ignore_file.exists()
+
+
+def test_should_track_file_generation_when_ignore_file_created(
+    configurator: CursorConfigurator, project: Project, tracker: Mock
+) -> None:
+    patterns = ["*.log"]
+
+    configurator.ignore_file(patterns)
+
+    tracker.track.assert_called()
+    call_args = tracker.track.call_args[0][0]
+    assert "Generated ignore file" in call_args

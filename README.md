@@ -113,6 +113,12 @@ rules:
 
   - description: "Coding standards"
     prompt: "All code should follow PEP 8"
+
+# Ignore patterns (optional) -- will be added to agent-specific ignore files
+ignore_patterns:
+  - "*.log"
+  - "tmp/"
+  - "node_modules/"
 ```
 
 Charlie will also read `charlie.dist.yaml`, unless you have a `charlie.yaml` in the directory.
@@ -129,6 +135,7 @@ For better organization and collaboration, use the directory-based approach. The
 ```
 project/
 ├── charlie.yaml                  # Optional: Project metadata (name inferred if omitted)
+├── .charlieignore                # Optional: Patterns to exclude from AI agents
 └── .charlie/
     ├── commands/
     │   ├── init.yaml             # One file per command (Markdown or YAML supported)

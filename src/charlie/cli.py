@@ -97,6 +97,9 @@ def generate(
         if charlie_config.assets:
             configurator.assets(charlie_config.assets)
 
+        if charlie_config.ignore_patterns:
+            configurator.ignore_file(charlie_config.ignore_patterns)
+
         for record in tracker.records:
             console.print(f" • {record['event']}")
 

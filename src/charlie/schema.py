@@ -17,6 +17,7 @@ class Agent(BaseModel):
     rules_file: str = Field(..., description="Default rules file")
     rules_extension: str = Field(..., description="Default extension for rules files")
     mcp_file: str = Field(..., description="MCP file")
+    ignore_file: str | None = Field(None, description="Ignore file path (e.g., .cursorignore, .claude/.clignore)")
 
 
 class Project(BaseModel):
@@ -91,6 +92,7 @@ class CharlieConfig(BaseModel):
     mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
     variables: dict[str, VariableSpec | None] = Field(default_factory=dict, description="Variable definitions")
     assets: list[str] = Field(default_factory=list, description="List of existing assets")
+    ignore_patterns: list[str] = Field(default_factory=list, description="Patterns to add to agent ignore files")
 
     @field_validator("version")
     @classmethod

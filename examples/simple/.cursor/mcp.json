@@ -4,7 +4,7 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        ".claude/assets/mcp-server.js"
+        ".cursor/assets/mcp-server.js"
       ],
       "env": {
         "PROJECT_ROOT": "${PROJECT_ROOT}",

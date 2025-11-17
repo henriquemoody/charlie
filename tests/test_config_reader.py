@@ -435,3 +435,106 @@ def test_discover_assets_recursively(tmp_path) -> None:
     asset_paths = [str(asset) for asset in result["assets"]]
     assert any("images" in path for path in asset_paths)
     assert any("icons" in path for path in asset_paths)
+
+
+def test_should_read_patterns_from_charlieignore_when_file_exists(tmp_path) -> None:
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("*.log\n.env\nsecrets/\n")
+
+    from charlie.config_reader import read_ignore_patterns
+
+    patterns = read_ignore_patterns(tmp_path)
+
+    assert patterns == ["*.log", ".env", "secrets/"]
+
+
+def test_should_skip_comments_and_empty_lines_when_reading_charlieignore(tmp_path) -> None:
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("# This is a comment\n*.log\n\n# Another comment\n.env\n   \nsecrets/\n")
+
+    from charlie.config_reader import read_ignore_patterns
+
+    patterns = read_ignore_patterns(tmp_path)
+
+    assert patterns == ["*.log", ".env", "secrets/"]
+
+
+def test_should_strip_whitespace_from_patterns_when_reading_charlieignore(tmp_path) -> None:
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("  *.log  \n\t.env\t\n   secrets/   \n")
+
+    from charlie.config_reader import read_ignore_patterns
+
+    patterns = read_ignore_patterns(tmp_path)
+
+    assert patterns == ["*.log", ".env", "secrets/"]
+
+
+def test_should_return_empty_list_when_charlieignore_does_not_exist(tmp_path) -> None:
+    from charlie.config_reader import read_ignore_patterns
+
+    patterns = read_ignore_patterns(tmp_path)
+
+    assert patterns == []
+
+
+def test_should_include_charlie_and_charlieignore_patterns_when_no_yaml_patterns(tmp_path) -> None:
+    config_file = tmp_path / "charlie.yaml"
+    config_file.write_text("project:\n  name: TestProject\n")
+
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("*.log\n.env\n")
+
+    from charlie.config_reader import parse_config
+
+    config = parse_config(config_file)
+
+    assert config.ignore_patterns == [".charlie", "*.log", ".env"]
+
+
+def test_should_merge_charlie_yaml_and_charlieignore_patterns_when_both_exist(tmp_path) -> None:
+    config_file = tmp_path / "charlie.yaml"
+    config_file.write_text("project:\n  name: TestProject\nignore_patterns:\n  - from_yaml.log\n  - shared.log\n")
+
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("from_charlieignore.log\nshared.log\n")
+
+    from charlie.config_reader import parse_config
+
+    config = parse_config(config_file)
+
+    assert config.ignore_patterns == [".charlie", "from_yaml.log", "shared.log", "from_charlieignore.log"]
+
+
+def test_should_include_charlie_and_charlieignore_when_directory_config_has_no_yaml_patterns(tmp_path) -> None:
+    charlie_dir = tmp_path / ".charlie"
+    charlie_dir.mkdir()
+
+    config_file = charlie_dir / "charlie.yaml"
+    config_file.write_text("project:\n  name: TestProject\n")
+
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("*.log\n.env\n")
+
+    from charlie.config_reader import load_directory_config
+
+    config = load_directory_config(tmp_path)
+
+    assert config.ignore_patterns == [".charlie", "*.log", ".env"]
+
+
+def test_should_merge_charlie_yaml_and_charlieignore_when_directory_config_has_both(tmp_path) -> None:
+    charlie_dir = tmp_path / ".charlie"
+    charlie_dir.mkdir()
+
+    config_file = tmp_path / "charlie.yaml"
+    config_file.write_text("project:\n  name: TestProject\nignore_patterns:\n  - yaml_pattern.log\n")
+
+    charlieignore_file = tmp_path / ".charlieignore"
+    charlieignore_file.write_text("file_pattern.log\nyaml_pattern.log\n")
+
+    from charlie.config_reader import load_directory_config
+
+    config = load_directory_config(tmp_path)
+
+    assert config.ignore_patterns == [".charlie", "yaml_pattern.log", "file_pattern.log"]

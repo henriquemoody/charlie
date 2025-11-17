@@ -20,3 +20,7 @@ class AgentConfigurator(ABC):
     @abstractmethod
     def assets(self, assets: list[str]) -> None:
         pass
+
+    @abstractmethod
+    def ignore_file(self, patterns: list[str]) -> None:
+        pass

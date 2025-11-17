@@ -26,6 +26,7 @@ def agent(tmp_path: Path) -> Agent:
         rules_file=str(tmp_path / "CLAUDE.md"),
         rules_extension="md",
         mcp_file=".claude/mcp.json",
+        ignore_file=".claude/settings.local.json",
     )
 
 
@@ -175,7 +176,12 @@ def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
     assets_manager: AssetsManager,
 ) -> None:
     configurator = ClaudeConfigurator(
-        agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator, assets_manager
+        agent,
+        project_with_namespace,
+        tracker,
+        markdown_generator,
+        mcp_server_generator,
+        assets_manager,
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
@@ -384,7 +390,12 @@ def test_should_apply_namespace_prefix_to_filename_when_using_separate_mode_with
     assets_manager: AssetsManager,
 ) -> None:
     configurator = ClaudeConfigurator(
-        agent, project_with_namespace, tracker, markdown_generator, mcp_server_generator, assets_manager
+        agent,
+        project_with_namespace,
+        tracker,
+        markdown_generator,
+        mcp_server_generator,
+        assets_manager,
     )
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
@@ -554,3 +565,159 @@ def test_should_not_call_assets_manager_when_no_assets(
     configurator.assets([])
 
     configurator.assets_manager.copy_assets.assert_not_called()
+
+
+def test_should_write_deny_rules_to_settings_when_ignore_patterns_provided(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    patterns = [".charlie", "*.log", ".env", "secrets/"]
+
+    configurator.ignore_file(patterns)
+
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    assert settings_file.exists()
+
+    import json
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    assert "permissions" in settings
+    assert "deny" in settings["permissions"]
+    deny_rules = settings["permissions"]["deny"]
+    assert "Read(.charlie)" in deny_rules
+    assert "Read(*.log)" in deny_rules
+    assert "Read(.env)" in deny_rules
+    assert "Read(secrets/)" in deny_rules
+
+
+def test_should_preserve_existing_settings_when_updating_deny_rules(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+
+    import json
+
+    existing_settings = {"permissions": {"deny": ["Read(.env)"], "allow": ["Bash(git:*)"]}, "otherSetting": "value"}
+    with open(settings_file, "w", encoding="utf-8") as f:
+        json.dump(existing_settings, f)
+
+    patterns = [".charlie", "*.log", "secrets/"]
+    configurator.ignore_file(patterns)
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    assert settings["otherSetting"] == "value"
+    assert settings["permissions"]["allow"] == ["Bash(git:*)"]
+
+    deny_rules = settings["permissions"]["deny"]
+    assert "Read(.env)" in deny_rules
+    assert "Read(.charlie)" in deny_rules
+    assert "Read(*.log)" in deny_rules
+    assert "Read(secrets/)" in deny_rules
+
+
+def test_should_not_duplicate_rules_when_pattern_already_exists(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+
+    import json
+
+    existing_settings = {"permissions": {"deny": ["Read(.charlie)", "Read(*.log)"]}}
+    with open(settings_file, "w", encoding="utf-8") as f:
+        json.dump(existing_settings, f)
+
+    patterns = [".charlie", "*.log", ".env"]
+    configurator.ignore_file(patterns)
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    deny_rules = settings["permissions"]["deny"]
+    assert deny_rules.count("Read(.charlie)") == 1
+    assert deny_rules.count("Read(*.log)") == 1
+    assert "Read(.env)" in deny_rules
+
+
+def test_should_create_valid_settings_when_existing_file_is_corrupted(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(settings_file, "w", encoding="utf-8") as f:
+        f.write("{ invalid json }")
+
+    patterns = ["*.log"]
+    configurator.ignore_file(patterns)
+
+    import json
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    assert "permissions" in settings
+    assert "deny" in settings["permissions"]
+
+
+def test_should_not_create_file_when_patterns_list_is_empty(
+    configurator: ClaudeConfigurator, project: Project, tracker: Mock
+) -> None:
+    configurator.ignore_file([])
+
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    assert not settings_file.exists()
+
+    tracker.track.assert_called_once_with("No ignore patterns to add for Claude Code")
+
+
+def test_should_not_create_file_when_agent_ignore_file_is_none(
+    agent: Agent,
+    project: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    mcp_server_generator: MCPServerGenerator,
+    assets_manager: AssetsManager,
+) -> None:
+    agent_without_ignore = Agent(
+        name="Test Agent",
+        shortname="test",
+        dir=".test",
+        default_format=agent.default_format,
+        commands_dir=".test/commands",
+        commands_extension="md",
+        commands_shorthand_injection="$ARGS",
+        rules_dir=".test/rules",
+        rules_file="TEST.md",
+        rules_extension="md",
+        mcp_file=".test/mcp.json",
+        ignore_file=None,
+    )
+    configurator = ClaudeConfigurator(
+        agent_without_ignore, project, tracker, markdown_generator, mcp_server_generator, assets_manager
+    )
+
+    configurator.ignore_file(["*.log"])
+
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    assert not settings_file.exists()
+
+
+def test_should_track_configuration_and_update_when_writing_settings(
+    configurator: ClaudeConfigurator, project: Project, tracker: Mock
+) -> None:
+    patterns = [".charlie", "*.log"]
+
+    configurator.ignore_file(patterns)
+
+    assert tracker.track.call_count == 2
+
+    first_call_args = tracker.track.call_args_list[0][0][0]
+    assert "Configuring Claude Code ignore patterns" in first_call_args
+
+    second_call_args = tracker.track.call_args_list[1][0][0]
+    assert "Updated ignore patterns" in second_call_args
