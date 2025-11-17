@@ -157,3 +157,19 @@ def test_should_overwrite_existing_file_when_copying_to_same_location(tmp_path) 
     manager.copy_assets([str(asset_file)], source_base, destination_base)
 
     assert existing_file.read_text() == "new content"
+
+
+def test_should_preserve_file_permissions_when_copying_asset(tmp_path) -> None:
+    tracker = Tracker()
+    manager = AssetsManager(tracker)
+    source_base = tmp_path / "source" / "assets"
+    source_base.mkdir(parents=True)
+    asset_file = source_base / "script.sh"
+    asset_file.write_text("#!/bin/bash\necho 'test'")
+    asset_file.chmod(0o755)
+    destination_base = tmp_path / "destination" / "assets"
+
+    manager.copy_assets([str(asset_file)], source_base, destination_base)
+
+    destination_file = destination_base / "script.sh"
+    assert destination_file.stat().st_mode == asset_file.stat().st_mode

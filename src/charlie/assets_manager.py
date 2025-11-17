@@ -19,5 +19,5 @@ class AssetsManager:
             relative_path = asset_path.relative_to(source_base)
             destination = destination_base / relative_path
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(asset, destination)
+            shutil.copy2(asset, destination)
             self.tracker.track(f"Created {destination}")
