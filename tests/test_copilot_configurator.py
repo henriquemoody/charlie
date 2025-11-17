@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from charlie.agent_registry import AgentRegistry
+from charlie.assets_manager import AssetsManager
 from charlie.configurators.copilot_configurator import CopilotConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
@@ -40,10 +41,15 @@ def markdown_generator() -> MarkdownGenerator:
 
 
 @pytest.fixture
+def assets_manager(tracker: Mock) -> AssetsManager:
+    return AssetsManager(tracker)
+
+
+@pytest.fixture
 def configurator(
-    agent: Agent, project: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent, project: Project, tracker: Mock, markdown_generator: MarkdownGenerator, assets_manager: AssetsManager
 ) -> CopilotConfigurator:
-    return CopilotConfigurator(agent, project, tracker, markdown_generator)
+    return CopilotConfigurator(agent, project, tracker, markdown_generator, assets_manager)
 
 
 def test_should_create_prompts_directory_when_it_does_not_exist(
@@ -102,9 +108,13 @@ def test_should_include_description_in_frontmatter_when_creating_command(
 
 
 def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
-    agent: Agent, project_with_namespace: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project_with_namespace: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    assets_manager: AssetsManager,
 ) -> None:
-    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator)
+    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator, assets_manager)
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
@@ -347,9 +357,13 @@ def test_should_create_instructions_file_with_at_imports_when_using_separate_mod
 
 
 def test_should_apply_namespace_prefix_to_filename_when_using_separate_mode_with_namespace(
-    agent: Agent, project_with_namespace: Project, tracker: Mock, markdown_generator: MarkdownGenerator
+    agent: Agent,
+    project_with_namespace: Project,
+    tracker: Mock,
+    markdown_generator: MarkdownGenerator,
+    assets_manager: AssetsManager,
 ) -> None:
-    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator)
+    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator, assets_manager)
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
     configurator.rules(rules, RuleMode.SEPARATE)
@@ -467,61 +481,31 @@ def test_should_not_create_mcp_directory_when_it_does_not_exist(
     assert not mcp_dir.exists()
 
 
-def test_should_copy_file_to_destination_when_processing_assets(
+def test_should_delegate_asset_copying_to_assets_manager(
     configurator: CopilotConfigurator, project: Project, tmp_path: Path
 ) -> None:
+    """Test that assets() delegates to AssetsManager with correct paths."""
+    # Mock the assets_manager
+    configurator.assets_manager = Mock()
+
     source_file = Path(project.dir) / ".charlie/assets/test.txt"
-    source_file.parent.mkdir(parents=True, exist_ok=True)
-    source_file.write_text("test content")
-
     assets = [str(source_file)]
+
     configurator.assets(assets)
 
-    dest_file = tmp_path / ".github/assets/test.txt"
-    assert dest_file.exists()
-    assert dest_file.read_text() == "test content"
+    # Verify it calls assets_manager with correct arguments
+    expected_source_base = Path(project.dir) / ".charlie" / "assets"
+    expected_dest_base = Path(project.dir) / tmp_path / ".github" / "assets"
+
+    configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_source_base, expected_dest_base)
 
 
-def test_should_create_destination_directory_when_it_does_not_exist(
-    configurator: CopilotConfigurator, project: Project, tmp_path: Path
+def test_should_not_call_assets_manager_when_no_assets(
+    configurator: CopilotConfigurator,
 ) -> None:
-    source_file = Path(project.dir) / ".charlie/assets/test.txt"
-    source_file.parent.mkdir(parents=True, exist_ok=True)
-    source_file.write_text("content")
+    """Test that assets() returns early when assets list is empty."""
+    configurator.assets_manager = Mock()
 
-    assets = [str(source_file)]
-    configurator.assets(assets)
+    configurator.assets([])
 
-    dest_dir = tmp_path / ".github/assets"
-    assert dest_dir.exists()
-    assert dest_dir.is_dir()
-
-
-def test_should_track_each_file_when_copying_assets(
-    configurator: CopilotConfigurator, tracker: Mock, tmp_path: Path, project: Project
-) -> None:
-    source1 = Path(project.dir) / ".charlie/assets/file1.txt"
-    source2 = Path(project.dir) / ".charlie/assets/file2.txt"
-    source1.parent.mkdir(parents=True, exist_ok=True)
-    source1.write_text("content1")
-    source2.write_text("content2")
-
-    assets = [str(source1), str(source2)]
-    configurator.assets(assets)
-
-    assert tracker.track.call_count == 2
-
-
-def test_should_handle_nested_directory_structure_when_copying_assets(
-    configurator: CopilotConfigurator, project: Project, tmp_path: Path
-) -> None:
-    source_file = Path(project.dir) / ".charlie/assets/subdir/nested.txt"
-    source_file.parent.mkdir(parents=True, exist_ok=True)
-    source_file.write_text("nested content")
-
-    assets = [str(source_file)]
-    configurator.assets(assets)
-
-    dest_file = tmp_path / ".github/assets/subdir/nested.txt"
-    assert dest_file.exists()
-    assert dest_file.read_text() == "nested content"
+    configurator.assets_manager.copy_assets.assert_not_called()

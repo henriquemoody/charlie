@@ -273,9 +273,9 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
     if mcp_servers_directory.exists():
         discovered_files["mcp_servers"] = sorted(mcp_servers_directory.glob("*.yaml"))
 
-    mcp_servers_directory = charlie_config_directory / "assets"
-    if mcp_servers_directory.exists():
-        discovered_files["assets"] = sorted(mcp_servers_directory.glob("*.*"))
+    assets_directory = charlie_config_directory / "assets"
+    if assets_directory.exists():
+        discovered_files["assets"] = sorted(assets_directory.rglob("*.*"))
 
     return discovered_files
 

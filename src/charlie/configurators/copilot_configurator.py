@@ -1,7 +1,7 @@
-import shutil
 from pathlib import Path
 from typing import final
 
+from charlie.assets_manager import AssetsManager
 from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
@@ -14,11 +14,19 @@ class CopilotConfigurator(AgentConfigurator):
     __ALLOWED_COMMAND_METADATA = ["description"]
     __ALLOWED_INSTRUCTION_METADATA = ["description", "applyTo"]
 
-    def __init__(self, agent: Agent, project: Project, tracker: Tracker, markdown_generator: MarkdownGenerator):
+    def __init__(
+        self,
+        agent: Agent,
+        project: Project,
+        tracker: Tracker,
+        markdown_generator: MarkdownGenerator,
+        assets_manager: AssetsManager,
+    ):
         self.agent = agent
         self.project = project
         self.tracker = tracker
         self.markdown_generator = markdown_generator
+        self.assets_manager = assets_manager
 
     def commands(self, commands: list[Command]) -> None:
         prompts_dir = Path(self.project.dir) / self.agent.commands_dir
@@ -109,11 +117,9 @@ class CopilotConfigurator(AgentConfigurator):
             self.tracker.track("GitHub Copilot does not support MCP servers natively. Skipping...")
 
     def assets(self, assets: list[str]) -> None:
-        for asset in assets:
-            asset_path = Path(asset)
-            charlie_assets = Path(self.project.dir) / ".charlie" / "assets"
-            relative_path = asset_path.relative_to(charlie_assets)
-            destination = Path(self.project.dir) / self.agent.dir / "assets" / relative_path
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(asset, destination)
-            self.tracker.track(f"Created {asset}")
+        if not assets:
+            return
+
+        source_base = Path(self.project.dir) / ".charlie" / "assets"
+        destination_base = Path(self.project.dir) / self.agent.dir / "assets"
+        self.assets_manager.copy_assets(assets, source_base, destination_base)

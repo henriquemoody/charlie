@@ -1,7 +1,7 @@
-import shutil
 from pathlib import Path
 from typing import final
 
+from charlie.assets_manager import AssetsManager
 from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
@@ -22,12 +22,14 @@ class CursorConfigurator(AgentConfigurator):
         tracker: Tracker,
         markdown_generator: MarkdownGenerator,
         mcp_server_generator: MCPServerGenerator,
+        assets_manager: AssetsManager,
     ):
         self.agent = agent
         self.project = project
         self.tracker = tracker
         self.markdown_generator = markdown_generator
         self.mcp_server_generator = mcp_server_generator
+        self.assets_manager = assets_manager
 
     def commands(self, commands: list[Command]) -> None:
         commands_dir = Path(self.project.dir) / self.agent.commands_dir
@@ -89,11 +91,9 @@ class CursorConfigurator(AgentConfigurator):
         self.mcp_server_generator.generate(file, mcp_servers)
 
     def assets(self, assets: list[str]) -> None:
-        for asset in assets:
-            asset_path = Path(asset)
-            charlie_assets = Path(self.project.dir) / ".charlie" / "assets"
-            relative_path = asset_path.relative_to(charlie_assets)
-            destination = Path(self.agent.dir) / "assets" / relative_path
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(asset, destination)
-            self.tracker.track(f"Created {asset}")
+        if not assets:
+            return
+
+        source_base = Path(self.project.dir) / ".charlie" / "assets"
+        destination_base = Path(self.agent.dir) / "assets"
+        self.assets_manager.copy_assets(assets, source_base, destination_base)

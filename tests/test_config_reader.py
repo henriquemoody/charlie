@@ -397,3 +397,41 @@ No closing delimiter
 """
     with pytest.raises(ConfigParseError, match="closing delimiter"):
         parse_frontmatter(content)
+
+
+def test_discover_assets_recursively(tmp_path) -> None:
+    """Regression test: ensure assets are discovered recursively from subdirectories."""
+    # Create directory structure with nested assets
+    charlie_dir = tmp_path / ".charlie"
+    assets_dir = charlie_dir / "assets"
+    subdirectory = assets_dir / "images"
+    nested_subdirectory = subdirectory / "icons"
+
+    assets_dir.mkdir(parents=True)
+    subdirectory.mkdir(parents=True)
+    nested_subdirectory.mkdir(parents=True)
+
+    # Create files at different levels
+    (assets_dir / "root-file.txt").write_text("root")
+    (assets_dir / "data.json").write_text("{}")
+    (subdirectory / "logo.png").write_text("png content")
+    (subdirectory / "banner.jpg").write_text("jpg content")
+    (nested_subdirectory / "favicon.ico").write_text("ico content")
+
+    result = discover_charlie_files(tmp_path)
+
+    # Should find all assets recursively
+    assert len(result["assets"]) == 5
+
+    # Verify all files are found
+    asset_names = [asset.name for asset in result["assets"]]
+    assert "root-file.txt" in asset_names
+    assert "data.json" in asset_names
+    assert "logo.png" in asset_names
+    assert "banner.jpg" in asset_names
+    assert "favicon.ico" in asset_names
+
+    # Verify paths include subdirectories
+    asset_paths = [str(asset) for asset in result["assets"]]
+    assert any("images" in path for path in asset_paths)
+    assert any("icons" in path for path in asset_paths)
