@@ -157,7 +157,10 @@ class TestStaticPlaceholders:
 
         result = transformer.command(command)
 
-        assert result.prompt == "Files: /home/user/projects/my-project/.cursor/rules/main.md, .cursor/mcp.json"
+        assert result.prompt == (
+            "Files: /home/user/projects/my-project/.cursor/rules/main.md, "
+            "/home/user/projects/my-project/.cursor/mcp.json"
+        )
 
     def test_should_replace_commands_shorthand_injection_when_text_contains_it(
         self, transformer: PlaceholderTransformer
@@ -376,6 +379,154 @@ class TestCommandTransformation:
 
         assert result.metadata == metadata
 
+    def test_should_transform_string_values_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "project": "{{project_name}}",
+            "language": "{{var:language}}",
+            "priority": 1,
+        }
+        command = Command(name="build", description="Build", prompt="Build", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["project"] == "my-project"
+        assert result.metadata["language"] == "python"
+        assert result.metadata["priority"] == 1
+
+    def test_should_transform_nested_dict_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "config": {
+                "project": "{{project_name}}",
+                "framework": "{{var:framework}}",
+            }
+        }
+        command = Command(name="build", description="Build", prompt="Build", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["config"]["project"] == "my-project"
+        assert result.metadata["config"]["framework"] == "fastapi"
+
+    def test_should_transform_list_items_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "tags": ["{{project_name}}", "{{var:language}}", "build"],
+            "count": 3,
+        }
+        command = Command(name="build", description="Build", prompt="Build", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["tags"] == ["my-project", "python", "build"]
+        assert result.metadata["count"] == 3
+
+    def test_should_transform_deeply_nested_metadata_in_command_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "project": "{{project_name}}",
+                    }
+                }
+            }
+        }
+        command = Command(name="test", description="Test", prompt="Test", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["level1"]["level2"]["level3"]["project"] == "my-project"
+
+    def test_should_transform_list_of_dicts_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "servers": [
+                {"name": "{{project_name}}-api", "port": 8000},
+                {"name": "{{project_name}}-worker", "port": 9000},
+            ]
+        }
+        command = Command(name="deploy", description="Deploy", prompt="Deploy", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["servers"][0]["name"] == "my-project-api"
+        assert result.metadata["servers"][0]["port"] == 8000
+        assert result.metadata["servers"][1]["name"] == "my-project-worker"
+        assert result.metadata["servers"][1]["port"] == 9000
+
+    def test_should_transform_nested_lists_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "matrix": [
+                ["{{project_name}}", "{{var:language}}"],
+                ["{{var:framework}}", "test"],
+            ]
+        }
+        command = Command(name="test", description="Test", prompt="Test", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["matrix"][0] == ["my-project", "python"]
+        assert result.metadata["matrix"][1] == ["fastapi", "test"]
+
+    def test_should_apply_replacements_to_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        replacements = {"version": ValueReplacement(value="2.0")}
+        metadata = {"release": "{{version}}", "stable": True}
+        command = Command(
+            name="release", description="Release", prompt="Release", metadata=metadata, replacements=replacements
+        )
+
+        result = transformer.command(command)
+
+        assert result.metadata["release"] == "2.0"
+        assert result.metadata["stable"] is True
+
+    def test_should_preserve_non_string_types_in_command_metadata_when_transforming(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "enabled": True,
+            "count": 42,
+            "ratio": 3.14,
+            "nothing": None,
+        }
+        command = Command(name="test", description="Test", prompt="Test", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["enabled"] is True
+        assert result.metadata["count"] == 42
+        assert result.metadata["ratio"] == 3.14
+        assert result.metadata["nothing"] is None
+
+    def test_should_transform_environment_variables_in_command_metadata_when_present(
+        self, transformer: PlaceholderTransformer, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("API_KEY", "secret123")
+        monkeypatch.setenv("DB_HOST", "localhost")
+        metadata = {
+            "api_key": "{{env:API_KEY}}",
+            "database": {
+                "host": "{{env:DB_HOST}}",
+            },
+        }
+        command = Command(name="connect", description="Connect", prompt="Connect", metadata=metadata)
+
+        result = transformer.command(command)
+
+        assert result.metadata["api_key"] == "secret123"
+        assert result.metadata["database"]["host"] == "localhost"
+
     def test_should_preserve_replacements_in_command_when_transforming(
         self, transformer: PlaceholderTransformer
     ) -> None:
@@ -434,6 +585,65 @@ class TestRuleTransformation:
         result = transformer.rule(rule)
 
         assert result.metadata == metadata
+
+    def test_should_transform_string_values_in_rule_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "project": "{{project_name}}",
+            "framework": "{{var:framework}}",
+            "enabled": True,
+        }
+        rule = Rule(name="testing", description="Testing", prompt="Test", metadata=metadata)
+
+        result = transformer.rule(rule)
+
+        assert result.metadata["project"] == "my-project"
+        assert result.metadata["framework"] == "fastapi"
+        assert result.metadata["enabled"] is True
+
+    def test_should_transform_nested_structures_in_rule_metadata_when_present(
+        self, transformer: PlaceholderTransformer
+    ) -> None:
+        metadata = {
+            "config": {
+                "project": "{{project_name}}",
+                "settings": {
+                    "language": "{{var:language}}",
+                },
+            },
+            "tags": ["{{project_name}}", "rules"],
+        }
+        rule = Rule(name="config", description="Config", prompt="Config", metadata=metadata)
+
+        result = transformer.rule(rule)
+
+        assert result.metadata["config"]["project"] == "my-project"
+        assert result.metadata["config"]["settings"]["language"] == "python"
+        assert result.metadata["tags"] == ["my-project", "rules"]
+
+    def test_should_apply_replacements_to_rule_metadata_when_present(self, transformer: PlaceholderTransformer) -> None:
+        replacements = {"style": ValueReplacement(value="BDD")}
+        metadata = {"testing_style": "{{style}}", "strict": False}
+        rule = Rule(name="test", description="Test", prompt="Test", metadata=metadata, replacements=replacements)
+
+        result = transformer.rule(rule)
+
+        assert result.metadata["testing_style"] == "BDD"
+        assert result.metadata["strict"] is False
+
+    def test_should_transform_environment_variables_in_rule_metadata_when_present(
+        self, transformer: PlaceholderTransformer, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("COVERAGE_THRESHOLD", "80")
+        metadata = {
+            "coverage": "{{env:COVERAGE_THRESHOLD}}",
+        }
+        rule = Rule(name="coverage", description="Coverage", prompt="Coverage", metadata=metadata)
+
+        result = transformer.rule(rule)
+
+        assert result.metadata["coverage"] == "80"
 
 
 class TestMCPServerTransformation:

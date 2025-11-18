@@ -1,6 +1,6 @@
 import os
 import re
-from typing import final
+from typing import Any, final
 
 from charlie.schema import (
     Agent,
@@ -42,11 +42,13 @@ class PlaceholderTransformer:
         prompt = self.__fixed(command.prompt)
         prompt = self.__replacements(prompt, command.replacements)
 
+        metadata = self.__dict(command.metadata, command.replacements)
+
         return Command(
             name=command.name,
             description=command.description,
             prompt=prompt,
-            metadata=command.metadata,
+            metadata=metadata,
             replacements=command.replacements,
         )
 
@@ -57,11 +59,13 @@ class PlaceholderTransformer:
         prompt = self.__fixed(rule.prompt)
         prompt = self.__replacements(prompt, rule.replacements)
 
+        metadata = self.__dict(rule.metadata, rule.replacements)
+
         return Rule(
             name=rule.name,
             description=title,
             prompt=prompt,
-            metadata=rule.metadata,
+            metadata=metadata,
             replacements=rule.replacements,
         )
 
@@ -95,36 +99,26 @@ class PlaceholderTransformer:
         project_dir_abs = os.path.abspath(self.project.dir)
         use_relative = cwd == project_dir_abs
 
-        if use_relative:
-            placeholders = {
-                "{{project_dir}}": ".",
-                "{{project_name}}": self.project.name,
-                "{{project_namespace}}": self.project.namespace or "",
-                "{{agent_name}}": self.agent.name,
-                "{{agent_shortname}}": self.agent.shortname,
-                "{{agent_dir}}": self.agent.dir,
-                "{{commands_dir}}": self.agent.commands_dir,
-                "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
-                "{{rules_dir}}": self.agent.rules_dir,
-                "{{rules_file}}": self.agent.rules_file,
-                "{{mcp_file}}": self.agent.mcp_file,
-                "{{assets_dir}}": self.agent.dir + "/assets",
-            }
-        else:
-            placeholders = {
-                "{{project_dir}}": self.project.dir,
-                "{{project_name}}": self.project.name,
-                "{{project_namespace}}": self.project.namespace or "",
-                "{{agent_name}}": self.agent.name,
-                "{{agent_shortname}}": self.agent.shortname,
-                "{{agent_dir}}": self.project.dir + "/" + self.agent.dir,
-                "{{commands_dir}}": self.project.dir + "/" + self.agent.commands_dir,
-                "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
-                "{{rules_dir}}": self.project.dir + "/" + self.agent.rules_dir,
-                "{{rules_file}}": self.project.dir + "/" + self.agent.rules_file,
-                "{{mcp_file}}": self.agent.mcp_file,
-                "{{assets_dir}}": self.project.dir + "/" + self.agent.dir + "/assets",
-            }
+        placeholders = {
+            "{{project_dir}}": ".",
+            "{{project_name}}": self.project.name,
+            "{{project_namespace}}": self.project.namespace or "",
+            "{{agent_name}}": self.agent.name,
+            "{{agent_shortname}}": self.agent.shortname,
+            "{{agent_dir}}": self.agent.dir,
+            "{{commands_dir}}": self.agent.commands_dir,
+            "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
+            "{{rules_dir}}": self.agent.rules_dir,
+            "{{rules_file}}": self.agent.rules_file,
+            "{{mcp_file}}": self.agent.mcp_file,
+            "{{assets_dir}}": self.agent.dir + "/assets",
+        }
+
+        if not use_relative:
+            for placeholder, replacement in placeholders.items():
+                if placeholder.endswith("_dir}}") or placeholder.endswith("_file}}"):
+                    placeholders[placeholder] = self.project.dir + "/" + replacement
+            placeholders["{{project_dir}}"] = self.project.dir
 
         for placeholder, replacement in placeholders.items():
             text = text.replace(placeholder, replacement)
@@ -171,3 +165,35 @@ class PlaceholderTransformer:
             text = text.replace(placeholder, choice)
 
         return text
+
+    def __dict(self, original: dict[str, Any], replacements: dict[str, ReplacementSpec]) -> dict[str, Any]:
+        transformed: dict[str, Any] = {}
+        for key, value in original.items():
+            if isinstance(value, str):
+                transformed_value = self.__fixed(value)
+                transformed_value = self.__replacements(transformed_value, replacements)
+                transformed[key] = transformed_value
+            elif isinstance(value, dict):
+                transformed[key] = self.__dict(value, replacements)
+            elif isinstance(value, list):
+                transformed[key] = self.__list(value, replacements)
+            else:
+                transformed[key] = value
+
+        return transformed
+
+    def __list(self, original: list[Any], replacements: dict[str, ReplacementSpec]) -> list[Any]:
+        transformed: list[Any] = []
+        for item in original:
+            if isinstance(item, str):
+                transformed_value = self.__fixed(item)
+                transformed_value = self.__replacements(transformed_value, replacements)
+                transformed.append(transformed_value)
+            elif isinstance(item, dict):
+                transformed.append(self.__dict(item, replacements))
+            elif isinstance(item, list):
+                transformed.append(self.__list(item, replacements))
+            else:
+                transformed.append(item)
+
+        return transformed
