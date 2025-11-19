@@ -25,7 +25,7 @@ def agent(tmp_path: Path) -> Agent:
         rules_dir=".claude/rules",
         rules_file=str(tmp_path / "CLAUDE.md"),
         rules_extension="md",
-        mcp_file=".claude/mcp.json",
+        mcp_file=".mcp.json",
         ignore_file=".claude/settings.local.json",
     )
 
@@ -435,7 +435,7 @@ def test_should_create_json_file_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".claude/mcp.json"
+    file = Path(project.dir) / ".mcp.json"
     assert file.exists()
 
 
@@ -444,7 +444,7 @@ def test_should_write_valid_json_when_processing_mcp_servers(configurator: Claud
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".claude/mcp.json"
+    file = Path(project.dir) / ".mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -466,7 +466,7 @@ def test_should_include_server_configuration_without_name_field_when_processing_
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".claude/mcp.json"
+    file = Path(project.dir) / ".mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -487,7 +487,7 @@ def test_should_handle_multiple_servers_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".claude/mcp.json"
+    file = Path(project.dir) / ".mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -506,7 +506,7 @@ def test_should_handle_http_servers_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".claude/mcp.json"
+    file = Path(project.dir) / ".mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -523,18 +523,90 @@ def test_should_track_created_file_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    tracker.track.assert_called_once()
-    assert str(Path(".claude") / "mcp.json") in str(tracker.track.call_args[0][0])
+    assert tracker.track.call_count == 2
+    # First call is from mcp_server_generator, second is for enabling servers
+    tracked_calls = [call[0][0] for call in tracker.track.call_args_list]
+    assert any(".mcp.json" in str(call) for call in tracked_calls)
+    assert any("Enabled MCP servers" in str(call) for call in tracked_calls)
 
 
-def test_should_create_mcp_directory_when_it_does_not_exist(configurator: ClaudeConfigurator, project: Project) -> None:
+def test_should_create_settings_directory_when_it_does_not_exist(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
     servers = [StdioMCPServer(name="test-server", command="npx")]
 
     configurator.mcp_servers(servers)
 
-    mcp_dir = Path(project.dir) / ".claude"
-    assert mcp_dir.exists()
-    assert mcp_dir.is_dir()
+    settings_dir = Path(project.dir) / ".claude"
+    assert settings_dir.exists()
+    assert settings_dir.is_dir()
+
+
+def test_should_add_server_names_to_enabled_mcp_json_servers_when_processing_mcp_servers(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    servers = [
+        StdioMCPServer(name="github", command="npx", args=["-y", "github-server"]),
+        StdioMCPServer(name="filesystem", command="npx", args=["-y", "fs-server"]),
+    ]
+
+    configurator.mcp_servers(servers)
+
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    assert settings_file.exists()
+
+    with open(settings_file) as f:
+        settings = json.load(f)
+
+    assert "enabledMcpjsonServers" in settings
+    assert "github" in settings["enabledMcpjsonServers"]
+    assert "filesystem" in settings["enabledMcpjsonServers"]
+
+
+def test_should_preserve_existing_enabled_servers_when_adding_new_ones(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+
+    existing_settings = {"enabledMcpjsonServers": ["existing-server"], "otherSetting": "value"}
+    with open(settings_file, "w", encoding="utf-8") as f:
+        json.dump(existing_settings, f)
+
+    servers = [StdioMCPServer(name="new-server", command="npx")]
+    configurator.mcp_servers(servers)
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    assert settings["otherSetting"] == "value"
+    assert "existing-server" in settings["enabledMcpjsonServers"]
+    assert "new-server" in settings["enabledMcpjsonServers"]
+
+
+def test_should_not_duplicate_server_names_when_already_enabled(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    settings_file = Path(project.dir) / ".claude/settings.local.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+
+    existing_settings = {"enabledMcpjsonServers": ["github", "filesystem"]}
+    with open(settings_file, "w", encoding="utf-8") as f:
+        json.dump(existing_settings, f)
+
+    servers = [
+        StdioMCPServer(name="github", command="npx"),
+        StdioMCPServer(name="new-server", command="npx"),
+    ]
+    configurator.mcp_servers(servers)
+
+    with open(settings_file, encoding="utf-8") as f:
+        settings = json.load(f)
+
+    enabled_servers = settings["enabledMcpjsonServers"]
+    assert enabled_servers.count("github") == 1
+    assert "filesystem" in enabled_servers
+    assert "new-server" in enabled_servers
 
 
 def test_should_delegate_asset_copying_to_assets_manager(

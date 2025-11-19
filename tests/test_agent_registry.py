@@ -18,7 +18,7 @@ def test_get_claude_agent() -> None:
     assert agent.rules_file == "CLAUDE.md"
     assert agent.rules_dir == ".claude/rules"
     assert agent.rules_extension == "md"
-    assert agent.mcp_file == ".claude/mcp.json"
+    assert agent.mcp_file == ".mcp.json"
 
 
 def test_get_cursor_agent() -> None:

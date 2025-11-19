@@ -15,7 +15,7 @@ class AgentRegistry:
             rules_file="CLAUDE.md",
             rules_dir=".claude/rules",
             rules_extension="md",
-            mcp_file=".claude/mcp.json",
+            mcp_file=".mcp.json",
             ignore_file=".claude/settings.local.json",
         ),
         Agent(

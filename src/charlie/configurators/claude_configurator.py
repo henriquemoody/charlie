@@ -97,8 +97,49 @@ class ClaudeConfigurator(AgentConfigurator):
         self.tracker.track(f"Created {rules_file}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
+        if not mcp_servers:
+            return
+
         file = Path(self.project.dir) / Path(self.agent.mcp_file)
         self.mcp_server_generator.generate(file, mcp_servers)
+
+        # Update settings.local.json to enable the MCP servers
+        if self.agent.ignore_file is None:
+            return
+
+        settings_file_path = Path(self.project.dir) / self.agent.ignore_file
+        settings_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Read existing settings if file exists
+        existing_settings: dict[str, Any] = {}
+        if settings_file_path.exists():
+            try:
+                with open(settings_file_path, encoding="utf-8") as f:
+                    existing_settings = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                existing_settings = {}
+
+        # Get server names
+        server_names = [server.name for server in mcp_servers]
+
+        # Update or create enabledMcpjsonServers
+        if "enabledMcpjsonServers" not in existing_settings:
+            existing_settings["enabledMcpjsonServers"] = []
+
+        # Merge server names, avoiding duplicates
+        existing_servers = existing_settings["enabledMcpjsonServers"]
+        for server_name in server_names:
+            if server_name not in existing_servers:
+                existing_servers.append(server_name)
+
+        existing_settings["enabledMcpjsonServers"] = existing_servers
+
+        # Write updated settings
+        with open(settings_file_path, "w", encoding="utf-8") as f:
+            json.dump(existing_settings, f, indent=2)
+            f.write("\n")
+
+        self.tracker.track(f"Enabled MCP servers in {settings_file_path}")
 
     def assets(self, assets: list[str]) -> None:
         if not assets:
