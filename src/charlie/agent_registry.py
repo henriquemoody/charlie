@@ -46,6 +46,20 @@ class AgentRegistry:
             mcp_file=".github/copilot/mcp.json",
             ignore_file=".github/.copilotignore",
         ),
+        Agent(
+            name="OpenCode",
+            shortname="opencode",
+            dir=".opencode",
+            default_format=FileFormat.MARKDOWN,
+            commands_dir=".opencode/prompts",
+            commands_extension="md",
+            commands_shorthand_injection="$ARGUMENTS",
+            rules_file=".opencode/instructions.md",
+            rules_dir=".opencode/instructions",
+            rules_extension="md",
+            mcp_file=".opencode/mcp.json",
+            ignore_file=".opencode/.opencodeignore",
+        ),
     ]
 
     def get(self, agent_name: str) -> Agent:

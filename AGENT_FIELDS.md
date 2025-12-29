@@ -10,6 +10,7 @@ Charlie currently supports:
 - **Claude Code** (`claude`)
 - **Cursor** (`cursor`)
 - **GitHub Copilot** (`copilot`)
+- **OpenCode** (`opencode`)
 
 ## Command Fields
 
@@ -87,6 +88,21 @@ metadata:
 **Documentation:** [GitHub Copilot Prompt Files](https://docs.github.com/en/copilot/tutorials/customization-library/prompt-files/your-first-prompt-file)
 
 **Note:** GitHub Copilot doesn't have native slash command support like Claude or Cursor. Instead, Charlie generates prompt files and creates an instructions file that lists available commands for reference.
+
+#### OpenCode
+
+OpenCode supports the following metadata fields:
+
+```yaml
+metadata:
+  # Organization
+  tags: ["git", "vcs"]
+  category: "source-control"
+```
+
+**Output Format:** YAML frontmatter in generated `.opencode/prompts/*.md` files.
+
+**Documentation:** [OpenCode Documentation](https://opencode.ai/)
 
 ## Rule Fields (Rules)
 
@@ -169,6 +185,22 @@ metadata:
 
 **Note:** GitHub Copilot scans the repository for files matching the pattern `*instructions.md`. When using separate mode, Charlie creates individual instruction files and a main instruction file that references them.
 
+#### OpenCode
+
+OpenCode supports the following metadata fields for rules:
+
+```yaml
+metadata:
+  # Organization
+  description: "Coding standards for this project"
+```
+
+**Output Format:**
+- **Merged mode**: Single `.opencode/instructions.md` file with all rules
+- **Separate mode**: Individual `*.md` files in `.opencode/instructions/` directory
+
+**Documentation:** [OpenCode Documentation](https://opencode.ai/)
+
 ## MCP Server Fields
 
 ### Core Fields (All Agents)
@@ -199,7 +231,7 @@ mcp_servers:
       Content-Type: "application/json"
 ```
 
-**Output Format:** Generated as JSON in `.claude/mcp.json` or `.cursor/mcp.json`
+**Output Format:** Generated as JSON in `.claude/mcp.json` or `.cursor/mcp.json` or `.opencode/mcp.json`
 
 **Note:** Charlie doesn't support custom metadata fields for MCP servers. All fields are part of the MCP specification.
 
