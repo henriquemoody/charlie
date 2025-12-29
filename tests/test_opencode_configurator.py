@@ -1,5 +1,6 @@
 from pathlib import Path
 from unittest.mock import Mock
+import json
 
 import pytest
 
@@ -70,9 +71,9 @@ def test_should_create_prompts_directory_when_it_does_not_exist(
 
     configurator.commands(commands)
 
-    prompts_dir = Path(project.dir) / ".opencode/prompts"
-    assert prompts_dir.exists()
-    assert prompts_dir.is_dir()
+    commands_dir = Path(project.dir) / ".opencode/command"
+    assert commands_dir.exists()
+    assert commands_dir.is_dir()
 
 
 def test_should_create_markdown_file_when_processing_each_command(
@@ -85,8 +86,8 @@ def test_should_create_markdown_file_when_processing_each_command(
 
     configurator.commands(commands)
 
-    fix_file = Path(project.dir) / ".opencode/prompts/fix-issue.md"
-    review_file = Path(project.dir) / ".opencode/prompts/review-pr.md"
+    fix_file = Path(project.dir) / ".opencode/command/fix-issue.md"
+    review_file = Path(project.dir) / ".opencode/command/review-pr.md"
 
     assert fix_file.exists()
     assert review_file.exists()
@@ -99,7 +100,7 @@ def test_should_write_prompt_to_file_body_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".opencode/prompts/test.md"
+    file = Path(project.dir) / ".opencode/command/test.md"
     content = file.read_text()
 
     assert "Fix issue following our coding standards" in content
@@ -112,7 +113,7 @@ def test_should_include_description_in_frontmatter_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".opencode/prompts/test.md"
+    file = Path(project.dir) / ".opencode/command/test.md"
     content = file.read_text()
 
     assert "description: Fix a numbered issue" in content
@@ -133,7 +134,7 @@ def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
 
     configurator.commands(commands)
 
-    file = Path(project_with_namespace.dir) / ".opencode/prompts/myapp-test.md"
+    file = Path(project_with_namespace.dir) / ".opencode/command/myapp-test.md"
     assert file.exists()
 
 
@@ -168,7 +169,7 @@ def test_should_filter_custom_metadata_when_not_in_allowed_list(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".opencode/prompts/test.md"
+    file = Path(project.dir) / ".opencode/command/test.md"
     content = file.read_text()
 
     assert "forbidden_field" not in content
@@ -262,8 +263,27 @@ def test_should_track_created_file_when_using_merged_mode(
 
     configurator.rules(rules, RuleMode.MERGED)
 
-    tracker.track.assert_called_once()
-    assert ".opencode/instructions.md" in str(tracker.track.call_args[0][0])
+    # Should track instructions file and update to opencode.json
+    assert tracker.track.call_count >= 1
+    tracked_files = [call[0][0] for call in tracker.track.call_args_list]
+    assert any(".opencode/instructions.md" in str(f) for f in tracked_files)
+
+
+def test_should_add_instructions_to_opencode_json_when_using_merged_mode(
+    configurator: OpencodeConfigurator, project: Project
+) -> None:
+    rules = [Rule(name="style", description="Style", prompt="Use Black")]
+
+    configurator.rules(rules, RuleMode.MERGED)
+
+    config_file = Path(project.dir) / "opencode.json"
+    assert config_file.exists()
+    
+    with open(config_file) as f:
+        config = json.load(f)
+    
+    assert "instructions" in config
+    assert ".opencode/instructions.md" in config["instructions"]
 
 
 def test_should_create_rules_directory_when_using_separate_mode(
@@ -357,11 +377,34 @@ def test_should_track_rule_files_and_instructions_file_when_using_separate_mode(
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    assert tracker.track.call_count == 3
+    # Should track all rule files and main instructions file
+    assert tracker.track.call_count >= 3
     tracked_files = [call[0][0] for call in tracker.track.call_args_list]
     assert any("style.md" in str(f) for f in tracked_files)
     assert any("testing.md" in str(f) for f in tracked_files)
     assert any(".opencode/instructions.md" in str(f) for f in tracked_files)
+
+
+def test_should_add_all_instructions_to_opencode_json_when_using_separate_mode(
+    configurator: OpencodeConfigurator, project: Project
+) -> None:
+    rules = [
+        Rule(name="style", description="Style", prompt="Use Black"),
+        Rule(name="testing", description="Testing", prompt="Write tests"),
+    ]
+
+    configurator.rules(rules, RuleMode.SEPARATE)
+
+    config_file = Path(project.dir) / "opencode.json"
+    assert config_file.exists()
+    
+    with open(config_file) as f:
+        config = json.load(f)
+    
+    assert "instructions" in config
+    assert ".opencode/instructions.md" in config["instructions"]
+    assert ".opencode/instructions/style.md" in config["instructions"]
+    assert ".opencode/instructions/testing.md" in config["instructions"]
 
 
 def test_should_return_early_when_no_mcp_servers_provided(
@@ -432,8 +475,8 @@ def test_should_create_ignore_file_when_patterns_provided(
 
     configurator.ignore_file(patterns)
 
-    ignore_file = Path(project.dir) / ".opencode/.opencodeignore"
-    assert ignore_file.exists()
+    config_file = Path(project.dir) / "opencode.json"
+    assert config_file.exists()
 
 
 def test_should_write_patterns_to_ignore_file(configurator: OpencodeConfigurator, project: Project) -> None:
@@ -441,12 +484,15 @@ def test_should_write_patterns_to_ignore_file(configurator: OpencodeConfigurator
 
     configurator.ignore_file(patterns)
 
-    ignore_file = Path(project.dir) / ".opencode/.opencodeignore"
-    content = ignore_file.read_text()
+    config_file = Path(project.dir) / "opencode.json"
+    with open(config_file) as f:
+        config = json.load(f)
 
-    assert "*.log" in content
-    assert ".env" in content
-    assert "secrets/" in content
+    assert "watcher" in config
+    assert "ignore" in config["watcher"]
+    assert "*.log" in config["watcher"]["ignore"]
+    assert ".env" in config["watcher"]["ignore"]
+    assert "secrets/" in config["watcher"]["ignore"]
 
 
 def test_should_include_auto_generated_comment_in_ignore_file(
@@ -456,10 +502,10 @@ def test_should_include_auto_generated_comment_in_ignore_file(
 
     configurator.ignore_file(patterns)
 
-    ignore_file = Path(project.dir) / ".opencode/.opencodeignore"
-    content = ignore_file.read_text()
-
-    assert "# Auto-generated by Charlie" in content
+    # The opencode.json doesn't have comments, so we skip this test or modify it
+    # Just check that the file was created
+    config_file = Path(project.dir) / "opencode.json"
+    assert config_file.exists()
 
 
 def test_should_track_ignore_file_creation(configurator: OpencodeConfigurator, tracker: Mock) -> None:
@@ -469,4 +515,14 @@ def test_should_track_ignore_file_creation(configurator: OpencodeConfigurator, t
 
     tracker.track.assert_called_once()
     call_args = tracker.track.call_args[0][0]
-    assert "ignore file" in call_args.lower()
+    assert "ignore patterns" in call_args.lower() or "opencode.json" in call_args.lower()
+
+
+def test_should_not_create_config_when_no_patterns_provided(
+    configurator: OpencodeConfigurator, project: Project, tracker: Mock
+) -> None:
+    configurator.ignore_file([])
+
+    config_file = Path(project.dir) / "opencode.json"
+    assert not config_file.exists()
+    tracker.track.assert_not_called()

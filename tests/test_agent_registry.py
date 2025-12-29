@@ -62,13 +62,14 @@ def test_get_opencode_agent() -> None:
     assert agent.shortname == "opencode"
     assert agent.dir == ".opencode"
     assert agent.default_format == FileFormat.MARKDOWN
-    assert agent.commands_dir == ".opencode/prompts"
+    assert agent.commands_dir == ".opencode/command"
     assert agent.commands_extension == "md"
     assert agent.commands_shorthand_injection == "$ARGUMENTS"
     assert agent.rules_file == ".opencode/instructions.md"
     assert agent.rules_dir == ".opencode/instructions"
     assert agent.rules_extension == "md"
     assert agent.mcp_file == ".opencode/mcp.json"
+    assert agent.ignore_file == "opencode.json"
 
 
 def test_get_unknown_agent_raises_value_error() -> None:

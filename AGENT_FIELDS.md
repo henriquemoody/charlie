@@ -99,11 +99,11 @@ metadata:
   description: "Description of the command"
 ```
 
-**Output Format:** YAML frontmatter in generated `.opencode/prompts/*.md` files.
+**Output Format:** YAML frontmatter in generated `.opencode/command/*.md` files.
 
-**Documentation:** [OpenCode Documentation](https://opencode.ai/)
+**Documentation:** [OpenCode Documentation](https://opencode.ai/docs/config)
 
-**Note:** OpenCode configuration follows standard markdown format with YAML frontmatter for command metadata.
+**Note:** OpenCode uses a centralized `opencode.json` configuration file that references command and instruction files. Commands are stored in `.opencode/command/` directory.
 
 ## Rule Fields (Rules)
 
@@ -199,8 +199,11 @@ metadata:
 **Output Format:**
 - **Merged mode**: Single `.opencode/instructions.md` file with all rules
 - **Separate mode**: Individual `*.md` files in `.opencode/instructions/` directory
+- All instruction paths are registered in `opencode.json` under the `instructions` key
 
-**Documentation:** [OpenCode Documentation](https://opencode.ai/)
+**Documentation:** [OpenCode Documentation](https://opencode.ai/docs/config)
+
+**Note:** OpenCode uses a centralized `opencode.json` configuration file that maintains an array of instruction file paths. This allows OpenCode to track and load all instruction files dynamically.
 
 ## MCP Server Fields
 
