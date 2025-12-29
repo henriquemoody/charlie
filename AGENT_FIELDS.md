@@ -96,13 +96,14 @@ OpenCode supports the following metadata fields:
 ```yaml
 metadata:
   # Organization
-  tags: ["git", "vcs"]
-  category: "source-control"
+  description: "Description of the command"
 ```
 
 **Output Format:** YAML frontmatter in generated `.opencode/prompts/*.md` files.
 
 **Documentation:** [OpenCode Documentation](https://opencode.ai/)
+
+**Note:** OpenCode configuration follows standard markdown format with YAML frontmatter for command metadata.
 
 ## Rule Fields (Rules)
 

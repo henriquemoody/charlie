@@ -101,7 +101,7 @@ class OpencodeConfigurator(AgentConfigurator):
         if not mcp_servers:
             return
 
-        file = Path(self.project.dir) / Path(self.agent.mcp_file)
+        file = Path(self.project.dir) / self.agent.mcp_file
         self.mcp_server_generator.generate(file, mcp_servers)
 
     def assets(self, assets: list[str]) -> None:
