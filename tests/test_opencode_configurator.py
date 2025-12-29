@@ -9,7 +9,7 @@ from charlie.configurators.opencode_configurator import OpencodeConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Command, HttpMCPServer, Project, Rule, StdioMCPServer
+from charlie.schema import Agent, Command, Project, Rule, StdioMCPServer
 
 
 @pytest.fixture
