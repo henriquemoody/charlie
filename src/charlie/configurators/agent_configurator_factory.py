@@ -27,6 +27,8 @@ class AgentConfiguratorFactory:
             return CopilotConfigurator(agent, project, tracker, markdown_generator, assets_manager)
 
         if agent.shortname == "opencode":
-            return OpencodeConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager)
+            return OpencodeConfigurator(
+                agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager
+            )
 
         raise ValueError(f"Unsupported agent: {agent.shortname}")
