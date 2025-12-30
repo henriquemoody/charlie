@@ -57,7 +57,7 @@ class AgentRegistry:
             rules_file=".opencode/instructions.md",
             rules_dir=".opencode/instructions",
             rules_extension="md",
-            mcp_file=".opencode/mcp.json",
+            mcp_file="opencode.json",
             ignore_file="opencode.json",
         ),
     ]

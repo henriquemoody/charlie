@@ -235,9 +235,9 @@ mcp_servers:
       Content-Type: "application/json"
 ```
 
-**Output Format:** Generated as JSON in `.claude/mcp.json` or `.cursor/mcp.json` or `.opencode/mcp.json`
+**Output Format:** Generated as JSON in `.claude/mcp.json`, `.cursor/mcp.json`, or as part of `opencode.json` (under the `mcpServers` key)
 
-**Note:** Charlie doesn't support custom metadata fields for MCP servers. All fields are part of the MCP specification.
+**Note:** Charlie doesn't support custom metadata fields for MCP servers. All fields are part of the MCP specification. OpenCode stores MCP configuration in the centralized `opencode.json` file rather than a separate file.
 
 ## Field Discovery
 

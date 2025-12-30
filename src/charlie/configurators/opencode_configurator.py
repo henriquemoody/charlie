@@ -112,8 +112,15 @@ class OpencodeConfigurator(AgentConfigurator):
         if not mcp_servers:
             return
 
-        file = Path(self.project.dir) / self.agent.mcp_file
-        self.mcp_server_generator.generate(file, mcp_servers)
+        # Convert MCP servers to the format expected by opencode.json
+        mcp_config = {}
+        for mcp_server in mcp_servers:
+            server = mcp_server.model_dump(mode="json", exclude={"name"})
+            mcp_config[mcp_server.name] = server
+            self.tracker.track(f"Added MCP server '{mcp_server.name}' to opencode.json")
+
+        # Add MCP servers to opencode.json under "mcpServers" key
+        self._update_opencode_config({"mcpServers": mcp_config})
 
     def assets(self, assets: list[str]) -> None:
         if not assets:

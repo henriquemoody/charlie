@@ -68,7 +68,7 @@ def test_get_opencode_agent() -> None:
     assert agent.rules_file == ".opencode/instructions.md"
     assert agent.rules_dir == ".opencode/instructions"
     assert agent.rules_extension == "md"
-    assert agent.mcp_file == ".opencode/mcp.json"
+    assert agent.mcp_file == "opencode.json"
     assert agent.ignore_file == "opencode.json"
 
 

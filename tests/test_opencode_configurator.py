@@ -423,8 +423,15 @@ def test_should_create_mcp_file_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".opencode/mcp.json"
-    assert file.exists()
+    config_file = Path(project.dir) / "opencode.json"
+    assert config_file.exists()
+
+    with open(config_file) as f:
+        config = json.load(f)
+
+    assert "mcpServers" in config
+    assert "filesystem" in config["mcpServers"]
+    assert config["mcpServers"]["filesystem"]["command"] == "npx"
 
 
 def test_should_track_created_file_when_processing_mcp_servers(
@@ -435,7 +442,8 @@ def test_should_track_created_file_when_processing_mcp_servers(
     configurator.mcp_servers(servers)
 
     tracker.track.assert_called_once()
-    assert ".opencode/mcp.json" in str(tracker.track.call_args[0][0])
+    assert "test-server" in str(tracker.track.call_args[0][0])
+    assert "opencode.json" in str(tracker.track.call_args[0][0])
 
 
 def test_should_delegate_asset_copying_to_assets_manager(
