@@ -145,9 +145,8 @@ class ClaudeConfigurator(AgentConfigurator):
         if not assets:
             return
 
-        source_base = Path(self.project.dir) / ".charlie" / "assets"
         destination_base = Path(self.agent.dir) / "assets"
-        self.assets_manager.copy_assets(assets, source_base, destination_base)
+        self.assets_manager.copy_assets(assets, destination_base)
 
     def ignore_file(self, patterns: list[str]) -> None:
         if self.agent.ignore_file is None:
