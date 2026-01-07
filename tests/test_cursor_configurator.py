@@ -535,10 +535,9 @@ def test_should_delegate_asset_copying_to_assets_manager(
     configurator.assets(assets)
 
     # Verify it calls assets_manager with correct arguments
-    expected_source_base = Path(project.dir) / ".charlie" / "assets"
     expected_dest_base = Path(tmp_path / ".cursorrules") / "assets"
 
-    configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_source_base, expected_dest_base)
+    configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_dest_base)
 
 
 def test_should_not_call_assets_manager_when_no_assets(

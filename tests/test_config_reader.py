@@ -2,6 +2,7 @@ import pytest
 
 from charlie.config_reader import (
     ConfigParseError,
+    _resolve_extends,
     discover_charlie_files,
     find_config_file,
     load_directory_config,
@@ -140,7 +141,6 @@ def test_discover_config_files_empty_when_charlie_dir_not_exist(tmp_path) -> Non
 
 
 def test_discover_config_files_complete_directory_structure(tmp_path) -> None:
-    # Create directory structure
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     rules_dir = charlie_dir / "rules"
@@ -162,7 +162,6 @@ def test_discover_config_files_complete_directory_structure(tmp_path) -> None:
 
 
 def test_load_directory_config_minimal_with_inferred_project_name(tmp_path) -> None:
-    # Create structure
     charlie_dir = tmp_path / ".charlie"
     commands_dir = charlie_dir / "commands"
     commands_dir.mkdir(parents=True)
@@ -179,7 +178,6 @@ Test prompt content
 
     config = load_directory_config(tmp_path)
     assert config.version == "1.0"
-    # Project config created with inferred name
     assert config.project is not None
     assert config.project.name == tmp_path.name
     assert len(config.commands) == 1
@@ -243,7 +241,6 @@ prompt: "Init"
     config = load_directory_config(tmp_path)
     assert len(config.mcp_servers) == 1
     assert config.mcp_servers[0].name == "local-tools"
-    # Commands field no longer exists in prototype
 
 
 def test_should_infer_mcp_server_name_from_filename_when_name_not_provided(tmp_path) -> None:
@@ -401,7 +398,6 @@ No closing delimiter
 
 def test_discover_assets_recursively(tmp_path) -> None:
     """Regression test: ensure assets are discovered recursively from subdirectories."""
-    # Create directory structure with nested assets
     charlie_dir = tmp_path / ".charlie"
     assets_dir = charlie_dir / "assets"
     subdirectory = assets_dir / "images"
@@ -411,7 +407,6 @@ def test_discover_assets_recursively(tmp_path) -> None:
     subdirectory.mkdir(parents=True)
     nested_subdirectory.mkdir(parents=True)
 
-    # Create files at different levels
     (assets_dir / "root-file.txt").write_text("root")
     (assets_dir / "data.json").write_text("{}")
     (subdirectory / "logo.png").write_text("png content")
@@ -420,10 +415,8 @@ def test_discover_assets_recursively(tmp_path) -> None:
 
     result = discover_charlie_files(tmp_path)
 
-    # Should find all assets recursively
     assert len(result["assets"]) == 5
 
-    # Verify all files are found
     asset_names = [asset.name for asset in result["assets"]]
     assert "root-file.txt" in asset_names
     assert "data.json" in asset_names
@@ -431,7 +424,6 @@ def test_discover_assets_recursively(tmp_path) -> None:
     assert "banner.jpg" in asset_names
     assert "favicon.ico" in asset_names
 
-    # Verify paths include subdirectories
     asset_paths = [str(asset) for asset in result["assets"]]
     assert any("images" in path for path in asset_paths)
     assert any("icons" in path for path in asset_paths)
@@ -538,3 +530,224 @@ def test_should_merge_charlie_yaml_and_charlieignore_when_directory_config_has_b
     config = load_directory_config(tmp_path)
 
     assert config.ignore_patterns == [".charlie", "yaml_pattern.log", "file_pattern.log"]
+
+
+def test_should_return_none_when_extends_list_is_empty() -> None:
+    """Test that _resolve_extends returns None when no extends are provided."""
+    result = _resolve_extends([])
+    assert result is None
+
+
+def test_should_skip_circular_reference_in_extends(tmp_path, monkeypatch) -> None:
+    """Test that circular references in extends are detected and skipped."""
+
+    visited = {"https://github.com/test/config1"}
+
+    result = _resolve_extends(["https://github.com/test/config1"], visited=visited)
+
+    assert result is None
+
+
+def test_should_raise_error_when_repository_fetch_fails(tmp_path) -> None:
+    """Test that _resolve_extends raises ConfigParseError when repository fetch fails."""
+    from unittest.mock import patch
+
+    from charlie.repository_fetcher import RepositoryFetchError
+
+    with patch("charlie.config_reader.fetch_repository") as mock_fetch:
+        mock_fetch.side_effect = RepositoryFetchError("Network error")
+
+        with pytest.raises(ConfigParseError, match="Failed to fetch extended config"):
+            _resolve_extends(["https://github.com/invalid/repo"])
+
+
+def test_should_merge_multiple_extended_configs(tmp_path) -> None:
+    """Test that _resolve_extends merges configurations from multiple repositories."""
+    from unittest.mock import patch
+
+    repo1_path = tmp_path / "repo1"
+    repo2_path = tmp_path / "repo2"
+    repo1_path.mkdir()
+    repo2_path.mkdir()
+
+    charlie1 = repo1_path / ".charlie"
+    commands1 = charlie1 / "commands"
+    commands1.mkdir(parents=True)
+
+    repo1_config = repo1_path / "charlie.yaml"
+    repo1_config.write_text("""
+version: "1.0"
+project:
+  name: "base-config"
+""")
+
+    cmd1_file = commands1 / "cmd1.md"
+    cmd1_file.write_text("""---
+name: "cmd1"
+description: "Command 1"
+---
+Prompt 1
+""")
+
+    charlie2 = repo2_path / ".charlie"
+    commands2 = charlie2 / "commands"
+    commands2.mkdir(parents=True)
+
+    repo2_config = repo2_path / "charlie.yaml"
+    repo2_config.write_text("""
+version: "1.0"
+project:
+  name: "extended-config"
+""")
+
+    cmd2_file = commands2 / "cmd2.md"
+    cmd2_file.write_text("""---
+name: "cmd2"
+description: "Command 2"
+---
+Prompt 2
+""")
+
+    with patch("charlie.config_reader.fetch_repository") as mock_fetch:
+        mock_fetch.side_effect = [repo1_path, repo2_path]
+
+        result = _resolve_extends(["https://github.com/test/config1", "https://github.com/test/config2"])
+
+        assert result is not None
+        assert len(result.commands) == 2
+        assert result.project.name == "extended-config"
+
+
+def test_should_handle_recursive_extends(tmp_path) -> None:
+    """Test that _resolve_extends handles recursive extends correctly."""
+    from unittest.mock import patch
+
+    base_path = tmp_path / "base"
+    middle_path = tmp_path / "middle"
+    base_path.mkdir()
+    middle_path.mkdir()
+
+    base_charlie = base_path / ".charlie"
+    base_commands = base_charlie / "commands"
+    base_commands.mkdir(parents=True)
+
+    base_config = base_path / "charlie.yaml"
+    base_config.write_text("""
+version: "1.0"
+project:
+  name: "base"
+""")
+
+    base_cmd = base_commands / "base-cmd.md"
+    base_cmd.write_text("""---
+name: "base-cmd"
+description: "Base command"
+---
+Base
+""")
+
+    middle_charlie = middle_path / ".charlie"
+    middle_commands = middle_charlie / "commands"
+    middle_commands.mkdir(parents=True)
+
+    middle_config = middle_path / "charlie.yaml"
+    middle_config.write_text("""
+version: "1.0"
+extends:
+  - "https://github.com/test/base"
+project:
+  name: "middle"
+""")
+
+    middle_cmd = middle_commands / "middle-cmd.md"
+    middle_cmd.write_text("""---
+name: "middle-cmd"
+description: "Middle command"
+---
+Middle
+""")
+
+    fetch_count = [0]
+
+    def mock_fetch_side_effect(url):
+        fetch_count[0] += 1
+        if "base" in url:
+            return base_path
+        elif "middle" in url:
+            return middle_path
+        raise ValueError(f"Unexpected URL: {url}")
+
+    with patch("charlie.config_reader.fetch_repository", side_effect=mock_fetch_side_effect):
+        result = _resolve_extends(["https://github.com/test/middle"])
+
+        assert result is not None
+        assert len(result.commands) == 2
+        command_names = {cmd.name for cmd in result.commands}
+        assert "base-cmd" in command_names
+        assert "middle-cmd" in command_names
+        assert result.project.name == "middle"
+
+
+def test_should_prevent_infinite_recursion_with_circular_extends(tmp_path) -> None:
+    """Test that circular extends chains are detected and don't cause infinite loops."""
+    from unittest.mock import patch
+
+    config_a_path = tmp_path / "config-a"
+    config_b_path = tmp_path / "config-b"
+    config_a_path.mkdir()
+    config_b_path.mkdir()
+
+    charlie_a = config_a_path / ".charlie"
+    commands_a = charlie_a / "commands"
+    commands_a.mkdir(parents=True)
+
+    config_a = config_a_path / "charlie.yaml"
+    config_a.write_text("""
+version: "1.0"
+extends:
+  - "https://github.com/test/config-b"
+project:
+  name: "config-a"
+""")
+
+    cmd_a = commands_a / "cmd-a.md"
+    cmd_a.write_text("""---
+name: "cmd-a"
+description: "Command A"
+---
+A
+""")
+
+    charlie_b = config_b_path / ".charlie"
+    commands_b = charlie_b / "commands"
+    commands_b.mkdir(parents=True)
+
+    config_b = config_b_path / "charlie.yaml"
+    config_b.write_text("""
+version: "1.0"
+extends:
+  - "https://github.com/test/config-a"
+project:
+  name: "config-b"
+""")
+
+    cmd_b = commands_b / "cmd-b.md"
+    cmd_b.write_text("""---
+name: "cmd-b"
+description: "Command B"
+---
+B
+""")
+
+    def mock_fetch_side_effect(url):
+        if "config-a" in url:
+            return config_a_path
+        elif "config-b" in url:
+            return config_b_path
+        raise ValueError(f"Unexpected URL: {url}")
+
+    with patch("charlie.config_reader.fetch_repository", side_effect=mock_fetch_side_effect):
+        result = _resolve_extends(["https://github.com/test/config-a"])
+
+        assert result is not None
+        assert result.project.name in ["config-a", "config-b"]

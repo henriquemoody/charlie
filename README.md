@@ -18,6 +18,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 - 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` or `.charlie/` directory
 - ⚡ **Runtime Targeting**: Choose which agents to generate for at runtime
 - 📦 **Library & CLI**: Use as CLI tool or import as Python library
+- 🔗 **Configuration Inheritance**: Extend configurations from external Git repositories
 
 ## Quick Start
 
@@ -74,12 +75,15 @@ For advanced features, create `charlie.yaml` in your project:
 ```yaml
 version: "1.0" # Optional: Schema version (defaults to "1.0")
 
+extends: # Optional: Define it when you want to extend another repository's configuration
+  - git@github.com:MyOrg/team-config.git#v1.0
+
 project:
-  name: "My project"      # Optional: Inferred from directory name if omitted
-  namespace: "my"         # Optional: Used to prefix commands, rules, and MCP servers.
+  name: "My project" # Optional: Inferred from directory name if omitted
+  namespace: "my" # Optional: Used to prefix commands, rules, and MCP servers.
 
 variables:
-  mcp_api_token: ~        # It will ask the user to provide an API token, if the environment variable is not set
+  mcp_api_token: ~ # It will ask the user to provide an API token, if the environment variable is not set
 
 # Command definitions
 commands:
@@ -127,6 +131,44 @@ See [`examples/`](examples/) directory for complete examples:
 
 - [`examples/simple/`](examples/simple/) - Basic configuration
 - [`examples/speckit/`](examples/speckit/) - Spec-kit inspired configuration
+
+### Configuration Inheritance (`extends`)
+
+Charlie supports inheriting configuration from external Git repositories. This allows you to share common configurations across multiple projects or organizations:
+
+```yaml
+extends:
+  - https://github.com/MyOrg/shared-agent-config
+  - git@github.com:MyOrg/team-config.git#v1.0
+
+# Local commands, rules, etc. will be merged with extended configs
+commands:
+  - name: "local-command"
+    description: "A project-specific command"
+    prompt: "Do something specific to this project"
+```
+
+**How it works:**
+
+1. Charlie fetches each repository in the `extends` list (in order)
+2. Configurations are merged sequentially - later entries override earlier ones
+3. Your local configuration is merged last, taking highest precedence
+4. Duplicate items (commands, rules, MCP servers, variables) are overwritten with a warning
+
+When duplicates are detected, Charlie displays a warning:
+
+```
+⚠ Overwriting command 'init' from https://github.com/MyOrg/shared-config
+⚠ Overwriting rule 'coding-standards' from https://github.com/MyOrg/shared-config
+```
+
+**Version/Branch Support:**
+
+Use URL fragments to specify a branch or tag:
+
+- `https://github.com/Org/Config#main` - use the `main` branch
+- `https://github.com/Org/Config#v1.0.0` - use the `v1.0.0` tag
+- `git@github.com:Org/Config.git#feature-branch` - use a specific branch
 
 ### Directory-Based Configuration
 

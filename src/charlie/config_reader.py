@@ -3,8 +3,11 @@ from typing import Any, TypeVar, get_origin
 
 import yaml
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from rich.console import Console
 from slugify import slugify
 
+from charlie.config_merger import merge_configs
+from charlie.repository_fetcher import RepositoryFetchError, fetch_repository
 from charlie.schema import (
     CharlieConfig,
     Command,
@@ -12,6 +15,8 @@ from charlie.schema import (
     Project,
     Rule,
 )
+
+console = Console()
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -48,6 +53,42 @@ def _ensure_project_name(config: CharlieConfig, base_dir: Path) -> CharlieConfig
     return config
 
 
+def _resolve_extends(extends_urls: list[str], visited: set[str] | None = None) -> CharlieConfig | None:
+    if not extends_urls:
+        return None
+
+    if visited is None:
+        visited = set()
+
+    merged_config: CharlieConfig | None = None
+
+    for url in extends_urls:
+        if url in visited:
+            console.print(f"  [yellow]⚠ Skipping circular reference: {url}[/yellow]")
+            continue
+
+        visited.add(url)
+
+        console.print(f"[cyan]Extending from:[/cyan] {url}")
+
+        try:
+            repo_path = fetch_repository(url)
+        except RepositoryFetchError as e:
+            raise ConfigParseError(f"Failed to fetch extended config from {url}: {e}")
+
+        extended_config = parse_config(repo_path, _visited=visited)
+
+        if merged_config is None:
+            merged_config = extended_config
+        else:
+            result = merge_configs(merged_config, extended_config, source_name=url)
+            for warning in result.warnings:
+                console.print(f"  [yellow]⚠ {warning}[/yellow]")
+            merged_config = result.config
+
+    return merged_config
+
+
 def parse_frontmatter(content: str) -> tuple[dict, str]:
     stripped_content = content.lstrip()
 
@@ -77,7 +118,7 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
         raise ConfigParseError(f"Error parsing frontmatter: {e}")
 
 
-def parse_config(config_path: str | Path) -> CharlieConfig:
+def parse_config(config_path: str | Path, _visited: set[str] | None = None) -> CharlieConfig:
     resolved_config_path = Path(config_path)
 
     if resolved_config_path.is_file():
@@ -94,7 +135,7 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
 
     charlie_config_dir = base_directory / ".charlie"
     if charlie_config_dir.exists() and charlie_config_dir.is_dir():
-        return load_directory_config(base_directory)
+        return load_directory_config(base_directory, _visited=_visited)
 
     if resolved_config_path.is_dir():
         return _create_default_config(base_directory)
@@ -113,6 +154,9 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
     if not raw_config_data:
         return _create_default_config(base_directory)
 
+    extends_urls = raw_config_data.get("extends") or []
+    base_config = _resolve_extends(extends_urls, visited=_visited)
+
     default_project = {"name": base_directory.stem, "dir": str(base_directory)}
 
     if "project" not in raw_config_data:
@@ -120,7 +164,6 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
 
     raw_config_data["project"] = {**default_project, **raw_config_data["project"]}
 
-    # Auto-generate names from descriptions if missing
     for command in raw_config_data.get("commands") or []:
         if "name" not in command and "description" in command:
             command["name"] = slugify(command["description"])
@@ -131,14 +174,10 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
 
     raw_config_data["variables"] = raw_config_data.get("variables") or {}
 
-    # Merge ignore patterns from YAML and .charlieignore
-    # Always include .charlie directory as the first pattern
     default_patterns = [".charlie"]
     yaml_patterns = raw_config_data.get("ignore_patterns") or []
     file_patterns = read_ignore_patterns(base_directory)
 
-    # Combine all sources: defaults first, then YAML, then file patterns
-    # Remove duplicates while preserving order
     all_patterns = default_patterns + yaml_patterns + file_patterns
     seen = set()
     unique_patterns = []
@@ -159,6 +198,12 @@ def parse_config(config_path: str | Path) -> CharlieConfig:
             error_location = " -> ".join(str(x) for x in error["loc"])
             validation_errors.append(f"  {error_location}: {error['msg']}")
         raise ConfigParseError("Configuration validation failed:\n" + "\n".join(validation_errors))
+
+    if base_config is not None:
+        result = merge_configs(base_config, parsed_config, source_name=str(resolved_config_path))
+        for warning in result.warnings:
+            console.print(f"  [yellow]⚠ {warning}[/yellow]")
+        parsed_config = result.config
 
     return parsed_config
 
@@ -202,7 +247,6 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
             if name is None:
                 name = slugify(file_path.stem)
 
-            # Separate known Command fields from metadata
             known_fields = {"name", "description", "prompt", "metadata", "replacements"}
             metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
 
@@ -213,7 +257,6 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
                 "metadata": {**parsed_frontmatter.get("metadata", {}), **metadata},
             }
 
-            # Include replacements if present
             if "replacements" in parsed_frontmatter:
                 raw_data["replacements"] = parsed_frontmatter["replacements"]
 
@@ -222,7 +265,6 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
             if name is None:
                 name = slugify(file_path.stem)
 
-            # Separate known Rule fields from metadata
             known_fields = {"name", "description", "prompt", "metadata", "replacements"}
             metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
 
@@ -233,7 +275,6 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
                 "metadata": {**parsed_frontmatter.get("metadata", {}), **metadata},
             }
 
-            # Include replacements if present
             if "replacements" in parsed_frontmatter:
                 raw_data["replacements"] = parsed_frontmatter["replacements"]
         else:
@@ -252,7 +293,6 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
                 raw_data["name"] = slugify(file_path.stem)
 
     try:
-        # Check if model_class is a union type
         if get_origin(model_class) is None:
             return model_class(**raw_data)
 
@@ -300,14 +340,6 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
 
 
 def read_ignore_patterns(base_dir: Path) -> list[str]:
-    """Read ignore patterns from .charlieignore file.
-
-    Args:
-        base_dir: Base directory to search for .charlieignore file
-
-    Returns:
-        List of patterns from .charlieignore file, or empty list if file doesn't exist
-    """
     charlieignore_file = base_dir / ".charlieignore"
 
     if not charlieignore_file.exists():
@@ -319,7 +351,6 @@ def read_ignore_patterns(base_dir: Path) -> list[str]:
 
         patterns = []
         for line in lines:
-            # Strip whitespace and skip empty lines and comments
             line = line.strip()
             if line and not line.startswith("#"):
                 patterns.append(line)
@@ -329,7 +360,7 @@ def read_ignore_patterns(base_dir: Path) -> list[str]:
         raise ConfigParseError(f"Error reading {charlieignore_file}: {e}")
 
 
-def load_directory_config(base_dir: Path) -> CharlieConfig:
+def load_directory_config(base_dir: Path, _visited: set[str] | None = None) -> CharlieConfig:
     default_project = {"name": base_dir.stem, "dir": str(base_dir)}
     merged_config_data: dict[str, Any] = {
         "version": "1.0",
@@ -339,6 +370,7 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
         "mcp_servers": [],
     }
 
+    extends_urls: list[str] = []
     main_config_file_path = base_dir / "charlie.yaml"
     main_config_file_path_dist = base_dir / "charlie.dist.yaml"
     if main_config_file_path.exists() or main_config_file_path_dist.exists():
@@ -347,6 +379,8 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
             with open(chosen_config_file, encoding="utf-8") as f:
                 main_config_content = yaml.safe_load(f)
                 if main_config_content:
+                    if "extends" in main_config_content:
+                        extends_urls = main_config_content["extends"] or []
                     if "project" in main_config_content:
                         merged_config_data["project"] = main_config_content["project"]
                     if "version" in main_config_content:
@@ -357,6 +391,8 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
                         merged_config_data["ignore_patterns"] = main_config_content["ignore_patterns"]
         except Exception as e:
             raise ConfigParseError(f"Error reading {chosen_config_file}: {e}")
+
+    base_config = _resolve_extends(extends_urls, visited=_visited)
 
     discovered_config_files = discover_charlie_files(base_dir)
 
@@ -386,14 +422,10 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     merged_config_data["project"] = {**default_project, **merged_config_data["project"]}
     merged_config_data["assets"] = [str(value) for value in discovered_config_files["assets"]]
 
-    # Merge ignore patterns from .charlieignore with any already in merged_config_data
-    # Always include .charlie directory as the first pattern
     default_patterns = [".charlie"]
     yaml_patterns = merged_config_data.get("ignore_patterns") or []
     file_patterns = read_ignore_patterns(base_dir)
 
-    # Combine all sources: defaults first, then YAML, then file patterns
-    # Remove duplicates while preserving order
     all_patterns = default_patterns + yaml_patterns + file_patterns
     seen = set()
     unique_patterns = []
@@ -408,10 +440,17 @@ def load_directory_config(base_dir: Path) -> CharlieConfig:
     try:
         final_config = CharlieConfig(**merged_config_data)
         final_config = _ensure_project_name(final_config, base_dir)
-        return final_config
     except ValidationError as e:
         validation_errors = []
         for error in e.errors():
             error_location = " -> ".join(str(x) for x in error["loc"])
             validation_errors.append(f"  {error_location}: {error['msg']}")
         raise ConfigParseError("Configuration validation failed:\n" + "\n".join(validation_errors))
+
+    if base_config is not None:
+        result = merge_configs(base_config, final_config, source_name=str(base_dir))
+        for warning in result.warnings:
+            console.print(f"  [yellow]⚠ {warning}[/yellow]")
+        final_config = result.config
+
+    return final_config

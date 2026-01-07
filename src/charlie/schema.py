@@ -86,6 +86,9 @@ class Command(BaseModel):
 
 class CharlieConfig(BaseModel):
     version: str = Field("1.0", description="Schema version")
+    extends: list[str] = Field(
+        default_factory=list, description="External repository URLs to inherit configuration from"
+    )
     project: Project = Field(..., description="Project configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
     rules: list[Rule] = Field(default_factory=list, description="Rules configuration")
