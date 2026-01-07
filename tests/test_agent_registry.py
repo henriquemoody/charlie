@@ -54,6 +54,24 @@ def test_get_copilot_agent() -> None:
     assert agent.rules_extension == "md"
 
 
+def test_get_opencode_agent() -> None:
+    registry = AgentRegistry()
+    agent = registry.get("opencode")
+
+    assert agent.name == "OpenCode"
+    assert agent.shortname == "opencode"
+    assert agent.dir == ".opencode"
+    assert agent.default_format == FileFormat.MARKDOWN
+    assert agent.commands_dir == ".opencode/command"
+    assert agent.commands_extension == "md"
+    assert agent.commands_shorthand_injection == "$ARGUMENTS"
+    assert agent.rules_file == ".opencode/instructions.md"
+    assert agent.rules_dir == ".opencode/instructions"
+    assert agent.rules_extension == "md"
+    assert agent.mcp_file == "opencode.json"
+    assert agent.ignore_file == "opencode.json"
+
+
 def test_get_unknown_agent_raises_value_error() -> None:
     registry = AgentRegistry()
 
@@ -64,7 +82,7 @@ def test_get_unknown_agent_raises_value_error() -> None:
 def test_get_unknown_agent_error_message_includes_supported_agents() -> None:
     registry = AgentRegistry()
 
-    with pytest.raises(ValueError, match="Supported agents: claude, copilot, cursor"):
+    with pytest.raises(ValueError, match="Supported agents: claude, copilot, cursor, opencode"):
         registry.get("invalid")
 
 
@@ -72,7 +90,7 @@ def test_list_returns_all_agent_shortnames() -> None:
     registry = AgentRegistry()
     agents = registry.list()
 
-    assert agents == ["claude", "copilot", "cursor"]
+    assert agents == ["claude", "copilot", "cursor", "opencode"]
 
 
 def test_list_returns_sorted_agent_shortnames() -> None:
@@ -93,4 +111,4 @@ def test_registry_contains_three_agents() -> None:
     registry = AgentRegistry()
     agents = registry.list()
 
-    assert len(agents) == 3
+    assert len(agents) == 4
