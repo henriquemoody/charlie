@@ -6,28 +6,10 @@ import pytest
 
 from charlie.assets_manager import AssetsManager
 from charlie.configurators.claude_configurator import ClaudeConfigurator
-from charlie.enums import FileFormat, RuleMode
+from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Command, HttpMCPServer, Project, Rule, StdioMCPServer
-
-
-@pytest.fixture
-def agent(tmp_path: Path) -> Agent:
-    return Agent(
-        name="Claude Code",
-        shortname="claude",
-        dir=str(tmp_path / ".claude"),
-        default_format=FileFormat.MARKDOWN,
-        commands_dir=".claude/commands",
-        commands_extension="md",
-        commands_shorthand_injection="$ARGUMENTS",
-        rules_dir=".claude/rules",
-        rules_file=str(tmp_path / "CLAUDE.md"),
-        rules_extension="md",
-        mcp_file=".mcp.json",
-        ignore_file=".claude/settings.local.json",
-    )
+from charlie.schema import Command, HttpMCPServer, Project, Rule, StdioMCPServer
 
 
 @pytest.fixture
@@ -62,14 +44,13 @@ def assets_manager(tracker: Mock) -> AssetsManager:
 
 @pytest.fixture
 def configurator(
-    agent: Agent,
     project: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
     mcp_server_generator: MCPServerGenerator,
     assets_manager: AssetsManager,
 ) -> ClaudeConfigurator:
-    return ClaudeConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager)
+    return ClaudeConfigurator(project, tracker, markdown_generator, mcp_server_generator, assets_manager, "claude")
 
 
 def test_should_create_commands_directory_when_it_does_not_exist(
@@ -168,7 +149,6 @@ def test_should_include_argument_hint_in_frontmatter_when_specified(
 
 
 def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -176,12 +156,12 @@ def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
     assets_manager: AssetsManager,
 ) -> None:
     configurator = ClaudeConfigurator(
-        agent,
         project_with_namespace,
         tracker,
         markdown_generator,
         mcp_server_generator,
         assets_manager,
+        "claude",
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
@@ -382,7 +362,6 @@ def test_should_create_claude_md_with_at_imports_when_using_separate_mode(
 
 
 def test_should_apply_namespace_prefix_to_filename_when_using_separate_mode_with_namespace(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -390,12 +369,12 @@ def test_should_apply_namespace_prefix_to_filename_when_using_separate_mode_with
     assets_manager: AssetsManager,
 ) -> None:
     configurator = ClaudeConfigurator(
-        agent,
         project_with_namespace,
         tracker,
         markdown_generator,
         mcp_server_generator,
         assets_manager,
+        "claude",
     )
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
@@ -612,8 +591,6 @@ def test_should_not_duplicate_server_names_when_already_enabled(
 def test_should_delegate_asset_copying_to_assets_manager(
     configurator: ClaudeConfigurator, project: Project, tmp_path: Path
 ) -> None:
-    """Test that assets() delegates to AssetsManager with correct paths."""
-    # Mock the assets_manager
     configurator.assets_manager = Mock()
 
     source_file = Path(project.dir) / ".charlie/assets/test.txt"
@@ -621,16 +598,13 @@ def test_should_delegate_asset_copying_to_assets_manager(
 
     configurator.assets(assets)
 
-    # Verify it calls assets_manager with correct arguments
-    expected_dest_base = Path(tmp_path / ".claude") / "assets"
-
+    expected_dest_base = Path(".claude/assets")
     configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_dest_base)
 
 
 def test_should_not_call_assets_manager_when_no_assets(
     configurator: ClaudeConfigurator,
 ) -> None:
-    """Test that assets() returns early when assets list is empty."""
     configurator.assets_manager = Mock()
 
     configurator.assets([])
@@ -744,38 +718,6 @@ def test_should_not_create_file_when_patterns_list_is_empty(
     assert not settings_file.exists()
 
     tracker.track.assert_called_once_with("No ignore patterns to add for Claude Code")
-
-
-def test_should_not_create_file_when_agent_ignore_file_is_none(
-    agent: Agent,
-    project: Project,
-    tracker: Mock,
-    markdown_generator: MarkdownGenerator,
-    mcp_server_generator: MCPServerGenerator,
-    assets_manager: AssetsManager,
-) -> None:
-    agent_without_ignore = Agent(
-        name="Test Agent",
-        shortname="test",
-        dir=".test",
-        default_format=agent.default_format,
-        commands_dir=".test/commands",
-        commands_extension="md",
-        commands_shorthand_injection="$ARGS",
-        rules_dir=".test/rules",
-        rules_file="TEST.md",
-        rules_extension="md",
-        mcp_file=".test/mcp.json",
-        ignore_file=None,
-    )
-    configurator = ClaudeConfigurator(
-        agent_without_ignore, project, tracker, markdown_generator, mcp_server_generator, assets_manager
-    )
-
-    configurator.ignore_file(["*.log"])
-
-    settings_file = Path(project.dir) / ".claude/settings.local.json"
-    assert not settings_file.exists()
 
 
 def test_should_track_configuration_and_update_when_writing_settings(

@@ -2,15 +2,15 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
-from rich.table import Table
 
-from charlie.agent_registry import AgentRegistry
 from charlie.config_reader import ConfigParseError, find_config_file, parse_config
 from charlie.configurators.agent_configurator_factory import AgentConfiguratorFactory
 from charlie.enums import RuleMode
 from charlie.placeholder_transformer import PlaceholderTransformer
 from charlie.tracker import Tracker
 from charlie.variable_collector import VariableCollector
+
+_SUPPORTED_AGENTS = ["claude", "cursor", "copilot"]
 
 app = typer.Typer(
     name="charlie",
@@ -61,12 +61,9 @@ def generate(
 
         charlie_config = parse_config(str(resolved_config_file))
 
-        agent_registry = AgentRegistry()
-        agent = agent_registry.get(agent_name)
-
         tracker = Tracker()
         configurator = AgentConfiguratorFactory.create(
-            agent=agent,
+            agent_name=agent_name,
             project=charlie_config.project,
             tracker=tracker,
         )
@@ -75,12 +72,12 @@ def generate(
         variables = variable_collector.collect(charlie_config.variables)
 
         transformer = PlaceholderTransformer(
-            agent=agent,
+            placeholders=configurator.placeholders(),
             variables=variables,
             project=charlie_config.project,
         )
 
-        console.print(f"\n[bold]Setting up {agent.name}...[/bold]\n")
+        console.print(f"\n[bold]Setting up {agent_name}...[/bold]\n")
 
         if not no_commands:
             configurator.commands([transformer.command(command) for command in charlie_config.commands])
@@ -156,45 +153,12 @@ def validate(
 
 @app.command("list-agents")
 def list_agents() -> None:
-    agent_registry = AgentRegistry()
-    supported_agent_names = agent_registry.list()
-
     console.print("\n[bold]Supported AI Agents:[/bold]\n")
 
-    agents_table = Table(show_header=True, header_style="bold cyan")
-    agents_table.add_column("Shortname", style="cyan")
-    agents_table.add_column("Display Name")
+    for agent_name in sorted(_SUPPORTED_AGENTS):
+        console.print(f"  • {agent_name}")
 
-    for agent_name in supported_agent_names:
-        agent = agent_registry.get(agent_name)
-        agents_table.add_row(agent_name, agent.name)
-
-    console.print(agents_table)
-    console.print(f"\n[dim]Total: {len(supported_agent_names)} agents[/dim]\n")
-
-
-@app.command()
-def info(
-    agent_name: str = typer.Argument(..., help="Agent name to show information for"),
-) -> None:
-    try:
-        agent_registry = AgentRegistry()
-        agent = agent_registry.get(agent_name)
-    except ValueError:
-        console.print(f"[red]Error:[/red] Unknown agent '{agent_name}'")
-        console.print("\n[dim]Use 'charlie list-agents' to see available agents[/dim]")
-        raise typer.Exit(1)
-
-    # Display all fields from Agent as a table
-    agent_info_table = Table(show_header=True, header_style="bold cyan")
-    agent_info_table.add_column("Field", style="cyan")
-    agent_info_table.add_column("Value")
-
-    for key, value in agent.__dict__.items():
-        agent_info_table.add_row(key, str(value))
-
-    console.print(agent_info_table)
-    console.print()
+    console.print(f"\n[dim]Total: {len(_SUPPORTED_AGENTS)} agents[/dim]\n")
 
 
 def main() -> None:

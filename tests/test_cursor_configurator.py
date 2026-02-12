@@ -6,28 +6,10 @@ import pytest
 
 from charlie.assets_manager import AssetsManager
 from charlie.configurators.cursor_configurator import CursorConfigurator
-from charlie.enums import FileFormat, RuleMode
+from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Command, HttpMCPServer, Project, Rule, StdioMCPServer
-
-
-@pytest.fixture
-def agent(tmp_path: Path) -> Agent:
-    return Agent(
-        name="Cursor",
-        shortname="cursor",
-        dir=str(tmp_path / ".cursorrules"),
-        default_format=FileFormat.MARKDOWN,
-        commands_dir=".cursorrules/commands",
-        commands_extension="md",
-        commands_shorthand_injection="{{shorthand}}",
-        rules_dir=".cursorrules/rules",
-        rules_file=str(tmp_path / ".cursorrules/rules.md"),
-        rules_extension="md",
-        mcp_file=".cursorrules/mcp.json",
-        ignore_file=".cursorignore",
-    )
+from charlie.schema import Command, HttpMCPServer, Project, Rule, StdioMCPServer
 
 
 @pytest.fixture
@@ -62,14 +44,13 @@ def assets_manager(tracker: Mock) -> AssetsManager:
 
 @pytest.fixture
 def configurator(
-    agent: Agent,
     project: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
     mcp_server_generator: MCPServerGenerator,
     assets_manager: AssetsManager,
 ) -> CursorConfigurator:
-    return CursorConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager)
+    return CursorConfigurator(project, tracker, markdown_generator, mcp_server_generator, assets_manager, "cursor")
 
 
 def test_should_create_commands_directory_when_it_does_not_exist(
@@ -79,7 +60,7 @@ def test_should_create_commands_directory_when_it_does_not_exist(
 
     configurator.commands(commands)
 
-    commands_dir = Path(project.dir) / ".cursorrules/commands"
+    commands_dir = Path(project.dir) / ".cursor/commands"
     assert commands_dir.exists()
     assert commands_dir.is_dir()
 
@@ -94,8 +75,8 @@ def test_should_create_markdown_file_when_processing_each_command(
 
     configurator.commands(commands)
 
-    init_file = Path(project.dir) / ".cursorrules/commands/init.md"
-    build_file = Path(project.dir) / ".cursorrules/commands/build.md"
+    init_file = Path(project.dir) / ".cursor/commands/init.md"
+    build_file = Path(project.dir) / ".cursor/commands/build.md"
 
     assert init_file.exists()
     assert build_file.exists()
@@ -108,7 +89,7 @@ def test_should_write_prompt_to_file_body_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".cursorrules/commands/test.md"
+    file = Path(project.dir) / ".cursor/commands/test.md"
     content = file.read_text()
 
     assert "This is the prompt content" in content
@@ -121,7 +102,7 @@ def test_should_include_description_in_frontmatter_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".cursorrules/commands/test.md"
+    file = Path(project.dir) / ".cursor/commands/test.md"
     content = file.read_text()
 
     assert "description: Test description" in content
@@ -134,14 +115,13 @@ def test_should_include_name_in_frontmatter_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".cursorrules/commands/test.md"
+    file = Path(project.dir) / ".cursor/commands/test.md"
     content = file.read_text()
 
     assert "name: test" in content
 
 
 def test_should_apply_namespace_to_filename_when_namespace_is_present(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -149,23 +129,22 @@ def test_should_apply_namespace_to_filename_when_namespace_is_present(
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent,
         project_with_namespace,
         tracker,
         markdown_generator,
         mcp_server_generator,
         assets_manager,
+        "cursor",
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
 
-    file = Path(project_with_namespace.dir) / ".cursorrules/commands/myapp.test.md"
+    file = Path(project_with_namespace.dir) / ".cursor/commands/myapp.test.md"
     assert file.exists()
 
 
 def test_should_apply_namespace_to_name_in_frontmatter_when_namespace_is_present(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -173,18 +152,18 @@ def test_should_apply_namespace_to_name_in_frontmatter_when_namespace_is_present
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent,
         project_with_namespace,
         tracker,
         markdown_generator,
         mcp_server_generator,
         assets_manager,
+        "cursor",
     )
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
 
-    file = Path(project_with_namespace.dir) / ".cursorrules/commands/myapp.test.md"
+    file = Path(project_with_namespace.dir) / ".cursor/commands/myapp.test.md"
     content = file.read_text()
 
     assert "name: myapp.test" in content
@@ -213,7 +192,7 @@ def test_should_filter_custom_metadata_when_not_in_allowed_list(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".cursorrules/commands/test.md"
+    file = Path(project.dir) / ".cursor/commands/test.md"
     content = file.read_text()
 
     assert "custom_field" not in content
@@ -233,7 +212,7 @@ def test_should_create_single_file_when_using_merged_mode(configurator: CursorCo
 
     configurator.rules(rules, RuleMode.MERGED)
 
-    file = Path(project.dir) / ".cursorrules/rules.md"
+    file = Path(project.dir) / ".cursor/rules"
     assert file.exists()
 
 
@@ -244,7 +223,7 @@ def test_should_include_project_name_in_header_when_using_merged_mode(
 
     configurator.rules(rules, RuleMode.MERGED)
 
-    file = Path(project.dir) / ".cursorrules/rules.md"
+    file = Path(project.dir) / ".cursor/rules"
     content = file.read_text()
 
     assert "# test-project guidelines" in content
@@ -260,7 +239,7 @@ def test_should_include_all_rule_descriptions_as_headers_when_using_merged_mode(
 
     configurator.rules(rules, RuleMode.MERGED)
 
-    file = Path(project.dir) / ".cursorrules/rules.md"
+    file = Path(project.dir) / ".cursor/rules"
     content = file.read_text()
 
     assert "## Code Style" in content
@@ -277,7 +256,7 @@ def test_should_include_all_rule_prompts_when_using_merged_mode(
 
     configurator.rules(rules, RuleMode.MERGED)
 
-    file = Path(project.dir) / ".cursorrules/rules.md"
+    file = Path(project.dir) / ".cursor/rules"
     content = file.read_text()
 
     assert "Use Black formatter" in content
@@ -292,7 +271,7 @@ def test_should_track_created_file_when_using_merged_mode(
     configurator.rules(rules, RuleMode.MERGED)
 
     tracker.track.assert_called_once()
-    assert str(Path(".cursorrules") / "rules.md") in str(tracker.track.call_args[0][0])
+    assert str(Path(".cursor") / "rules") in str(tracker.track.call_args[0][0])
 
 
 def test_should_create_rules_directory_when_using_separate_mode_and_directory_does_not_exist(
@@ -302,7 +281,7 @@ def test_should_create_rules_directory_when_using_separate_mode_and_directory_do
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    rules_dir = Path(project.dir) / ".cursorrules/rules"
+    rules_dir = Path(project.dir) / ".cursor/rules"
     assert rules_dir.exists()
     assert rules_dir.is_dir()
 
@@ -317,8 +296,8 @@ def test_should_create_file_for_each_rule_when_using_separate_mode(
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    style_file = Path(project.dir) / ".cursorrules/rules/style.md"
-    testing_file = Path(project.dir) / ".cursorrules/rules/testing.md"
+    style_file = Path(project.dir) / ".cursor/rules/style.mdc"
+    testing_file = Path(project.dir) / ".cursor/rules/testing.mdc"
 
     assert style_file.exists()
     assert testing_file.exists()
@@ -331,7 +310,7 @@ def test_should_write_prompt_to_file_body_when_using_separate_mode(
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    file = Path(project.dir) / ".cursorrules/rules/style.md"
+    file = Path(project.dir) / ".cursor/rules/style.mdc"
     content = file.read_text()
 
     assert "Use Black formatter for all code" in content
@@ -344,14 +323,13 @@ def test_should_include_description_in_frontmatter_when_using_separate_mode(
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    file = Path(project.dir) / ".cursorrules/rules/style.md"
+    file = Path(project.dir) / ".cursor/rules/style.mdc"
     content = file.read_text()
 
     assert "description: Code Style Guidelines" in content
 
 
 def test_should_apply_namespace_to_filename_when_using_separate_mode_with_namespace(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -359,18 +337,18 @@ def test_should_apply_namespace_to_filename_when_using_separate_mode_with_namesp
     assets_manager: AssetsManager,
 ) -> None:
     configurator = CursorConfigurator(
-        agent,
         project_with_namespace,
         tracker,
         markdown_generator,
         mcp_server_generator,
         assets_manager,
+        "cursor",
     )
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    file = Path(project_with_namespace.dir) / ".cursorrules/rules/myapp.style.md"
+    file = Path(project_with_namespace.dir) / ".cursor/rules/myapp.style.mdc"
     assert file.exists()
 
 
@@ -386,8 +364,8 @@ def test_should_track_each_file_when_using_separate_mode(
 
     assert tracker.track.call_count == 2
     tracked_files = [call[0][0] for call in tracker.track.call_args_list]
-    assert any("style.md" in str(f) for f in tracked_files)
-    assert any("testing.md" in str(f) for f in tracked_files)
+    assert any("style.mdc" in str(f) for f in tracked_files)
+    assert any("testing.mdc" in str(f) for f in tracked_files)
 
 
 def test_should_filter_metadata_to_allowed_fields_when_using_separate_mode(
@@ -408,7 +386,7 @@ def test_should_filter_metadata_to_allowed_fields_when_using_separate_mode(
 
     configurator.rules(rules, RuleMode.SEPARATE)
 
-    file = Path(project.dir) / ".cursorrules/rules/style.md"
+    file = Path(project.dir) / ".cursor/rules/style.mdc"
     content = file.read_text()
 
     assert "alwaysApply: true" in content
@@ -429,7 +407,7 @@ def test_should_create_json_file_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".cursorrules/mcp.json"
+    file = Path(project.dir) / ".cursor/mcp.json"
     assert file.exists()
 
 
@@ -438,7 +416,7 @@ def test_should_write_valid_json_when_processing_mcp_servers(configurator: Curso
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".cursorrules/mcp.json"
+    file = Path(project.dir) / ".cursor/mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -453,7 +431,7 @@ def test_should_include_server_configuration_without_name_field_when_processing_
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".cursorrules/mcp.json"
+    file = Path(project.dir) / ".cursor/mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -474,7 +452,7 @@ def test_should_handle_multiple_servers_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".cursorrules/mcp.json"
+    file = Path(project.dir) / ".cursor/mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -491,7 +469,7 @@ def test_should_handle_http_servers_when_processing_mcp_servers(
 
     configurator.mcp_servers(servers)
 
-    file = Path(project.dir) / ".cursorrules/mcp.json"
+    file = Path(project.dir) / ".cursor/mcp.json"
     with open(file) as f:
         data = json.load(f)
 
@@ -509,7 +487,7 @@ def test_should_track_created_file_when_processing_mcp_servers(
     configurator.mcp_servers(servers)
 
     tracker.track.assert_called_once()
-    assert str(Path(".cursorrules") / "mcp.json") in str(tracker.track.call_args[0][0])
+    assert str(Path(".cursor") / "mcp.json") in str(tracker.track.call_args[0][0])
 
 
 def test_should_create_mcp_directory_when_it_does_not_exist(configurator: CursorConfigurator, project: Project) -> None:
@@ -517,7 +495,7 @@ def test_should_create_mcp_directory_when_it_does_not_exist(configurator: Cursor
 
     configurator.mcp_servers(servers)
 
-    mcp_dir = Path(project.dir) / ".cursorrules"
+    mcp_dir = Path(project.dir) / ".cursor"
     assert mcp_dir.exists()
     assert mcp_dir.is_dir()
 
@@ -525,8 +503,6 @@ def test_should_create_mcp_directory_when_it_does_not_exist(configurator: Cursor
 def test_should_delegate_asset_copying_to_assets_manager(
     configurator: CursorConfigurator, project: Project, tmp_path: Path
 ) -> None:
-    """Test that assets() delegates to AssetsManager with correct paths."""
-    # Mock the assets_manager
     configurator.assets_manager = Mock()
 
     source_file = Path(project.dir) / ".charlie/assets/test.txt"
@@ -534,16 +510,13 @@ def test_should_delegate_asset_copying_to_assets_manager(
 
     configurator.assets(assets)
 
-    # Verify it calls assets_manager with correct arguments
-    expected_dest_base = Path(tmp_path / ".cursorrules") / "assets"
-
+    expected_dest_base = Path(".cursor/assets")
     configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_dest_base)
 
 
 def test_should_not_call_assets_manager_when_no_assets(
     configurator: CursorConfigurator,
 ) -> None:
-    """Test that assets() returns early when assets list is empty."""
     configurator.assets_manager = Mock()
 
     configurator.assets([])
@@ -606,38 +579,6 @@ def test_should_create_parent_directory_when_ignore_file_path_does_not_exist(
     ignore_file = Path(project.dir) / ".cursorignore"
     assert ignore_file.exists()
     assert ignore_file.parent.exists()
-
-
-def test_should_not_create_file_when_agent_ignore_file_is_none(
-    agent: Agent,
-    project: Project,
-    tracker: Mock,
-    markdown_generator: MarkdownGenerator,
-    mcp_server_generator: MCPServerGenerator,
-    assets_manager: AssetsManager,
-) -> None:
-    agent_without_ignore = Agent(
-        name="Test Agent",
-        shortname="test",
-        dir=".test",
-        default_format=agent.default_format,
-        commands_dir=".test/commands",
-        commands_extension="md",
-        commands_shorthand_injection="$ARGS",
-        rules_dir=".test/rules",
-        rules_file="TEST.md",
-        rules_extension="md",
-        mcp_file=".test/mcp.json",
-        ignore_file=None,
-    )
-    configurator = CursorConfigurator(
-        agent_without_ignore, project, tracker, markdown_generator, mcp_server_generator, assets_manager
-    )
-
-    configurator.ignore_file(["*.log"])
-
-    ignore_file = Path(project.dir) / ".cursorignore"
-    assert not ignore_file.exists()
 
 
 def test_should_track_file_generation_when_ignore_file_created(

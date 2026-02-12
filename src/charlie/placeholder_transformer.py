@@ -3,7 +3,6 @@ import re
 from typing import Any, final
 
 from charlie.schema import (
-    Agent,
     Command,
     HttpMCPServer,
     MCPServer,
@@ -30,11 +29,11 @@ class ChoiceNotFoundError(Exception):
 class PlaceholderTransformer:
     def __init__(
         self,
-        agent: Agent,
+        placeholders: dict[str, str],
         variables: dict[str, str],
         project: Project,
     ):
-        self.agent = agent
+        self.placeholders = placeholders
         self.variables = variables
         self.project = project
 
@@ -99,29 +98,21 @@ class PlaceholderTransformer:
         project_dir_abs = os.path.abspath(self.project.dir)
         use_relative = cwd == project_dir_abs
 
-        placeholders = {
-            "{{project_dir}}": ".",
-            "{{project_name}}": self.project.name,
-            "{{project_namespace}}": self.project.namespace or "",
-            "{{agent_name}}": self.agent.name,
-            "{{agent_shortname}}": self.agent.shortname,
-            "{{agent_dir}}": self.agent.dir,
-            "{{commands_dir}}": self.agent.commands_dir,
-            "{{commands_shorthand_injection}}": self.agent.commands_shorthand_injection,
-            "{{rules_dir}}": self.agent.rules_dir,
-            "{{rules_file}}": self.agent.rules_file,
-            "{{mcp_file}}": self.agent.mcp_file,
-            "{{assets_dir}}": self.agent.dir + "/assets",
+        merged = {
+            "project_dir": ".",
+            "project_name": self.project.name,
+            "project_namespace": self.project.namespace or "",
+            **self.placeholders,
         }
 
         if not use_relative:
-            for placeholder, replacement in placeholders.items():
-                if placeholder.endswith("_dir}}") or placeholder.endswith("_file}}"):
-                    placeholders[placeholder] = self.project.dir + "/" + replacement
-            placeholders["{{project_dir}}"] = self.project.dir
+            for key, value in merged.items():
+                if key.endswith("_dir") or key.endswith("_file"):
+                    merged[key] = self.project.dir + "/" + value
+            merged["project_dir"] = self.project.dir
 
-        for placeholder, replacement in placeholders.items():
-            text = text.replace(placeholder, replacement)
+        for key, value in merged.items():
+            text = text.replace("{{" + key + "}}", value)
 
         return text
 

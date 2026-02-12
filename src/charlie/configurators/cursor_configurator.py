@@ -6,37 +6,60 @@ from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Command, MCPServer, Project, Rule
+from charlie.schema import Command, MCPServer, Project, Rule
 from charlie.tracker import Tracker
 
 
 @final
 class CursorConfigurator(AgentConfigurator):
+    COMMANDS_DIR = ".cursor/commands"
+    COMMANDS_EXTENSION = "md"
+    COMMANDS_SHORTHAND_INJECTION = "$ARGUMENTS"
+    RULES_FILE = ".cursor/rules"
+    RULES_DIR = ".cursor/rules"
+    RULES_EXTENSION = "mdc"
+    MCP_FILE = ".cursor/mcp.json"
+    IGNORE_FILE = ".cursorignore"
+    ASSETS_DIR = ".cursor/assets"
+
     __ALLOWED_COMMAND_METADATA = ["name", "description"]
     __ALLOWED_INSTRUCTION_METADATA = ["description", "alwaysApply", "globs"]
 
     def __init__(
         self,
-        agent: Agent,
         project: Project,
         tracker: Tracker,
         markdown_generator: MarkdownGenerator,
         mcp_server_generator: MCPServerGenerator,
         assets_manager: AssetsManager,
+        short_name: str,
     ):
-        self.agent = agent
         self.project = project
         self.tracker = tracker
         self.markdown_generator = markdown_generator
         self.mcp_server_generator = mcp_server_generator
         self.assets_manager = assets_manager
+        self.short_name = short_name
+
+    def placeholders(self) -> dict[str, str]:
+        return {
+            "agent_name": "Cursor",
+            "agent_shortname": self.short_name,
+            "agent_dir": ".cursor",
+            "commands_dir": self.COMMANDS_DIR,
+            "commands_shorthand_injection": self.COMMANDS_SHORTHAND_INJECTION,
+            "rules_dir": self.RULES_DIR,
+            "rules_file": self.RULES_FILE,
+            "mcp_file": self.MCP_FILE,
+            "assets_dir": self.ASSETS_DIR,
+        }
 
     def commands(self, commands: list[Command]) -> None:
-        commands_dir = Path(self.project.dir) / self.agent.commands_dir
+        commands_dir = Path(self.project.dir) / self.COMMANDS_DIR
         commands_dir.mkdir(parents=True, exist_ok=True)
         for command in commands:
             name = command.name
-            filename = f"{name}.{self.agent.commands_extension}"
+            filename = f"{name}.{self.COMMANDS_EXTENSION}"
             if self.project.namespace is not None:
                 name = f"{self.project.namespace}.{name}"
                 filename = f"{self.project.namespace}.{filename}"
@@ -56,7 +79,7 @@ class CursorConfigurator(AgentConfigurator):
             return
 
         if mode == RuleMode.MERGED:
-            rules_file = Path(self.agent.rules_file)
+            rules_file = Path(self.project.dir) / self.RULES_FILE
             rules_file.parent.mkdir(parents=True, exist_ok=True)
             body = f"# {self.project.name} guidelines"
 
@@ -69,10 +92,10 @@ class CursorConfigurator(AgentConfigurator):
             self.tracker.track(f"Created {rules_file}")
             return
 
-        rules_dir = Path(self.project.dir) / self.agent.rules_dir
+        rules_dir = Path(self.project.dir) / self.RULES_DIR
         rules_dir.mkdir(parents=True, exist_ok=True)
         for rule in rules:
-            filename = f"{rule.name}.{self.agent.rules_extension}"
+            filename = f"{rule.name}.{self.RULES_EXTENSION}"
             if self.project.namespace is not None:
                 filename = f"{self.project.namespace}.{filename}"
 
@@ -87,21 +110,18 @@ class CursorConfigurator(AgentConfigurator):
             self.tracker.track(f"Created {command_file}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
-        file = Path(self.project.dir) / Path(self.agent.mcp_file)
+        file = Path(self.project.dir) / self.MCP_FILE
         self.mcp_server_generator.generate(file, mcp_servers)
 
     def assets(self, assets: list[str]) -> None:
         if not assets:
             return
 
-        destination_base = Path(self.agent.dir) / "assets"
+        destination_base = Path(self.ASSETS_DIR)
         self.assets_manager.copy_assets(assets, destination_base)
 
     def ignore_file(self, patterns: list[str]) -> None:
-        if self.agent.ignore_file is None:
-            return
-
-        ignore_file_path = Path(self.project.dir) / self.agent.ignore_file
+        ignore_file_path = Path(self.project.dir) / self.IGNORE_FILE
 
         # Create the ignore file content
         content_lines = [

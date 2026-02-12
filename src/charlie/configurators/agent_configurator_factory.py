@@ -5,24 +5,28 @@ from charlie.configurators.copilot_configurator import CopilotConfigurator
 from charlie.configurators.cursor_configurator import CursorConfigurator
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Project
+from charlie.schema import Project
 from charlie.tracker import Tracker
 
 
 class AgentConfiguratorFactory:
     @staticmethod
-    def create(agent: Agent, project: Project, tracker: Tracker) -> AgentConfigurator:
+    def create(agent_name: str, project: Project, tracker: Tracker) -> AgentConfigurator:
         markdown_generator = MarkdownGenerator()
         mcp_server_generator = MCPServerGenerator(tracker)
         assets_manager = AssetsManager(tracker)
 
-        if agent.shortname == "cursor":
-            return CursorConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager)
+        if agent_name == "cursor":
+            return CursorConfigurator(
+                project, tracker, markdown_generator, mcp_server_generator, assets_manager, agent_name
+            )
 
-        if agent.shortname == "claude":
-            return ClaudeConfigurator(agent, project, tracker, markdown_generator, mcp_server_generator, assets_manager)
+        if agent_name == "claude":
+            return ClaudeConfigurator(
+                project, tracker, markdown_generator, mcp_server_generator, assets_manager, agent_name
+            )
 
-        if agent.shortname == "copilot":
-            return CopilotConfigurator(agent, project, tracker, markdown_generator, assets_manager)
+        if agent_name == "copilot":
+            return CopilotConfigurator(project, tracker, markdown_generator, assets_manager, agent_name)
 
-        raise ValueError(f"Unsupported agent: {agent.shortname}")
+        raise ValueError(f"Unsupported agent: {agent_name}")

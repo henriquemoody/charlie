@@ -2,22 +2,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from charlie.enums import FileFormat, TransportType
-
-
-class Agent(BaseModel):
-    name: str = Field(..., description="Name of the agent")
-    shortname: str = Field(..., description="Short version of the agent name")
-    dir: str = Field(..., description="Root directory of the agent")
-    default_format: FileFormat = Field(..., description="Default file format")
-    commands_dir: str = Field(..., description="Directory containing command files")
-    commands_extension: str = Field(..., description="Extension of command files")
-    commands_shorthand_injection: str = Field(..., description="Placeholder for shorthand injection in command files")
-    rules_dir: str = Field(..., description="Directory where rules are stored")
-    rules_file: str = Field(..., description="Default rules file")
-    rules_extension: str = Field(..., description="Default extension for rules files")
-    mcp_file: str = Field(..., description="MCP file")
-    ignore_file: str | None = Field(None, description="Ignore file path (e.g., .cursorignore, .claude/.clignore)")
+from charlie.enums import TransportType
 
 
 class Project(BaseModel):

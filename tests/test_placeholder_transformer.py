@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from charlie.enums import FileFormat, TransportType
+from charlie.enums import TransportType
 from charlie.placeholder_transformer import (
     ChoiceNotFoundError,
     EnvironmentVariableNotFoundError,
@@ -11,7 +11,6 @@ from charlie.placeholder_transformer import (
     VariableNotFoundError,
 )
 from charlie.schema import (
-    Agent,
     ChoiceReplacement,
     Command,
     HttpMCPServer,
@@ -23,20 +22,18 @@ from charlie.schema import (
 
 
 @pytest.fixture
-def sample_agent() -> Agent:
-    return Agent(
-        name="Claude",
-        shortname="claude",
-        dir=".cursor",
-        default_format=FileFormat.MARKDOWN,
-        commands_dir=".cursor/commands",
-        commands_extension=".md",
-        commands_shorthand_injection="[Commands Injection]",
-        rules_dir=".cursor/rules",
-        rules_file=".cursor/rules/main.md",
-        rules_extension=".md",
-        mcp_file=".cursor/mcp.json",
-    )
+def sample_placeholders() -> dict[str, str]:
+    return {
+        "agent_name": "Claude",
+        "agent_shortname": "claude",
+        "agent_dir": ".cursor",
+        "commands_dir": ".cursor/commands",
+        "commands_shorthand_injection": "[Commands Injection]",
+        "rules_dir": ".cursor/rules",
+        "rules_file": ".cursor/rules/main.md",
+        "mcp_file": ".cursor/mcp.json",
+        "assets_dir": ".cursor/assets",
+    }
 
 
 @pytest.fixture
@@ -68,10 +65,10 @@ def sample_variables() -> dict[str, str]:
 
 @pytest.fixture
 def transformer(
-    sample_agent: Agent, sample_variables: dict[str, str], sample_project: Project
+    sample_placeholders: dict[str, str], sample_variables: dict[str, str], sample_project: Project
 ) -> PlaceholderTransformer:
     return PlaceholderTransformer(
-        agent=sample_agent,
+        placeholders=sample_placeholders,
         variables=sample_variables,
         project=sample_project,
     )
@@ -114,10 +111,12 @@ class TestStaticPlaceholders:
         )
 
     def test_should_replace_directory_placeholders_with_relative_paths_when_in_project_dir(
-        self, sample_agent: Agent, sample_variables: dict[str, str], tmp_path: Path
+        self, sample_placeholders: dict[str, str], sample_variables: dict[str, str], tmp_path: Path
     ) -> None:
         project = Project(name="test-project", namespace="test", dir=str(tmp_path))
-        transformer = PlaceholderTransformer(agent=sample_agent, variables=sample_variables, project=project)
+        transformer = PlaceholderTransformer(
+            placeholders=sample_placeholders, variables=sample_variables, project=project
+        )
 
         original_cwd = os.getcwd()
         try:
@@ -132,10 +131,12 @@ class TestStaticPlaceholders:
             os.chdir(original_cwd)
 
     def test_should_replace_project_dir_with_dot_when_in_project_dir(
-        self, sample_agent: Agent, sample_variables: dict[str, str], tmp_path: Path
+        self, sample_placeholders: dict[str, str], sample_variables: dict[str, str], tmp_path: Path
     ) -> None:
         project = Project(name="test-project", namespace="test", dir=str(tmp_path))
-        transformer = PlaceholderTransformer(agent=sample_agent, variables=sample_variables, project=project)
+        transformer = PlaceholderTransformer(
+            placeholders=sample_placeholders, variables=sample_variables, project=project
+        )
 
         original_cwd = os.getcwd()
         try:
@@ -173,10 +174,13 @@ class TestStaticPlaceholders:
         assert result.prompt == "Injection: [Commands Injection]"
 
     def test_should_replace_namespace_with_empty_string_when_namespace_is_none(
-        self, sample_agent: Agent, sample_variables: dict[str, str], sample_project_without_namespace: Project
+        self,
+        sample_placeholders: dict[str, str],
+        sample_variables: dict[str, str],
+        sample_project_without_namespace: Project,
     ) -> None:
         transformer = PlaceholderTransformer(
-            agent=sample_agent, variables=sample_variables, project=sample_project_without_namespace
+            placeholders=sample_placeholders, variables=sample_variables, project=sample_project_without_namespace
         )
         text = "Namespace: '{{project_namespace}}'"
         command = Command(name="test", description="test", prompt=text)
@@ -218,9 +222,9 @@ class TestVariablePlaceholders:
         assert result.prompt == "Unknown: {{var:unknown_variable}}"
 
     def test_should_handle_empty_variables_dict_when_transforming(
-        self, sample_agent: Agent, sample_project: Project
+        self, sample_placeholders: dict[str, str], sample_project: Project
     ) -> None:
-        transformer = PlaceholderTransformer(agent=sample_agent, variables={}, project=sample_project)
+        transformer = PlaceholderTransformer(placeholders=sample_placeholders, variables={}, project=sample_project)
         text = "Language: {{var:language}}"
         command = Command(name="test", description="test", prompt=text)
 

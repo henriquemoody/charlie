@@ -7,37 +7,60 @@ from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Agent, Command, MCPServer, Project, Rule
+from charlie.schema import Command, MCPServer, Project, Rule
 from charlie.tracker import Tracker
 
 
 @final
 class ClaudeConfigurator(AgentConfigurator):
+    COMMANDS_DIR = ".claude/commands"
+    COMMANDS_EXTENSION = "md"
+    COMMANDS_SHORTHAND_INJECTION = "$ARGUMENTS"
+    RULES_FILE = "CLAUDE.md"
+    RULES_DIR = ".claude/rules"
+    RULES_EXTENSION = "md"
+    MCP_FILE = ".mcp.json"
+    SETTINGS_FILE = ".claude/settings.local.json"
+    ASSETS_DIR = ".claude/assets"
+
     __ALLOWED_COMMAND_METADATA = ["description", "allowed-tools", "argument-hint", "model", "disable-model-invocation"]
     __ALLOWED_INSTRUCTION_METADATA = ["description"]
 
     def __init__(
         self,
-        agent: Agent,
         project: Project,
         tracker: Tracker,
         markdown_generator: MarkdownGenerator,
         mcp_server_generator: MCPServerGenerator,
         assets_manager: AssetsManager,
+        short_name: str,
     ):
-        self.agent = agent
         self.project = project
         self.tracker = tracker
         self.markdown_generator = markdown_generator
         self.mcp_server_generator = mcp_server_generator
         self.assets_manager = assets_manager
+        self.short_name = short_name
+
+    def placeholders(self) -> dict[str, str]:
+        return {
+            "agent_name": "Claude Code",
+            "agent_shortname": self.short_name,
+            "agent_dir": ".claude",
+            "commands_dir": self.COMMANDS_DIR,
+            "commands_shorthand_injection": self.COMMANDS_SHORTHAND_INJECTION,
+            "rules_dir": self.RULES_DIR,
+            "rules_file": self.RULES_FILE,
+            "mcp_file": self.MCP_FILE,
+            "assets_dir": self.ASSETS_DIR,
+        }
 
     def commands(self, commands: list[Command]) -> None:
-        commands_dir = Path(self.project.dir) / self.agent.commands_dir
+        commands_dir = Path(self.project.dir) / self.COMMANDS_DIR
         commands_dir.mkdir(parents=True, exist_ok=True)
         for command in commands:
             name = command.name
-            filename = f"{name}.{self.agent.commands_extension}"
+            filename = f"{name}.{self.COMMANDS_EXTENSION}"
             if self.project.namespace is not None:
                 filename = f"{self.project.namespace}-{filename}"
 
@@ -55,7 +78,7 @@ class ClaudeConfigurator(AgentConfigurator):
         if not rules:
             return
 
-        rules_file = Path(self.project.dir) / self.agent.rules_file
+        rules_file = Path(self.project.dir) / self.RULES_FILE
         rules_file.parent.mkdir(parents=True, exist_ok=True)
 
         if mode == RuleMode.MERGED:
@@ -69,13 +92,13 @@ class ClaudeConfigurator(AgentConfigurator):
             self.tracker.track(f"Created {rules_file}")
             return
 
-        rules_dir = Path(self.project.dir) / self.agent.rules_dir
+        rules_dir = Path(self.project.dir) / self.RULES_DIR
         rules_dir.mkdir(parents=True, exist_ok=True)
 
         body = f"# {self.project.name}\n\n"
 
         for rule in rules:
-            filename = f"{rule.name}.{self.agent.rules_extension}"
+            filename = f"{rule.name}.{self.RULES_EXTENSION}"
             if self.project.namespace is not None:
                 filename = f"{self.project.namespace}-{filename}"
 
@@ -87,7 +110,7 @@ class ClaudeConfigurator(AgentConfigurator):
                 allowed_metadata=self.__ALLOWED_INSTRUCTION_METADATA,
             )
 
-            relative_path = f"{self.agent.rules_dir}/{filename}"
+            relative_path = f"{self.RULES_DIR}/{filename}"
             body += f"## {rule.description}\n\n"
             body += f"@{relative_path}\n\n"
 
@@ -100,14 +123,10 @@ class ClaudeConfigurator(AgentConfigurator):
         if not mcp_servers:
             return
 
-        file = Path(self.project.dir) / Path(self.agent.mcp_file)
+        file = Path(self.project.dir) / self.MCP_FILE
         self.mcp_server_generator.generate(file, mcp_servers)
 
-        # Update settings.local.json to enable the MCP servers
-        if self.agent.ignore_file is None:
-            return
-
-        settings_file_path = Path(self.project.dir) / self.agent.ignore_file
+        settings_file_path = Path(self.project.dir) / self.SETTINGS_FILE
         settings_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read existing settings if file exists
@@ -145,18 +164,15 @@ class ClaudeConfigurator(AgentConfigurator):
         if not assets:
             return
 
-        destination_base = Path(self.agent.dir) / "assets"
+        destination_base = Path(self.ASSETS_DIR)
         self.assets_manager.copy_assets(assets, destination_base)
 
     def ignore_file(self, patterns: list[str]) -> None:
-        if self.agent.ignore_file is None:
-            return
-
         if not patterns:
             self.tracker.track("No ignore patterns to add for Claude Code")
             return
 
-        settings_file_path = Path(self.project.dir) / self.agent.ignore_file
+        settings_file_path = Path(self.project.dir) / self.SETTINGS_FILE
         self.tracker.track(f"Configuring Claude Code ignore patterns in {settings_file_path}")
 
         # Read existing settings if file exists

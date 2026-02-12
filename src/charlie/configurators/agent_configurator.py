@@ -6,6 +6,10 @@ from charlie.schema import Command, MCPServer, Rule
 
 class AgentConfigurator(ABC):
     @abstractmethod
+    def placeholders(self) -> dict[str, str]:
+        pass
+
+    @abstractmethod
     def commands(self, commands: list[Command]) -> None:
         pass
 

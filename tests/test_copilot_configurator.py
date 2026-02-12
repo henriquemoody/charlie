@@ -3,21 +3,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from charlie.agent_registry import AgentRegistry
 from charlie.assets_manager import AssetsManager
 from charlie.configurators.copilot_configurator import CopilotConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
-from charlie.schema import Agent, Command, HttpMCPServer, Project, Rule, StdioMCPServer
-
-
-@pytest.fixture
-def agent(tmp_path: Path) -> Agent:
-    registry = AgentRegistry()
-    agent = registry.get("copilot")
-    # Override rules_file to use tmp_path for test isolation
-    agent.rules_file = str(tmp_path / "copilot-instructions.md")
-    return agent
+from charlie.schema import Command, HttpMCPServer, Project, Rule, StdioMCPServer
 
 
 @pytest.fixture
@@ -47,13 +37,12 @@ def assets_manager(tracker: Mock) -> AssetsManager:
 
 @pytest.fixture
 def configurator(
-    agent: Agent,
     project: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
     assets_manager: AssetsManager,
 ) -> CopilotConfigurator:
-    return CopilotConfigurator(agent, project, tracker, markdown_generator, assets_manager)
+    return CopilotConfigurator(project, tracker, markdown_generator, assets_manager, "copilot")
 
 
 def test_should_create_prompts_directory_when_it_does_not_exist(
@@ -112,13 +101,12 @@ def test_should_include_description_in_frontmatter_when_creating_command(
 
 
 def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
     assets_manager: AssetsManager,
 ) -> None:
-    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator, assets_manager)
+    configurator = CopilotConfigurator(project_with_namespace, tracker, markdown_generator, assets_manager, "copilot")
     commands = [Command(name="test", description="Test", prompt="Prompt")]
 
     configurator.commands(commands)
@@ -361,13 +349,12 @@ def test_should_create_instructions_file_with_at_imports_when_using_separate_mod
 
 
 def test_should_apply_namespace_prefix_to_filename_when_using_separate_mode_with_namespace(
-    agent: Agent,
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
     assets_manager: AssetsManager,
 ) -> None:
-    configurator = CopilotConfigurator(agent, project_with_namespace, tracker, markdown_generator, assets_manager)
+    configurator = CopilotConfigurator(project_with_namespace, tracker, markdown_generator, assets_manager, "copilot")
     rules = [Rule(name="style", description="Style", prompt="Use Black")]
 
     configurator.rules(rules, RuleMode.SEPARATE)
@@ -488,8 +475,6 @@ def test_should_not_create_mcp_directory_when_it_does_not_exist(
 def test_should_delegate_asset_copying_to_assets_manager(
     configurator: CopilotConfigurator, project: Project, tmp_path: Path
 ) -> None:
-    """Test that assets() delegates to AssetsManager with correct paths."""
-    # Mock the assets_manager
     configurator.assets_manager = Mock()
 
     source_file = Path(project.dir) / ".charlie/assets/test.txt"
@@ -497,16 +482,13 @@ def test_should_delegate_asset_copying_to_assets_manager(
 
     configurator.assets(assets)
 
-    # Verify it calls assets_manager with correct arguments
-    expected_dest_base = Path(project.dir) / tmp_path / ".github" / "assets"
-
+    expected_dest_base = Path(project.dir) / ".github/assets"
     configurator.assets_manager.copy_assets.assert_called_once_with(assets, expected_dest_base)
 
 
 def test_should_not_call_assets_manager_when_no_assets(
     configurator: CopilotConfigurator,
 ) -> None:
-    """Test that assets() returns early when assets list is empty."""
     configurator.assets_manager = Mock()
 
     configurator.assets([])
