@@ -481,10 +481,10 @@ def test_should_include_charlie_and_charlieignore_patterns_when_no_yaml_patterns
 
     config = parse_config(config_file)
 
-    assert config.ignore_patterns == [".charlie", "*.log", ".env"]
+    assert config.ignore_patterns == ["*.log", ".env"]
 
 
-def test_should_merge_charlie_yaml_and_charlieignore_patterns_when_both_exist(tmp_path) -> None:
+def test_should_merge_yaml_and_charlieignore_patterns_when_both_exist(tmp_path) -> None:
     config_file = tmp_path / "charlie.yaml"
     config_file.write_text("project:\n  name: TestProject\nignore_patterns:\n  - from_yaml.log\n  - shared.log\n")
 
@@ -495,10 +495,10 @@ def test_should_merge_charlie_yaml_and_charlieignore_patterns_when_both_exist(tm
 
     config = parse_config(config_file)
 
-    assert config.ignore_patterns == [".charlie", "from_yaml.log", "shared.log", "from_charlieignore.log"]
+    assert config.ignore_patterns == ["from_yaml.log", "shared.log", "from_charlieignore.log"]
 
 
-def test_should_include_charlie_and_charlieignore_when_directory_config_has_no_yaml_patterns(tmp_path) -> None:
+def test_should_include_charlieignore_patterns_when_directory_config_has_no_yaml_patterns(tmp_path) -> None:
     charlie_dir = tmp_path / ".charlie"
     charlie_dir.mkdir()
 
@@ -512,10 +512,10 @@ def test_should_include_charlie_and_charlieignore_when_directory_config_has_no_y
 
     config = load_directory_config(tmp_path)
 
-    assert config.ignore_patterns == [".charlie", "*.log", ".env"]
+    assert config.ignore_patterns == ["*.log", ".env"]
 
 
-def test_should_merge_charlie_yaml_and_charlieignore_when_directory_config_has_both(tmp_path) -> None:
+def test_should_merge_yaml_and_charlieignore_when_directory_config_has_both(tmp_path) -> None:
     charlie_dir = tmp_path / ".charlie"
     charlie_dir.mkdir()
 
@@ -529,7 +529,7 @@ def test_should_merge_charlie_yaml_and_charlieignore_when_directory_config_has_b
 
     config = load_directory_config(tmp_path)
 
-    assert config.ignore_patterns == [".charlie", "yaml_pattern.log", "file_pattern.log"]
+    assert config.ignore_patterns == ["yaml_pattern.log", "file_pattern.log"]
 
 
 def test_should_return_none_when_extends_list_is_empty() -> None:

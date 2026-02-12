@@ -174,11 +174,10 @@ def parse_config(config_path: str | Path, _visited: set[str] | None = None) -> C
 
     raw_config_data["variables"] = raw_config_data.get("variables") or {}
 
-    default_patterns = [".charlie"]
     yaml_patterns = raw_config_data.get("ignore_patterns") or []
     file_patterns = read_ignore_patterns(base_directory)
 
-    all_patterns = default_patterns + yaml_patterns + file_patterns
+    all_patterns = yaml_patterns + file_patterns
     seen = set()
     unique_patterns = []
     for pattern in all_patterns:
@@ -422,11 +421,10 @@ def load_directory_config(base_dir: Path, _visited: set[str] | None = None) -> C
     merged_config_data["project"] = {**default_project, **merged_config_data["project"]}
     merged_config_data["assets"] = [str(value) for value in discovered_config_files["assets"]]
 
-    default_patterns = [".charlie"]
     yaml_patterns = merged_config_data.get("ignore_patterns") or []
     file_patterns = read_ignore_patterns(base_dir)
 
-    all_patterns = default_patterns + yaml_patterns + file_patterns
+    all_patterns = yaml_patterns + file_patterns
     seen = set()
     unique_patterns = []
     for pattern in all_patterns:
