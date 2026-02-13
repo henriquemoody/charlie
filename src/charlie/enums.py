@@ -9,3 +9,4 @@ class RuleMode(Enum):
 class TransportType(Enum):
     STDIO = "stdio"
     HTTP = "http"
+    SSE = "sse"

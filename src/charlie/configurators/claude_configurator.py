@@ -186,7 +186,7 @@ class ClaudeConfigurator(AgentConfigurator):
                 existing_settings = {}
 
         # Convert patterns to Claude's permission deny format
-        deny_rules = [f"Read({pattern})" for pattern in patterns]
+        deny_rules = [f"Read(./{pattern})" for pattern in patterns]
 
         # Merge with existing permissions
         if "permissions" not in existing_settings:
