@@ -25,7 +25,14 @@ class MCPServerGenerator:
                 existing_servers = {}
 
         for mcp_server in mcp_servers:
-            server = mcp_server.model_dump(mode="json", exclude={"name"})
+            raw = mcp_server.model_dump(mode="json", exclude={"name"})
+            server = {}
+            for k, v in raw.items():
+                if k == "type" and v == "stdio":
+                    continue
+                if not v and not isinstance(v, (bool, int, float)):
+                    continue
+                server[k] = v
             is_update = mcp_server.name in existing_servers
             existing_servers[mcp_server.name] = server
 

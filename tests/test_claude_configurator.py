@@ -495,6 +495,41 @@ def test_should_handle_http_servers_when_processing_mcp_servers(
     assert server_config["type"] == "http"
 
 
+def test_should_omit_stdio_type_and_empty_defaults_from_mcp_server_config(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    servers = [StdioMCPServer(name="minimal-server", command="npx")]
+
+    configurator.mcp_servers(servers)
+
+    file = Path(project.dir) / ".mcp.json"
+    with open(file) as f:
+        data = json.load(f)
+
+    server_config = data["mcpServers"]["minimal-server"]
+    assert server_config == {"command": "npx"}
+    assert "type" not in server_config
+    assert "args" not in server_config
+    assert "env" not in server_config
+
+
+def test_should_keep_http_type_in_mcp_server_config(
+    configurator: ClaudeConfigurator, project: Project
+) -> None:
+    servers = [HttpMCPServer(name="remote", url="https://example.com")]
+
+    configurator.mcp_servers(servers)
+
+    file = Path(project.dir) / ".mcp.json"
+    with open(file) as f:
+        data = json.load(f)
+
+    server_config = data["mcpServers"]["remote"]
+    assert server_config["type"] == "http"
+    assert server_config["url"] == "https://example.com"
+    assert "headers" not in server_config
+
+
 def test_should_track_created_file_when_processing_mcp_servers(
     configurator: ClaudeConfigurator, tracker: Mock, project: Project
 ) -> None:
@@ -630,10 +665,10 @@ def test_should_write_deny_rules_to_settings_when_ignore_patterns_provided(
     assert "permissions" in settings
     assert "deny" in settings["permissions"]
     deny_rules = settings["permissions"]["deny"]
-    assert "Read(.charlie)" in deny_rules
-    assert "Read(*.log)" in deny_rules
-    assert "Read(.env)" in deny_rules
-    assert "Read(secrets/)" in deny_rules
+    assert "Read(./.charlie)" in deny_rules
+    assert "Read(./*.log)" in deny_rules
+    assert "Read(./.env)" in deny_rules
+    assert "Read(./secrets/)" in deny_rules
 
 
 def test_should_preserve_existing_settings_when_updating_deny_rules(
@@ -658,10 +693,10 @@ def test_should_preserve_existing_settings_when_updating_deny_rules(
     assert settings["permissions"]["allow"] == ["Bash(git:*)"]
 
     deny_rules = settings["permissions"]["deny"]
-    assert "Read(.env)" in deny_rules
-    assert "Read(.charlie)" in deny_rules
-    assert "Read(*.log)" in deny_rules
-    assert "Read(secrets/)" in deny_rules
+    assert "Read(.env)" in deny_rules  # pre-existing rule, kept as-is
+    assert "Read(./.charlie)" in deny_rules
+    assert "Read(./*.log)" in deny_rules
+    assert "Read(./secrets/)" in deny_rules
 
 
 def test_should_not_duplicate_rules_when_pattern_already_exists(
@@ -672,7 +707,7 @@ def test_should_not_duplicate_rules_when_pattern_already_exists(
 
     import json
 
-    existing_settings = {"permissions": {"deny": ["Read(.charlie)", "Read(*.log)"]}}
+    existing_settings = {"permissions": {"deny": ["Read(./.charlie)", "Read(./*.log)"]}}
     with open(settings_file, "w", encoding="utf-8") as f:
         json.dump(existing_settings, f)
 
@@ -683,9 +718,9 @@ def test_should_not_duplicate_rules_when_pattern_already_exists(
         settings = json.load(f)
 
     deny_rules = settings["permissions"]["deny"]
-    assert deny_rules.count("Read(.charlie)") == 1
-    assert deny_rules.count("Read(*.log)") == 1
-    assert "Read(.env)" in deny_rules
+    assert deny_rules.count("Read(./.charlie)") == 1
+    assert deny_rules.count("Read(./*.log)") == 1
+    assert "Read(./.env)" in deny_rules
 
 
 def test_should_create_valid_settings_when_existing_file_is_corrupted(
