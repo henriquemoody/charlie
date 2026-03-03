@@ -16,6 +16,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
 - 🕵️ **Subagent Support**: Define specialized AI sub-assistants once
+- 🧠 **Skills Support**: Package domain knowledge as reusable skills agents invoke automatically
 - 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` or `.charlie/` directory
 - ⚡ **Runtime Targeting**: Choose which agents to generate for at runtime
 - 📦 **Library & CLI**: Use as CLI tool or import as Python library
@@ -132,6 +133,28 @@ subagents:
       tools: "Read, Grep, Glob, Bash"
       model: sonnet
 
+# Skill definitions (optional)
+skills:
+  - name: "explain-code"
+    description: "Explains code with visual diagrams and analogies. Use when explaining how code works."
+    prompt: |
+      When explaining code, always include:
+      1. An analogy from everyday life
+      2. An ASCII diagram showing the flow
+      3. A step-by-step walkthrough
+      4. A common gotcha or misconception
+
+  - name: "deploy"
+    description: "Deploy the application to production"
+    prompt: |
+      Deploy the application:
+      1. Run the test suite
+      2. Build the application
+      3. Push to the deployment target
+      4. Verify the deployment succeeded
+    metadata:
+      disable-model-invocation: true
+
 # Ignore patterns (optional) -- will be added to agent-specific ignore files
 ignore_patterns:
   - "*.log"
@@ -202,6 +225,9 @@ project/
     ├── agents/
     │   ├── code-reviewer.md      # One file per subagent (Markdown with YAML frontmatter)
     │   └── debugger.md
+    ├── skills/
+    │   ├── explain-code.md       # One file per skill (Markdown with YAML frontmatter)
+    │   └── deploy.md
     └── mcp-servers/
         └── local-tools.yaml      # MCP servers in YAML
 ```
@@ -246,6 +272,7 @@ Charlie supports these universal placeholders in commands, rules, and MCP config
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
 - `{{rules_file}}` → Resolves to agent's rules file path (e.g., `.claude/rules.md`)
 - `{{subagents_dir}}` → Resolves to agent's subagents directory (e.g., `.claude/agents`)
+- `{{skills_dir}}` → Resolves to agent's skills directory (e.g., `.claude/skills`)
 - `{{mcp_file}}` → Resolves to agent's MCP configuration file name (e.g., `mcp.json`)
 - `{{assets_dir}}` → Resolves to agent's assets directory (e.g., `.claude/assets`)
 
@@ -295,6 +322,9 @@ charlie generate claude --no-commands
 # Setup without subagents
 charlie generate claude --no-subagents
 
+# Setup without skills
+charlie generate claude --no-skills
+
 # Explicit config file
 charlie generate cursor --config my-config.yaml
 
@@ -337,7 +367,7 @@ Use Charlie programmatically in Python:
 
 ```python
 from charlie import AgentRegistry, AgentConfiguratorFactory, Tracker
-from charlie.schema import Project, Command, Rule, Subagent, HttpMCPServer, StdioMCPServer, ValueReplacement
+from charlie.schema import Project, Command, Rule, Skill, Subagent, HttpMCPServer, StdioMCPServer, ValueReplacement
 from charlie.enums import RuleMode
 
 # Initialize registry and get agent
@@ -446,6 +476,24 @@ configurator.subagents([
     )
 ])
 
+# Generate skills
+configurator.skills([
+    Skill(
+        name="explain-code",
+        description="Explains code with visual diagrams and analogies. Use when explaining how code works.",
+        prompt="When explaining code, always include an analogy, an ASCII diagram, and a step-by-step walkthrough.",
+    ),
+    Skill(
+        name="deploy",
+        description="Deploy the application to production",
+        prompt="Deploy the application: run tests, build, push, verify.",
+        metadata={
+            "disable-model-invocation": True,
+            "allowed-tools": "Bash(./deploy.sh)",
+        },
+    ),
+])
+
 # Copy assets to the agent's directory
 configurator.assets([
     ".charlie/assets/deploy.sh",
@@ -539,6 +587,69 @@ When a `namespace` is set, subagent filenames are prefixed:
 
 - Claude: `.claude/agents/myapp-code-reviewer.md`
 - Cursor: `.cursor/agents/myapp.code-reviewer.md`
+
+## Skills
+
+Skills are portable, version-controlled packages that teach agents how to perform domain-specific tasks. Unlike commands (which users invoke explicitly), skills can be loaded automatically by the agent when relevant to the conversation.
+
+### Define skills
+
+**Directory-based** — create `.charlie/skills/<name>.md`:
+
+```markdown
+---
+description: Explains code with visual diagrams and analogies. Use when explaining how code works.
+---
+
+When explaining code, always include:
+
+1. **Start with an analogy**: Compare the code to something from everyday life
+2. **Draw a diagram**: Use ASCII art to show the flow, structure, or relationships
+3. **Walk through the code**: Explain step-by-step what happens
+4. **Highlight a gotcha**: What's a common mistake or misconception?
+```
+
+The filename becomes the skill name (e.g., `explain-code.md` → `explain-code`). Override it with a `name:` field in the frontmatter.
+
+**YAML inline** — add a `skills:` section to `charlie.yaml`:
+
+```yaml
+skills:
+  - name: explain-code
+    description: Explains code with visual diagrams and analogies. Use when explaining how code works.
+    prompt: |
+      When explaining code, always include an analogy, an ASCII diagram, and a step-by-step walkthrough.
+  - name: deploy
+    description: Deploy the application to production
+    prompt: |
+      Deploy the application:
+      1. Run the test suite
+      2. Build the application
+      3. Push to the deployment target
+    metadata:
+      disable-model-invocation: true
+```
+
+### Generated output
+
+| Agent          | Output                                  | Supported metadata                                                                              |
+| -------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Claude Code    | `.claude/skills/{name}/SKILL.md`        | `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `context`, `agent` |
+| Cursor         | `.cursor/skills/{name}/SKILL.md`        | `description`, `disable-model-invocation`, `license`, `compatibility`                          |
+| GitHub Copilot | — (skipped)                             | —                                                                                               |
+
+Each skill is output as a directory containing a `SKILL.md` file, following the [Agent Skills](https://agentskills.io) open standard.
+
+### Namespace support
+
+When a `namespace` is set, skill directory names are prefixed:
+
+- Claude: `.claude/skills/myapp-explain-code/SKILL.md`
+- Cursor: `.cursor/skills/myapp.explain-code/SKILL.md`
+
+### Invocation control
+
+Use `disable-model-invocation: true` in metadata to prevent the agent from loading the skill automatically — useful for workflows with side effects (deploys, commits, etc.) that you want to trigger manually with `/skill-name`.
 
 ## Development
 

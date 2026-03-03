@@ -4,7 +4,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 from rich.console import Console
 
-from charlie.schema import CharlieConfig, Command, MCPServer, Rule, Subagent
+from charlie.schema import CharlieConfig, Command, MCPServer, Rule, Skill, Subagent
 
 console = Console()
 
@@ -17,7 +17,7 @@ class MergeResult:
     warnings: list[str] = field(default_factory=list)
 
 
-def _get_item_name(item: Command | Rule | Subagent | MCPServer) -> str:
+def _get_item_name(item: Command | Rule | Subagent | Skill | MCPServer) -> str:
     return item.name
 
 
@@ -99,6 +99,14 @@ def merge_configs(base: CharlieConfig, overlay: CharlieConfig, source_name: str 
     )
     warnings.extend(subagent_warnings)
 
+    merged_skills, skill_warnings = _merge_named_list(
+        base.skills,
+        overlay.skills,
+        "skill",
+        source_name,
+    )
+    warnings.extend(skill_warnings)
+
     merged_mcp_servers, mcp_warnings = _merge_named_list(
         list(base.mcp_servers),
         list(overlay.mcp_servers),
@@ -134,6 +142,7 @@ def merge_configs(base: CharlieConfig, overlay: CharlieConfig, source_name: str 
         commands=merged_commands,
         rules=merged_rules,
         subagents=merged_subagents,
+        skills=merged_skills,
         mcp_servers=merged_mcp_servers,
         variables=merged_variables,
         assets=merged_assets,

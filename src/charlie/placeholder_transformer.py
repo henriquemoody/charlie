@@ -9,6 +9,7 @@ from charlie.schema import (
     Project,
     ReplacementSpec,
     Rule,
+    Skill,
     StdioMCPServer,
     Subagent,
 )
@@ -84,6 +85,23 @@ class PlaceholderTransformer:
             prompt=prompt,
             metadata=metadata,
             replacements=subagent.replacements,
+        )
+
+    def skill(self, skill: Skill) -> Skill:
+        description = self.__fixed(skill.description)
+        description = self.__replacements(description, skill.replacements)
+
+        prompt = self.__fixed(skill.prompt)
+        prompt = self.__replacements(prompt, skill.replacements)
+
+        metadata = self.__dict(skill.metadata, skill.replacements)
+
+        return Skill(
+            name=skill.name,
+            description=description,
+            prompt=prompt,
+            metadata=metadata,
+            replacements=skill.replacements,
         )
 
     def mcp_server(self, mcp_server: MCPServer) -> MCPServer:

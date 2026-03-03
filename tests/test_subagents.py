@@ -112,9 +112,7 @@ def test_claude_should_create_markdown_file_for_each_subagent(
     assert (Path(project.dir) / ".claude/agents/debugger.md").exists()
 
 
-def test_claude_should_write_prompt_to_file_body(
-    claude_configurator: ClaudeConfigurator, project: Project
-) -> None:
+def test_claude_should_write_prompt_to_file_body(claude_configurator: ClaudeConfigurator, project: Project) -> None:
     subagents = [Subagent(name="reviewer", description="Reviews code", prompt="You are a senior code reviewer.")]
 
     claude_configurator.subagents(subagents)
@@ -237,9 +235,7 @@ def test_claude_should_track_each_subagent_file_created(
     assert any("debugger.md" in str(f) for f in tracked)
 
 
-def test_claude_should_not_track_when_no_subagents(
-    claude_configurator: ClaudeConfigurator, tracker: Mock
-) -> None:
+def test_claude_should_not_track_when_no_subagents(claude_configurator: ClaudeConfigurator, tracker: Mock) -> None:
     claude_configurator.subagents([])
 
     tracker.track.assert_not_called()
@@ -292,9 +288,7 @@ def test_cursor_should_create_markdown_file_for_each_subagent(
     assert (Path(project.dir) / ".cursor/agents/debugger.md").exists()
 
 
-def test_cursor_should_write_prompt_to_file_body(
-    cursor_configurator: CursorConfigurator, project: Project
-) -> None:
+def test_cursor_should_write_prompt_to_file_body(cursor_configurator: CursorConfigurator, project: Project) -> None:
     subagents = [Subagent(name="reviewer", description="Reviews code", prompt="You are a senior code reviewer.")]
 
     cursor_configurator.subagents(subagents)
@@ -334,9 +328,7 @@ def test_cursor_should_include_cursor_specific_metadata(
     assert "readonly: true" in content
 
 
-def test_cursor_should_filter_non_cursor_metadata(
-    cursor_configurator: CursorConfigurator, project: Project
-) -> None:
+def test_cursor_should_filter_non_cursor_metadata(cursor_configurator: CursorConfigurator, project: Project) -> None:
     subagents = [
         Subagent(
             name="reviewer",
@@ -424,9 +416,7 @@ def test_copilot_should_track_skip_message_when_subagents_provided(
     assert "does not support subagents" in tracker.track.call_args[0][0]
 
 
-def test_copilot_should_not_track_when_no_subagents(
-    copilot_configurator: CopilotConfigurator, tracker: Mock
-) -> None:
+def test_copilot_should_not_track_when_no_subagents(copilot_configurator: CopilotConfigurator, tracker: Mock) -> None:
     copilot_configurator.subagents([])
 
     tracker.track.assert_not_called()
@@ -510,9 +500,7 @@ def test_should_load_subagents_from_directory_config(tmp_path: Path) -> None:
 
     agents_dir = tmp_path / ".charlie" / "agents"
     agents_dir.mkdir(parents=True)
-    (agents_dir / "reviewer.md").write_text(
-        "---\ndescription: Reviews code\n---\nYou are a code reviewer."
-    )
+    (agents_dir / "reviewer.md").write_text("---\ndescription: Reviews code\n---\nYou are a code reviewer.")
 
     config = load_directory_config(tmp_path)
 

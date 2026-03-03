@@ -6,7 +6,7 @@ from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Command, MCPServer, Project, Rule, Subagent
+from charlie.schema import Command, MCPServer, Project, Rule, Skill, Subagent
 from charlie.tracker import Tracker
 
 
@@ -20,6 +20,8 @@ class CursorConfigurator(AgentConfigurator):
     RULES_EXTENSION = "mdc"
     SUBAGENTS_DIR = ".cursor/agents"
     SUBAGENTS_EXTENSION = "md"
+    SKILLS_DIR = ".cursor/skills"
+    SKILLS_FILE = "SKILL.md"
     MCP_FILE = ".cursor/mcp.json"
     IGNORE_FILE = ".cursorignore"
     ASSETS_DIR = ".cursor/assets"
@@ -27,6 +29,7 @@ class CursorConfigurator(AgentConfigurator):
     __ALLOWED_COMMAND_METADATA = ["name", "description"]
     __ALLOWED_INSTRUCTION_METADATA = ["description", "alwaysApply", "globs"]
     __ALLOWED_SUBAGENT_METADATA = ["name", "description", "model", "readonly", "is_background"]
+    __ALLOWED_SKILL_METADATA = ["name", "description", "disable-model-invocation", "license", "compatibility"]
 
     def __init__(
         self,
@@ -54,6 +57,7 @@ class CursorConfigurator(AgentConfigurator):
             "rules_dir": self.RULES_DIR,
             "rules_file": self.RULES_FILE,
             "subagents_dir": self.SUBAGENTS_DIR,
+            "skills_dir": self.SKILLS_DIR,
             "mcp_file": self.MCP_FILE,
             "assets_dir": self.ASSETS_DIR,
         }
@@ -136,6 +140,31 @@ class CursorConfigurator(AgentConfigurator):
             )
 
             self.tracker.track(f"Created {subagent_file}")
+
+    def skills(self, skills: list[Skill]) -> None:
+        if not skills:
+            return
+
+        skills_dir = Path(self.project.dir) / self.SKILLS_DIR
+        skills_dir.mkdir(parents=True, exist_ok=True)
+
+        for skill in skills:
+            name = skill.name
+            if self.project.namespace is not None:
+                name = f"{self.project.namespace}.{name}"
+
+            skill_dir = skills_dir / name
+            skill_dir.mkdir(parents=True, exist_ok=True)
+
+            skill_file = skill_dir / self.SKILLS_FILE
+            self.markdown_generator.generate(
+                file=skill_file,
+                body=skill.prompt,
+                metadata={**skill.metadata, "name": name, "description": skill.description},
+                allowed_metadata=self.__ALLOWED_SKILL_METADATA,
+            )
+
+            self.tracker.track(f"Created {skill_file}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
         file = Path(self.project.dir) / self.MCP_FILE

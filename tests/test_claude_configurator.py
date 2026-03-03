@@ -513,9 +513,7 @@ def test_should_omit_stdio_type_and_empty_defaults_from_mcp_server_config(
     assert "env" not in server_config
 
 
-def test_should_keep_http_type_in_mcp_server_config(
-    configurator: ClaudeConfigurator, project: Project
-) -> None:
+def test_should_keep_http_type_in_mcp_server_config(configurator: ClaudeConfigurator, project: Project) -> None:
     servers = [HttpMCPServer(name="remote", url="https://example.com")]
 
     configurator.mcp_servers(servers)

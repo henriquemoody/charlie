@@ -47,6 +47,7 @@ def generate(
     no_mcp: bool = typer.Option(False, "--no-mcp", help="Skip MCP server configuration"),
     no_rules: bool = typer.Option(False, "--no-rules", help="Skip rules file generation"),
     no_subagents: bool = typer.Option(False, "--no-subagents", help="Skip subagent file generation"),
+    no_skills: bool = typer.Option(False, "--no-skills", help="Skip skill file generation"),
     rules_generation_mode: str = typer.Option(
         "separate",
         "--rules-mode",
@@ -94,6 +95,9 @@ def generate(
 
         if not no_subagents:
             configurator.subagents([transformer.subagent(subagent) for subagent in charlie_config.subagents])
+
+        if not no_skills:
+            configurator.skills([transformer.skill(skill) for skill in charlie_config.skills])
 
         if charlie_config.assets:
             configurator.assets(charlie_config.assets)
@@ -145,6 +149,7 @@ def validate(
         console.print(f"  Project: {project_name}")
         console.print(f"  Namespace: {namespace or '(none)'}")
         console.print(f"  Commands: {len(validated_config.commands)}")
+        console.print(f"  Skills: {len(validated_config.skills)}")
         console.print(f"  MCP servers: {len(validated_config.mcp_servers)}")
 
     except FileNotFoundError as e:

@@ -5,7 +5,7 @@ from charlie.assets_manager import AssetsManager
 from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
-from charlie.schema import Command, MCPServer, Project, Rule, Subagent
+from charlie.schema import Command, MCPServer, Project, Rule, Skill, Subagent
 from charlie.tracker import Tracker
 
 
@@ -136,6 +136,10 @@ class CopilotConfigurator(AgentConfigurator):
     def subagents(self, subagents: list[Subagent]) -> None:
         if subagents:
             self.tracker.track("GitHub Copilot does not support subagents natively. Skipping...")
+
+    def skills(self, skills: list[Skill]) -> None:
+        if skills:
+            self.tracker.track("GitHub Copilot does not support skills natively. Skipping...")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
         if mcp_servers:

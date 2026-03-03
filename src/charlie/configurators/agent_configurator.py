@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from charlie.enums import RuleMode
-from charlie.schema import Command, MCPServer, Rule, Subagent
+from charlie.schema import Command, MCPServer, Rule, Skill, Subagent
 
 
 class AgentConfigurator(ABC):
@@ -19,6 +19,10 @@ class AgentConfigurator(ABC):
 
     @abstractmethod
     def subagents(self, subagents: list[Subagent]) -> None:
+        pass
+
+    @abstractmethod
+    def skills(self, skills: list[Skill]) -> None:
         pass
 
     @abstractmethod

@@ -23,7 +23,7 @@ class MarkdownGenerator:
             metadata = {key: value for key, value in metadata.items() if key in allowed_metadata}
 
         if metadata is not None:
-            yaml_str = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
+            yaml_str = yaml.dump(metadata, default_flow_style=False, sort_keys=False, width=10**9)
             frontmatter += f"---\n{yaml_str}---\n\n"
 
         file.write_text(frontmatter + body, encoding=self.encoding)

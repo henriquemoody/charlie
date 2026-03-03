@@ -801,4 +801,3 @@ class TestSubagentTransformation:
         result = transformer.subagent(subagent)
 
         assert result.description == "Linter with strict mode"
-

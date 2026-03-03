@@ -77,6 +77,14 @@ class Subagent(BaseModel):
     replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
 
 
+class Skill(BaseModel):
+    name: str = Field(..., description="Skill name (lowercase, hyphens)")
+    description: str = Field(..., description="What the skill does and when to use it")
+    prompt: str = Field(default="", description="Skill instructions")
+    metadata: Metadata = Field(default_factory=dict, description="Agent-specific metadata")
+    replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
+
+
 class CharlieConfig(BaseModel):
     version: str = Field("1.0", description="Schema version")
     extends: list[str] = Field(
@@ -86,6 +94,7 @@ class CharlieConfig(BaseModel):
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
     rules: list[Rule] = Field(default_factory=list, description="Rules configuration")
     subagents: list[Subagent] = Field(default_factory=list, description="Subagent definitions")
+    skills: list[Skill] = Field(default_factory=list, description="Skill definitions")
     mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
     variables: dict[str, VariableSpec | None] = Field(default_factory=dict, description="Variable definitions")
     assets: list[str] = Field(default_factory=list, description="List of existing assets")
@@ -114,4 +123,13 @@ class CharlieConfig(BaseModel):
         if len(names) != len(set(names)):
             duplicate_names = [name for name in names if names.count(name) > 1]
             raise ValueError(f"Duplicate subagent names found: {set(duplicate_names)}")
+        return v
+
+    @field_validator("skills")
+    @classmethod
+    def validate_unique_skill_names(cls, v: list[Skill]) -> list[Skill]:
+        names = [s.name for s in v]
+        if len(names) != len(set(names)):
+            duplicate_names = [name for name in names if names.count(name) > 1]
+            raise ValueError(f"Duplicate skill names found: {set(duplicate_names)}")
         return v
