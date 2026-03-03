@@ -70,6 +70,9 @@ class PlaceholderTransformer:
         )
 
     def subagent(self, subagent: Subagent) -> Subagent:
+        description = self.__fixed(subagent.description)
+        description = self.__replacements(description, subagent.replacements)
+
         prompt = self.__fixed(subagent.prompt)
         prompt = self.__replacements(prompt, subagent.replacements)
 
@@ -77,7 +80,7 @@ class PlaceholderTransformer:
 
         return Subagent(
             name=subagent.name,
-            description=subagent.description,
+            description=description,
             prompt=prompt,
             metadata=metadata,
             replacements=subagent.replacements,

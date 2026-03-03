@@ -17,6 +17,7 @@ from charlie.schema import (
     Project,
     Rule,
     StdioMCPServer,
+    Subagent,
     ValueReplacement,
 )
 
@@ -772,3 +773,32 @@ class TestComplexScenarios:
         result = transformer.command(command)
 
         assert result.prompt == "Value: {{project_name}}"
+
+
+class TestSubagentTransformation:
+    def test_should_transform_subagent_description_and_prompt(self, transformer: PlaceholderTransformer) -> None:
+        subagent = Subagent(
+            name="code-reviewer",
+            description="Code reviewer for {{project_name}}",
+            prompt="Review code using {{var:framework}}",
+        )
+
+        result = transformer.subagent(subagent)
+
+        assert result.description == "Code reviewer for my-project"
+        assert result.prompt == "Review code using fastapi"
+        assert result.name == "code-reviewer"
+
+    def test_should_apply_replacements_to_subagent_description(self, transformer: PlaceholderTransformer) -> None:
+        replacements = {"style": ValueReplacement(value="strict")}
+        subagent = Subagent(
+            name="linter",
+            description="Linter with {{style}} mode",
+            prompt="Lint the code",
+            replacements=replacements,
+        )
+
+        result = transformer.subagent(subagent)
+
+        assert result.description == "Linter with strict mode"
+

@@ -46,6 +46,7 @@ class CopilotConfigurator(AgentConfigurator):
             "rules_dir": self.RULES_DIR,
             "rules_file": self.RULES_FILE,
             "assets_dir": self.ASSETS_DIR,
+            "subagents_dir": "",
         }
 
     def commands(self, commands: list[Command]) -> None:
