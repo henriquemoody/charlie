@@ -69,6 +69,14 @@ class Command(BaseModel):
     replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
 
 
+class Subagent(BaseModel):
+    name: str = Field(..., description="Subagent name (lowercase, hyphens)")
+    description: str = Field(..., description="When to use this subagent")
+    prompt: str = Field(default="", description="Subagent system prompt")
+    metadata: Metadata = Field(default_factory=dict, description="Agent-specific metadata")
+    replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
+
+
 class CharlieConfig(BaseModel):
     version: str = Field("1.0", description="Schema version")
     extends: list[str] = Field(
@@ -77,6 +85,7 @@ class CharlieConfig(BaseModel):
     project: Project = Field(..., description="Project configuration")
     commands: list[Command] = Field(default_factory=list, description="Command definitions")
     rules: list[Rule] = Field(default_factory=list, description="Rules configuration")
+    subagents: list[Subagent] = Field(default_factory=list, description="Subagent definitions")
     mcp_servers: list[MCPServer] = Field(default_factory=list, description="MCP server definitions")
     variables: dict[str, VariableSpec | None] = Field(default_factory=dict, description="Variable definitions")
     assets: list[str] = Field(default_factory=list, description="List of existing assets")
@@ -96,4 +105,13 @@ class CharlieConfig(BaseModel):
         if len(command_names) != len(set(command_names)):
             duplicate_names = [name for name in command_names if command_names.count(name) > 1]
             raise ValueError(f"Duplicate command names found: {set(duplicate_names)}")
+        return v
+
+    @field_validator("subagents")
+    @classmethod
+    def validate_unique_subagent_names(cls, v: list[Subagent]) -> list[Subagent]:
+        names = [s.name for s in v]
+        if len(names) != len(set(names)):
+            duplicate_names = [name for name in names if names.count(name) > 1]
+            raise ValueError(f"Duplicate subagent names found: {set(duplicate_names)}")
         return v

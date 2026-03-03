@@ -7,6 +7,7 @@ This document lists known metadata fields that specific agents support, but you 
 ## Supported Agents
 
 Charlie currently supports:
+
 - **Claude Code** (`claude`)
 - **Cursor** (`cursor`)
 - **GitHub Copilot** (`copilot`)
@@ -46,7 +47,7 @@ Claude Code supports the following metadata fields:
 metadata:
   # Security restrictions
   allowed-tools: "Bash(git add:*), Bash(git status:*), Bash(git commit:*)"
-  
+
   # Organization
   tags: ["git", "vcs"]
   category: "source-control"
@@ -122,13 +123,13 @@ Cursor supports the following metadata fields for rules (rules):
 ```yaml
 metadata:
   # Control when rules apply
-  alwaysApply: true  # Rule applies to all files (default: false)
-  
+  alwaysApply: true # Rule applies to all files (default: false)
+
   # File pattern matching
   globs:
     - "**/*.py"
     - "**/*.ts"
-    - "!**/test_*.py"  # Exclusion pattern
+    - "!**/test_*.py" # Exclusion pattern
 ```
 
 **Output Format:** YAML frontmatter at top of generated `.cursor/rules/*.md` files.
@@ -159,15 +160,100 @@ metadata:
 ```
 
 **Output Format:**
+
 - **Merged mode**: Single `copilot-instructions.md` file with all rules
 - **Separate mode**: Individual `*-instructions.md` files in `.github/instructions/` directory
 
 **Behavior:**
+
 - `applyTo` - Comma-separated string of glob patterns that control which files this instruction applies to (e.g., `"**/*.ts,**/*.tsx"`)
 
 **Documentation:** [GitHub Copilot Repository Instructions](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions)
 
 **Note:** GitHub Copilot scans the repository for files matching the pattern `*instructions.md`. When using separate mode, Charlie creates individual instruction files and a main instruction file that references them.
+
+## Subagent Fields
+
+### Core Fields (All Agents)
+
+These are Charlie's core subagent fields and are always processed:
+
+- `name` - Subagent name in lowercase with hyphens (required, auto-generated from filename if omitted)
+- `description` - When the agent should delegate to this subagent (required)
+- `prompt` - System prompt that guides the subagent's behavior (the Markdown body when using file-based definitions)
+- `metadata` - Dictionary of agent-specific metadata fields (optional)
+- `replacements` - Custom placeholder replacements (optional)
+
+### Agent-Specific Metadata Fields
+
+#### Claude Code
+
+Claude Code supports the following metadata fields for subagents:
+
+```yaml
+subagents:
+  - name: code-reviewer
+    description: Expert code reviewer. Use proactively after code changes.
+    prompt: You are a senior code reviewer...
+    metadata:
+      # Tool access control
+      tools: "Read, Grep, Glob, Bash" # Allowlist of tools the subagent can use
+      disallowedTools: "Write, Edit" # Denylist (removed from allowed set)
+
+      # Model selection
+      model: sonnet # sonnet | opus | haiku | inherit (default: inherit)
+
+      # Permission and execution control
+      permissionMode: acceptEdits # default | acceptEdits | dontAsk | bypassPermissions | plan
+      maxTurns: 10 # Maximum agentic turns before stopping
+      background: false # Run as a background task (default: false)
+      isolation: worktree # Run in a temporary git worktree (default: none)
+
+      # Knowledge and context
+      skills: # Skills to preload into the subagent's context
+        - api-conventions
+        - error-handling-patterns
+      memory: project # Persistent memory scope: user | project | local
+
+      # MCP servers available to this subagent
+      mcpServers:
+        - slack
+
+      # Lifecycle hooks scoped to this subagent
+      hooks:
+        PreToolUse:
+          - matcher: "Bash"
+            hooks:
+              - type: command
+                command: "./scripts/validate.sh"
+```
+
+**Output format:** YAML frontmatter in `.claude/agents/{name}.md`
+
+**Documentation:** [Claude Code Sub-agents](https://code.claude.com/docs/en/sub-agents)
+
+#### Cursor
+
+Cursor supports the following metadata fields for subagents:
+
+```yaml
+subagents:
+  - name: code-reviewer
+    description: Reviews code for quality and best practices
+    prompt: You are a code reviewer...
+    metadata:
+      model: inherit # fast | inherit | or a specific model ID
+      readonly: true # Restrict write permissions (default: false)
+      is_background: false # Run asynchronously (default: false)
+```
+
+**Output format:** YAML frontmatter in `.cursor/agents/{name}.md`
+
+**Documentation:** [Cursor Subagents](https://cursor.com/docs/context/subagents)
+
+#### GitHub Copilot
+
+GitHub Copilot does not have native subagent support. Charlie logs a skip message and generates no output.
 
 ## MCP Server Fields
 
@@ -179,11 +265,11 @@ MCP servers support two transport types:
 
 ```yaml
 mcp_servers:
-  - name: "my-server"           # Server name (required)
-    type: "stdio"               # Transport type (default: "stdio")
-    command: "node"             # Command to run (required)
-    args: ["server.js"]         # Command arguments (optional, default: [])
-    env:                        # Environment variables (optional, default: {})
+  - name: "my-server" # Server name (required)
+    type: "stdio" # Transport type (default: "stdio")
+    command: "node" # Command to run (required)
+    args: ["server.js"] # Command arguments (optional, default: [])
+    env: # Environment variables (optional, default: {})
       API_KEY: "value"
 ```
 
@@ -191,10 +277,10 @@ mcp_servers:
 
 ```yaml
 mcp_servers:
-  - name: "remote-server"       # Server name (required)
-    type: "http"                # Transport type
-    url: "https://example.com"  # Server URL (required)
-    headers:                    # HTTP headers (optional, default: {})
+  - name: "remote-server" # Server name (required)
+    type: "http" # Transport type
+    url: "https://example.com" # Server URL (required)
+    headers: # HTTP headers (optional, default: {})
       Authorization: "Bearer token"
       Content-Type: "application/json"
 ```
@@ -225,7 +311,7 @@ description: "My Rule"
 prompt: "Rule content here..."
 metadata:
   alwaysApply: true
-  experimental-feature: true  # New metadata field
+  experimental-feature: true # New metadata field
 ```
 
 Charlie will include it in the output:
@@ -266,6 +352,7 @@ Example:
 metadata:
   tags: ["python", "testing"]
   alwaysApply: true
+
 
 # Output (YAML frontmatter)
 ---

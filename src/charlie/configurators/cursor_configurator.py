@@ -6,7 +6,7 @@ from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
-from charlie.schema import Command, MCPServer, Project, Rule
+from charlie.schema import Command, MCPServer, Project, Rule, Subagent
 from charlie.tracker import Tracker
 
 
@@ -18,12 +18,15 @@ class CursorConfigurator(AgentConfigurator):
     RULES_FILE = ".cursor/rules"
     RULES_DIR = ".cursor/rules"
     RULES_EXTENSION = "mdc"
+    SUBAGENTS_DIR = ".cursor/agents"
+    SUBAGENTS_EXTENSION = "md"
     MCP_FILE = ".cursor/mcp.json"
     IGNORE_FILE = ".cursorignore"
     ASSETS_DIR = ".cursor/assets"
 
     __ALLOWED_COMMAND_METADATA = ["name", "description"]
     __ALLOWED_INSTRUCTION_METADATA = ["description", "alwaysApply", "globs"]
+    __ALLOWED_SUBAGENT_METADATA = ["name", "description", "model", "readonly", "is_background"]
 
     def __init__(
         self,
@@ -50,6 +53,7 @@ class CursorConfigurator(AgentConfigurator):
             "commands_shorthand_injection": self.COMMANDS_SHORTHAND_INJECTION,
             "rules_dir": self.RULES_DIR,
             "rules_file": self.RULES_FILE,
+            "subagents_dir": self.SUBAGENTS_DIR,
             "mcp_file": self.MCP_FILE,
             "assets_dir": self.ASSETS_DIR,
         }
@@ -108,6 +112,30 @@ class CursorConfigurator(AgentConfigurator):
             )
 
             self.tracker.track(f"Created {command_file}")
+
+    def subagents(self, subagents: list[Subagent]) -> None:
+        if not subagents:
+            return
+
+        subagents_dir = Path(self.project.dir) / self.SUBAGENTS_DIR
+        subagents_dir.mkdir(parents=True, exist_ok=True)
+
+        for subagent in subagents:
+            name = subagent.name
+            filename = f"{name}.{self.SUBAGENTS_EXTENSION}"
+            if self.project.namespace is not None:
+                name = f"{self.project.namespace}.{name}"
+                filename = f"{self.project.namespace}.{filename}"
+
+            subagent_file = subagents_dir / filename
+            self.markdown_generator.generate(
+                file=subagent_file,
+                body=subagent.prompt,
+                metadata={"name": name, "description": subagent.description, **subagent.metadata},
+                allowed_metadata=self.__ALLOWED_SUBAGENT_METADATA,
+            )
+
+            self.tracker.track(f"Created {subagent_file}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
         file = Path(self.project.dir) / self.MCP_FILE

@@ -46,6 +46,7 @@ def generate(
     no_commands: bool = typer.Option(False, "--no-commands", help="Skip command file generation"),
     no_mcp: bool = typer.Option(False, "--no-mcp", help="Skip MCP server configuration"),
     no_rules: bool = typer.Option(False, "--no-rules", help="Skip rules file generation"),
+    no_subagents: bool = typer.Option(False, "--no-subagents", help="Skip subagent file generation"),
     rules_generation_mode: str = typer.Option(
         "separate",
         "--rules-mode",
@@ -90,6 +91,9 @@ def generate(
                 [transformer.rule(rule) for rule in charlie_config.rules],
                 RuleMode(rules_generation_mode),
             )
+
+        if not no_subagents:
+            configurator.subagents([transformer.subagent(subagent) for subagent in charlie_config.subagents])
 
         if charlie_config.assets:
             configurator.assets(charlie_config.assets)
