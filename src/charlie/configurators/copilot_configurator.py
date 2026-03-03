@@ -5,7 +5,7 @@ from charlie.assets_manager import AssetsManager
 from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.enums import RuleMode
 from charlie.markdown_generator import MarkdownGenerator
-from charlie.schema import Command, MCPServer, Project, Rule
+from charlie.schema import Command, MCPServer, Project, Rule, Subagent
 from charlie.tracker import Tracker
 
 
@@ -46,6 +46,7 @@ class CopilotConfigurator(AgentConfigurator):
             "rules_dir": self.RULES_DIR,
             "rules_file": self.RULES_FILE,
             "assets_dir": self.ASSETS_DIR,
+            "subagents_dir": "",
         }
 
     def commands(self, commands: list[Command]) -> None:
@@ -131,6 +132,10 @@ class CopilotConfigurator(AgentConfigurator):
         instructions_file = Path(self.project.dir) / self.RULES_FILE
         self.markdown_generator.generate(file=instructions_file, body=body.rstrip())
         self.tracker.track(f"Created {instructions_file}")
+
+    def subagents(self, subagents: list[Subagent]) -> None:
+        if subagents:
+            self.tracker.track("GitHub Copilot does not support subagents natively. Skipping...")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
         if mcp_servers:

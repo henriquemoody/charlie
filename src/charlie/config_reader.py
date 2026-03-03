@@ -14,6 +14,7 @@ from charlie.schema import (
     MCPServer,
     Project,
     Rule,
+    Subagent,
 )
 
 console = Console()
@@ -172,6 +173,10 @@ def parse_config(config_path: str | Path, _visited: set[str] | None = None) -> C
         if "name" not in rule and "description" in rule:
             rule["name"] = slugify(rule["description"])
 
+    for subagent in raw_config_data.get("subagents") or []:
+        if "name" not in subagent and "description" in subagent:
+            subagent["name"] = slugify(subagent["description"])
+
     raw_config_data["variables"] = raw_config_data.get("variables") or {}
 
     yaml_patterns = raw_config_data.get("ignore_patterns") or []
@@ -276,6 +281,24 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
 
             if "replacements" in parsed_frontmatter:
                 raw_data["replacements"] = parsed_frontmatter["replacements"]
+
+        elif model_class.__name__ == "Subagent":
+            name = parsed_frontmatter.get("name")
+            if name is None:
+                name = slugify(file_path.stem)
+
+            known_fields = {"name", "description", "prompt", "metadata", "replacements"}
+            metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
+
+            raw_data = {
+                "name": name,
+                "description": parsed_frontmatter.get("description", ""),
+                "prompt": content_body.strip(),
+                "metadata": {**parsed_frontmatter.get("metadata", {}), **metadata},
+            }
+
+            if "replacements" in parsed_frontmatter:
+                raw_data["replacements"] = parsed_frontmatter["replacements"]
         else:
             raw_data = parsed_frontmatter
     else:
@@ -312,6 +335,7 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
     discovered_files: dict[str, list[Path]] = {
         "commands": [],
         "rules": [],
+        "subagents": [],
         "mcp_servers": [],
         "assets": [],
     }
@@ -326,6 +350,10 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
     rules_directory = charlie_config_directory / "rules"
     if rules_directory.exists():
         discovered_files["rules"] = sorted(rules_directory.glob("*.md"))
+
+    agents_directory = charlie_config_directory / "agents"
+    if agents_directory.exists():
+        discovered_files["subagents"] = sorted(agents_directory.glob("*.md"))
 
     mcp_servers_directory = charlie_config_directory / "mcp-servers"
     if mcp_servers_directory.exists():
@@ -366,6 +394,7 @@ def load_directory_config(base_dir: Path, _visited: set[str] | None = None) -> C
         "project": default_project,
         "commands": [],
         "rules": [],
+        "subagents": [],
         "mcp_servers": [],
     }
 
@@ -410,6 +439,13 @@ def load_directory_config(base_dir: Path, _visited: set[str] | None = None) -> C
             merged_config_data["rules"].append(parsed_rule)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading rule from {rules_file_path}: {e}")
+
+    for subagent_file_path in discovered_config_files["subagents"]:
+        try:
+            parsed_subagent = parse_single_file(subagent_file_path, Subagent)
+            merged_config_data["subagents"].append(parsed_subagent.model_dump())
+        except ConfigParseError as e:
+            raise ConfigParseError(f"Error loading subagent from {subagent_file_path}: {e}")
 
     for mcp_server_file_path in discovered_config_files["mcp_servers"]:
         try:

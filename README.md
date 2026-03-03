@@ -15,6 +15,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 - ⚙️ **Slash Commands Integration**: Generate slash commands from a single definition.
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
+- 🕵️ **Subagent Support**: Define specialized AI sub-assistants once
 - 🎯 **Auto-Detection**: Automatically finds `charlie.yaml` or `.charlie/` directory
 - ⚡ **Runtime Targeting**: Choose which agents to generate for at runtime
 - 📦 **Library & CLI**: Use as CLI tool or import as Python library
@@ -118,6 +119,19 @@ rules:
   - description: "Coding standards"
     prompt: "All code should follow PEP 8"
 
+# Subagent definitions (optional)
+subagents:
+  - name: "code-reviewer"
+    description: "Expert code reviewer. Use proactively after code changes."
+    prompt: |
+      You are a senior code reviewer. When invoked:
+      1. Run git diff to see recent changes
+      2. Review for quality, security, and best practices
+      3. Provide feedback organized by priority
+    metadata:
+      tools: "Read, Grep, Glob, Bash"
+      model: sonnet
+
 # Ignore patterns (optional) -- will be added to agent-specific ignore files
 ignore_patterns:
   - "*.log"
@@ -185,6 +199,9 @@ project/
     ├── rules/
     │   ├── commit-messages.yaml  # One file per rule (Markdown or YAML supported)
     │   └── code-style.md
+    ├── agents/
+    │   ├── code-reviewer.md      # One file per subagent (Markdown with YAML frontmatter)
+    │   └── debugger.md
     └── mcp-servers/
         └── local-tools.yaml      # MCP servers in YAML
 ```
@@ -228,6 +245,7 @@ Charlie supports these universal placeholders in commands, rules, and MCP config
 - `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
 - `{{rules_file}}` → Resolves to agent's rules file path (e.g., `.claude/rules.md`)
+- `{{subagents_dir}}` → Resolves to agent's subagents directory (e.g., `.claude/agents`)
 - `{{mcp_file}}` → Resolves to agent's MCP configuration file name (e.g., `mcp.json`)
 - `{{assets_dir}}` → Resolves to agent's assets directory (e.g., `.claude/assets`)
 
@@ -274,6 +292,9 @@ charlie generate claude --no-rules
 # Setup without commands
 charlie generate claude --no-commands
 
+# Setup without subagents
+charlie generate claude --no-subagents
+
 # Explicit config file
 charlie generate cursor --config my-config.yaml
 
@@ -316,7 +337,7 @@ Use Charlie programmatically in Python:
 
 ```python
 from charlie import AgentRegistry, AgentConfiguratorFactory, Tracker
-from charlie.schema import Project, Command, Rule, HttpMCPServer, StdioMCPServer, ValueReplacement
+from charlie.schema import Project, Command, Rule, Subagent, HttpMCPServer, StdioMCPServer, ValueReplacement
 from charlie.enums import RuleMode
 
 # Initialize registry and get agent
@@ -412,6 +433,19 @@ configurator.rules(
     RuleMode.MERGED
 )
 
+# Generate subagents
+configurator.subagents([
+    Subagent(
+        name="code-reviewer",
+        description="Expert code reviewer. Use proactively after code changes.",
+        prompt="You are a senior code reviewer. Analyze code for quality, security, and best practices.",
+        metadata={
+            "tools": "Read, Grep, Glob, Bash",
+            "model": "sonnet",
+        },
+    )
+])
+
 # Copy assets to the agent's directory
 configurator.assets([
     ".charlie/assets/deploy.sh",
@@ -451,6 +485,60 @@ charlie generate cursor --rules-mode separate
 ```
 
 Use merged mode for simple projects, separate mode for better organization in complex projects.
+
+## Subagents
+
+Subagents are specialized AI sub-assistants that handle specific types of tasks. Charlie lets you define them once and generate the appropriate files for each supported tool.
+
+### Define subagents
+
+**Directory-based** — create `.charlie/agents/<name>.md`:
+
+```markdown
+---
+description: Expert code reviewer. Use proactively after code changes.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+
+You are a senior code reviewer. When invoked:
+
+1. Run git diff to see recent changes
+2. Review for quality, security, and best practices
+3. Provide feedback organized by priority: Critical / Warnings / Suggestions
+```
+
+The filename becomes the subagent name (e.g., `code-reviewer.md` → `code-reviewer`). Override it with a `name:` field in the frontmatter.
+
+**YAML inline** — add a `subagents:` section to `charlie.yaml`:
+
+```yaml
+subagents:
+  - name: code-reviewer
+    description: Expert code reviewer. Use proactively after code changes.
+    prompt: |
+      You are a senior code reviewer...
+    metadata:
+      tools: "Read, Grep, Glob, Bash"
+      model: sonnet
+```
+
+### Generated output
+
+| Agent          | Output                     | Supported metadata                                                                                                                      |
+| -------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code    | `.claude/agents/{name}.md` | `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `isolation` |
+| Cursor         | `.cursor/agents/{name}.md` | `model`, `readonly`, `is_background`                                                                                                    |
+| GitHub Copilot | — (skipped)                | —                                                                                                                                       |
+
+See [`AGENT_FIELDS.md`](AGENT_FIELDS.md) for a full metadata field reference.
+
+### Namespace support
+
+When a `namespace` is set, subagent filenames are prefixed:
+
+- Claude: `.claude/agents/myapp-code-reviewer.md`
+- Cursor: `.cursor/agents/myapp.code-reviewer.md`
 
 ## Development
 
