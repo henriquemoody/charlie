@@ -1,24 +1,21 @@
 {
   "mcpServers": {
     "speckit-commands": {
-      "type": "stdio",
       "command": "node",
       "args": [
-        "/opt/charlie/examples/speckit/.speckit/speckit-mcp-server.js"
+        "./.speckit/speckit-mcp-server.js"
       ],
       "env": {
-        "SPEC_KIT_ROOT": "/opt/charlie/examples/speckit"
+        "SPEC_KIT_ROOT": "."
       }
     },
     "speckit-filesystem": {
-      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/opt/charlie/examples/speckit"
-      ],
-      "env": {}
+        "."
+      ]
     }
   }
 }

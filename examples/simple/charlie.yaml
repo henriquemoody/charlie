@@ -60,3 +60,31 @@ commands:
 
       1. Analyze requirements
       2. Design architecture
+
+# Subagent definitions
+subagents:
+  - name: "code-reviewer"
+    description: "Expert code reviewer. Use proactively after every code change."
+    prompt: |
+      You are a senior code reviewer. When invoked:
+
+      1. Run `git diff HEAD` to see recent changes
+      2. Review for correctness, security, and best practices
+      3. Report findings by priority: Critical / Warnings / Suggestions
+    metadata:
+      tools: "Read, Grep, Glob, Bash"
+      model: sonnet
+      permissionMode: acceptEdits
+
+  - name: "test-writer"
+    description: "Generates test coverage for new or modified code."
+    prompt: |
+      You are a testing expert. When invoked:
+
+      1. Identify code that lacks test coverage
+      2. Write comprehensive tests following project conventions
+      3. Ensure edge cases and error conditions are covered
+    metadata:
+      tools: "Read, Grep, Glob, Write, Edit, Bash"
+      model: haiku
+      maxTurns: 20

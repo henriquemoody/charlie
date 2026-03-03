@@ -1,10 +1,9 @@
 {
   "mcpServers": {
     "local-tools": {
-      "type": "stdio",
       "command": "node",
       "args": [
-        "/opt/charlie/examples/directory-based/.cursor/assets/mcp-server.js"
+        ".cursor/assets/mcp-server.js"
       ],
       "env": {
         "DEBUG": "true",

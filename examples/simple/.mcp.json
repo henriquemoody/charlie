@@ -3,7 +3,7 @@
     "local": {
       "command": "node",
       "args": [
-        ".cursor/assets/mcp-server.js"
+        ".claude/assets/mcp-server.js"
       ],
       "env": {
         "PROJECT_ROOT": "${PROJECT_ROOT}",
