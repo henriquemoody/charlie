@@ -102,6 +102,7 @@ class PlaceholderTransformer:
             prompt=prompt,
             metadata=metadata,
             replacements=skill.replacements,
+            files=skill.files,
         )
 
     def mcp_server(self, mcp_server: MCPServer) -> MCPServer:

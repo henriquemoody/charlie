@@ -1,7 +1,7 @@
 ---
+disable-model-invocation: true
 name: review-pr
 description: Review a pull request for quality, correctness, and best practices
-disable-model-invocation: true
 ---
 
 Review the pull request $ARGUMENTS:

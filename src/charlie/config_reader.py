@@ -308,7 +308,10 @@ def parse_single_file(file_path: Path, model_class: type[T]) -> T:
         elif model_class.__name__ == "Skill":
             name = parsed_frontmatter.get("name")
             if name is None:
-                name = slugify(file_path.stem)
+                if file_path.name == "SKILL.md":
+                    name = slugify(file_path.parent.name)
+                else:
+                    name = slugify(file_path.stem)
 
             known_fields = {"name", "description", "prompt", "metadata", "replacements"}
             metadata = {k: v for k, v in parsed_frontmatter.items() if k not in known_fields}
@@ -383,6 +386,11 @@ def discover_charlie_files(base_dir: Path) -> dict[str, list[Path]]:
     skills_directory = charlie_config_directory / "skills"
     if skills_directory.exists():
         discovered_files["skills"] = sorted(skills_directory.glob("*.md"))
+        for skill_dir in sorted(skills_directory.iterdir()):
+            if skill_dir.is_dir():
+                skill_md = skill_dir / "SKILL.md"
+                if skill_md.exists():
+                    discovered_files["skills"].append(skill_md)
 
     mcp_servers_directory = charlie_config_directory / "mcp-servers"
     if mcp_servers_directory.exists():
@@ -480,7 +488,15 @@ def load_directory_config(base_dir: Path, _visited: set[str] | None = None) -> C
     for skill_file_path in discovered_config_files["skills"]:
         try:
             parsed_skill = parse_single_file(skill_file_path, Skill)
-            merged_config_data["skills"].append(parsed_skill.model_dump())
+            skill_data = parsed_skill.model_dump()
+            if skill_file_path.name == "SKILL.md":
+                skill_source_dir = skill_file_path.parent
+                extra_files = {}
+                for extra in sorted(skill_source_dir.rglob("*")):
+                    if extra.is_file() and extra != skill_file_path:
+                        extra_files[extra.relative_to(skill_source_dir).as_posix()] = str(extra)
+                skill_data["files"] = extra_files
+            merged_config_data["skills"].append(skill_data)
         except ConfigParseError as e:
             raise ConfigParseError(f"Error loading skill from {skill_file_path}: {e}")
 

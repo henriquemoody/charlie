@@ -83,6 +83,9 @@ class Skill(BaseModel):
     prompt: str = Field(default="", description="Skill instructions")
     metadata: Metadata = Field(default_factory=dict, description="Agent-specific metadata")
     replacements: dict[str, ReplacementSpec] = Field(default_factory=dict, description="String replacements")
+    files: dict[str, str] = Field(
+        default_factory=dict, description="Map of relative destination path to source file path"
+    )
 
 
 class CharlieConfig(BaseModel):

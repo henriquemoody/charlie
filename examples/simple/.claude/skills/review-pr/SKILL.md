@@ -1,8 +1,8 @@
 ---
-name: review-pr
-description: Review a pull request for quality, correctness, and best practices
 disable-model-invocation: true
 allowed-tools: Bash(gh pr *)
+name: review-pr
+description: Review a pull request for quality, correctness, and best practices
 ---
 
 Review the pull request $ARGUMENTS:

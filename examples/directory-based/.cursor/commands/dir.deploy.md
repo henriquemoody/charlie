@@ -16,4 +16,4 @@ Before deploying:
 
 ## Execute Deployment
 
-Run: {{assets_dir}}/deploy.ps1
+Run: {{assets_dir}}/deploy.sh

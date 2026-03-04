@@ -260,6 +260,97 @@ def test_claude_should_track_created_skill_files(
     assert "SKILL.md" in call_arg
 
 
+def test_claude_should_copy_extra_files_alongside_skill(
+    claude_configurator: ClaudeConfigurator, project: Project, tmp_path: Path
+) -> None:
+    extra_file = tmp_path / "helper.sh"
+    extra_file.write_text("#!/bin/bash\necho hello")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"helper.sh": str(extra_file)},
+        )
+    ]
+
+    claude_configurator.skills(skills)
+
+    dest = Path(project.dir) / ".claude/skills/deploy/helper.sh"
+    assert dest.exists()
+    assert dest.read_text() == "#!/bin/bash\necho hello"
+
+
+def test_claude_should_copy_nested_extra_files(
+    claude_configurator: ClaudeConfigurator, project: Project, tmp_path: Path
+) -> None:
+    nested = tmp_path / "templates"
+    nested.mkdir()
+    config_file = nested / "config.yaml"
+    config_file.write_text("key: value")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"templates/config.yaml": str(config_file)},
+        )
+    ]
+
+    claude_configurator.skills(skills)
+
+    dest = Path(project.dir) / ".claude/skills/deploy/templates/config.yaml"
+    assert dest.exists()
+    assert dest.read_text() == "key: value"
+
+
+def test_claude_should_track_extra_files(
+    claude_configurator: ClaudeConfigurator, tracker: Mock, project: Project, tmp_path: Path
+) -> None:
+    extra_file = tmp_path / "helper.sh"
+    extra_file.write_text("#!/bin/bash")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"helper.sh": str(extra_file)},
+        )
+    ]
+
+    claude_configurator.skills(skills)
+
+    assert tracker.track.call_count == 2
+    tracked_messages = [call[0][0] for call in tracker.track.call_args_list]
+    assert any("SKILL.md" in msg for msg in tracked_messages)
+    assert any("helper.sh" in msg for msg in tracked_messages)
+
+
+def test_claude_should_copy_extra_files_with_namespace(
+    claude_configurator_with_namespace: ClaudeConfigurator, project_with_namespace: Project, tmp_path: Path
+) -> None:
+    extra_file = tmp_path / "script.py"
+    extra_file.write_text("print('hello')")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"script.py": str(extra_file)},
+        )
+    ]
+
+    claude_configurator_with_namespace.skills(skills)
+
+    dest = Path(project_with_namespace.dir) / ".claude/skills/myapp-deploy/script.py"
+    assert dest.exists()
+    assert dest.read_text() == "print('hello')"
+
+
 # ─── Cursor configurator skills ──────────────────────────────────────────────
 
 
@@ -372,6 +463,74 @@ def test_cursor_should_include_namespaced_name_in_skill_frontmatter(
     assert "name: myapp.explain-code" in content
 
 
+def test_cursor_should_copy_extra_files_alongside_skill(
+    cursor_configurator: CursorConfigurator, project: Project, tmp_path: Path
+) -> None:
+    extra_file = tmp_path / "helper.sh"
+    extra_file.write_text("#!/bin/bash\necho hello")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"helper.sh": str(extra_file)},
+        )
+    ]
+
+    cursor_configurator.skills(skills)
+
+    dest = Path(project.dir) / ".cursor/skills/deploy/helper.sh"
+    assert dest.exists()
+    assert dest.read_text() == "#!/bin/bash\necho hello"
+
+
+def test_cursor_should_copy_nested_extra_files(
+    cursor_configurator: CursorConfigurator, project: Project, tmp_path: Path
+) -> None:
+    nested = tmp_path / "templates"
+    nested.mkdir()
+    config_file = nested / "config.yaml"
+    config_file.write_text("key: value")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"templates/config.yaml": str(config_file)},
+        )
+    ]
+
+    cursor_configurator.skills(skills)
+
+    dest = Path(project.dir) / ".cursor/skills/deploy/templates/config.yaml"
+    assert dest.exists()
+    assert dest.read_text() == "key: value"
+
+
+def test_cursor_should_copy_extra_files_with_namespace(
+    cursor_configurator_with_namespace: CursorConfigurator, project_with_namespace: Project, tmp_path: Path
+) -> None:
+    extra_file = tmp_path / "script.py"
+    extra_file.write_text("print('hello')")
+
+    skills = [
+        Skill(
+            name="deploy",
+            description="Deploys the app",
+            prompt="Deploy it",
+            files={"script.py": str(extra_file)},
+        )
+    ]
+
+    cursor_configurator_with_namespace.skills(skills)
+
+    dest = Path(project_with_namespace.dir) / ".cursor/skills/myapp.deploy/script.py"
+    assert dest.exists()
+    assert dest.read_text() == "print('hello')"
+
+
 # ─── Copilot configurator skills ─────────────────────────────────────────────
 
 
@@ -420,6 +579,54 @@ def test_discover_charlie_files_should_discover_skill_files(
     assert "fix-bug.md" in skill_names
 
 
+def test_discover_charlie_files_should_discover_directory_based_skills(
+    tmp_path: Path,
+) -> None:
+    skill_dir = tmp_path / ".charlie" / "skills" / "deploy"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+    (skill_dir / "deploy.sh").write_text("#!/bin/bash\necho deploy")
+
+    discovered = discover_charlie_files(tmp_path)
+
+    skill_paths = [f for f in discovered["skills"]]
+    assert any(f.name == "SKILL.md" and f.parent.name == "deploy" for f in skill_paths)
+
+
+def test_discover_charlie_files_should_discover_both_flat_and_directory_skills(
+    tmp_path: Path,
+) -> None:
+    skills_dir = tmp_path / ".charlie" / "skills"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "explain-code.md").write_text("---\ndescription: Explains code\n---\nExplain the code")
+
+    deploy_dir = skills_dir / "deploy"
+    deploy_dir.mkdir()
+    (deploy_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+
+    discovered = discover_charlie_files(tmp_path)
+
+    assert len(discovered["skills"]) == 2
+    names = [f.name for f in discovered["skills"]]
+    assert "explain-code.md" in names
+    assert "SKILL.md" in names
+
+
+def test_discover_charlie_files_should_ignore_directories_without_skill_md(
+    tmp_path: Path,
+) -> None:
+    skills_dir = tmp_path / ".charlie" / "skills"
+    skills_dir.mkdir(parents=True)
+
+    empty_dir = skills_dir / "not-a-skill"
+    empty_dir.mkdir()
+    (empty_dir / "random.txt").write_text("not a skill")
+
+    discovered = discover_charlie_files(tmp_path)
+
+    assert len(discovered["skills"]) == 0
+
+
 def test_parse_single_file_should_parse_skill_from_markdown(
     tmp_path: Path,
 ) -> None:
@@ -442,6 +649,21 @@ def test_parse_single_file_should_use_filename_as_skill_name_when_not_in_frontma
     skill = parse_single_file(skill_file, Skill)
 
     assert skill.name == "my-skill"
+
+
+def test_parse_single_file_should_use_parent_directory_name_for_skill_md(
+    tmp_path: Path,
+) -> None:
+    skill_dir = tmp_path / "deploy-tool"
+    skill_dir.mkdir()
+    skill_file = skill_dir / "SKILL.md"
+    skill_file.write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+
+    skill = parse_single_file(skill_file, Skill)
+
+    assert skill.name == "deploy-tool"
+    assert skill.description == "Deploys the app"
+    assert skill.prompt == "Deploy it"
 
 
 def test_parse_single_file_should_use_explicit_name_in_frontmatter(
@@ -483,6 +705,93 @@ def test_load_directory_config_should_load_skills_from_charlie_skills_directory(
     assert len(config.skills) == 1
     assert config.skills[0].name == "explain-code"
     assert config.skills[0].description == "Explains code"
+
+
+def test_load_directory_config_should_load_directory_based_skill_with_extra_files(
+    tmp_path: Path,
+) -> None:
+    skill_dir = tmp_path / ".charlie" / "skills" / "deploy"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+    (skill_dir / "deploy.sh").write_text("#!/bin/bash\necho deploy")
+
+    config = load_directory_config(tmp_path)
+
+    assert len(config.skills) == 1
+    assert config.skills[0].name == "deploy"
+    assert config.skills[0].description == "Deploys the app"
+    assert "deploy.sh" in config.skills[0].files
+    assert config.skills[0].files["deploy.sh"] == str(skill_dir / "deploy.sh")
+
+
+def test_load_directory_config_should_collect_nested_extra_files(
+    tmp_path: Path,
+) -> None:
+    skill_dir = tmp_path / ".charlie" / "skills" / "deploy"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+    templates = skill_dir / "templates"
+    templates.mkdir()
+    (templates / "config.yaml").write_text("key: value")
+
+    config = load_directory_config(tmp_path)
+
+    assert len(config.skills) == 1
+    files = config.skills[0].files
+    assert "templates/config.yaml" in files
+
+
+def test_load_directory_config_should_not_include_skill_md_in_extra_files(
+    tmp_path: Path,
+) -> None:
+    skill_dir = tmp_path / ".charlie" / "skills" / "deploy"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+    (skill_dir / "helper.sh").write_text("#!/bin/bash")
+
+    config = load_directory_config(tmp_path)
+
+    files = config.skills[0].files
+    assert "SKILL.md" not in files
+    assert "helper.sh" in files
+
+
+def test_load_directory_config_should_have_empty_files_for_flat_skills(
+    tmp_path: Path,
+) -> None:
+    skills_dir = tmp_path / ".charlie" / "skills"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "explain-code.md").write_text("---\ndescription: Explains code\n---\nExplain the code")
+
+    config = load_directory_config(tmp_path)
+
+    assert config.skills[0].files == {}
+
+
+def test_load_directory_config_should_load_mixed_flat_and_directory_skills(
+    tmp_path: Path,
+) -> None:
+    skills_dir = tmp_path / ".charlie" / "skills"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "explain-code.md").write_text("---\ndescription: Explains code\n---\nExplain the code")
+
+    deploy_dir = skills_dir / "deploy"
+    deploy_dir.mkdir()
+    (deploy_dir / "SKILL.md").write_text("---\ndescription: Deploys the app\n---\nDeploy it")
+    (deploy_dir / "deploy.sh").write_text("#!/bin/bash\necho deploy")
+
+    config = load_directory_config(tmp_path)
+
+    assert len(config.skills) == 2
+    names = [s.name for s in config.skills]
+    assert "explain-code" in names
+    assert "deploy" in names
+
+    deploy_skill = next(s for s in config.skills if s.name == "deploy")
+    assert "deploy.sh" in deploy_skill.files
+
+    explain_skill = next(s for s in config.skills if s.name == "explain-code")
+    assert explain_skill.files == {}
 
 
 # ─── Schema validation ────────────────────────────────────────────────────────
@@ -605,3 +914,24 @@ def test_placeholder_transformer_should_preserve_skill_name_and_description() ->
 
     assert result.name == "my-skill"
     assert result.description == "My fixed description"
+
+
+def test_placeholder_transformer_should_preserve_skill_files() -> None:
+    project = Project(name="my-project", namespace=None, dir=".")
+    transformer = PlaceholderTransformer(
+        placeholders={"agent_name": "Claude Code"},
+        variables={},
+        project=project,
+    )
+    files = {"helper.sh": "/path/to/helper.sh", "templates/config.yaml": "/path/to/config.yaml"}
+    skill = Skill(
+        name="my-skill",
+        description="My skill",
+        prompt="Use {{agent_name}}",
+        files=files,
+    )
+
+    result = transformer.skill(skill)
+
+    assert result.files == files
+    assert result.prompt == "Use Claude Code"

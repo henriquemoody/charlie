@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 from typing import final
 
@@ -165,6 +166,12 @@ class CursorConfigurator(AgentConfigurator):
             )
 
             self.tracker.track(f"Created {skill_file}")
+
+            for relative_path, source_path in skill.files.items():
+                dest = skill_dir / relative_path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source_path, dest)
+                self.tracker.track(f"Created {dest}")
 
     def mcp_servers(self, mcp_servers: list[MCPServer]) -> None:
         file = Path(self.project.dir) / self.MCP_FILE
