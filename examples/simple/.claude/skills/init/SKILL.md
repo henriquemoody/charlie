@@ -1,4 +1,5 @@
 ---
+name: init
 description: Initialize a new feature
 ---
 
