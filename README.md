@@ -4,8 +4,8 @@
 
 Charlie is a universal agent configuration generator that produces agent-specific commands, MCP configurations, and rules from a single YAML/Markdown spec.
 
-[![Tests](https://img.shields.io/badge/tests-94%20passed-green)]()
-[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-350%20passed-green)]()
+[![Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue)]()
 
 ## Features
@@ -226,8 +226,12 @@ project/
     │   ├── code-reviewer.md      # One file per subagent (Markdown with YAML frontmatter)
     │   └── debugger.md
     ├── skills/
-    │   ├── explain-code.md       # One file per skill (Markdown with YAML frontmatter)
-    │   └── deploy.md
+    │   ├── explain-code.md       # Flat file skill (Markdown with YAML frontmatter)
+    │   └── deploy/               # Directory-based skill
+    │       ├── SKILL.md          # Skill definition (required)
+    │       ├── deploy.sh         # Companion files (copied to output)
+    │       └── templates/
+    │           └── config.yaml
     └── mcp-servers/
         └── local-tools.yaml      # MCP servers in YAML
 ```
@@ -268,9 +272,9 @@ Charlie supports these universal placeholders in commands, rules, and MCP config
 
 **Agent Path Placeholders:**
 
-- `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/commands/`)
+- `{{commands_dir}}` → Resolves to agent's commands directory (e.g., `.claude/skills`, `.cursor/commands`)
 - `{{rules_dir}}` → Resolves to agent's rules directory (e.g., `.claude/rules/`)
-- `{{rules_file}}` → Resolves to agent's rules file path (e.g., `.claude/rules.md`)
+- `{{rules_file}}` → Resolves to agent's rules file path (e.g., `CLAUDE.md`, `.cursor/rules`)
 - `{{subagents_dir}}` → Resolves to agent's subagents directory (e.g., `.claude/agents`)
 - `{{skills_dir}}` → Resolves to agent's skills directory (e.g., `.claude/skills`)
 - `{{mcp_file}}` → Resolves to agent's MCP configuration file name (e.g., `mcp.json`)
@@ -510,6 +514,8 @@ Charlie currently supports the following AI agents:
 
 Run `charlie list-agents` to see all available agents.
 
+> **Note:** Claude Code has [merged custom commands into skills](https://code.claude.com/docs/en/skills). Charlie generates Claude commands as `.claude/skills/{name}/SKILL.md` (the same format as skills). For Cursor, commands are still generated as `.cursor/commands/{name}.md`.
+
 ### Metadata support
 
 Charlie uses **pass-through metadata** - add any agent-specific metadata to your commands or rules, and Charlie will include them in generated output:
@@ -594,7 +600,9 @@ Skills are portable, version-controlled packages that teach agents how to perfor
 
 ### Define skills
 
-**Directory-based** — create `.charlie/skills/<name>.md`:
+Charlie supports three ways to define skills:
+
+**Flat file** — create `.charlie/skills/<name>.md`:
 
 ```markdown
 ---
@@ -610,6 +618,32 @@ When explaining code, always include:
 ```
 
 The filename becomes the skill name (e.g., `explain-code.md` → `explain-code`). Override it with a `name:` field in the frontmatter.
+
+**Directory-based** — create `.charlie/skills/<name>/SKILL.md`:
+
+```
+.charlie/skills/deploy/
+├── SKILL.md              # Skill definition (required)
+├── deploy.sh             # Companion files (copied to output)
+└── templates/
+    └── config.yaml
+```
+
+```markdown
+---
+description: Deploy the application to production
+disable-model-invocation: true
+---
+
+Deploy the application:
+
+1. Run the test suite
+2. Build using the template at `{{skills_dir}}/deploy/templates/config.yaml`
+3. Execute `{{skills_dir}}/deploy/deploy.sh`
+4. Verify the deployment succeeded
+```
+
+The directory name becomes the skill name (e.g., `deploy/` → `deploy`). Any files alongside `SKILL.md` are automatically copied to the output skill directory, preserving the relative path structure. This lets skills bundle scripts, templates, or reference material that the agent can access at runtime.
 
 **YAML inline** — add a `skills:` section to `charlie.yaml`:
 
@@ -630,15 +664,17 @@ skills:
       disable-model-invocation: true
 ```
 
+Both flat and directory-based skills can coexist in the same `.charlie/skills/` folder.
+
 ### Generated output
 
-| Agent          | Output                                  | Supported metadata                                                                              |
-| -------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Claude Code    | `.claude/skills/{name}/SKILL.md`        | `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `context`, `agent` |
-| Cursor         | `.cursor/skills/{name}/SKILL.md`        | `description`, `disable-model-invocation`, `license`, `compatibility`                          |
-| GitHub Copilot | — (skipped)                             | —                                                                                               |
+| Agent          | Output                           | Supported metadata                                                                                                                  |
+| -------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code    | `.claude/skills/{name}/SKILL.md` | `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `context`, `agent`, `hooks` |
+| Cursor         | `.cursor/skills/{name}/SKILL.md` | `description`, `disable-model-invocation`, `license`, `compatibility`                                                               |
+| GitHub Copilot | — (skipped)                      | —                                                                                                                                   |
 
-Each skill is output as a directory containing a `SKILL.md` file, following the [Agent Skills](https://agentskills.io) open standard.
+Each skill is output as a directory containing a `SKILL.md` file, following the [Agent Skills](https://agentskills.io) open standard. Companion files from directory-based skills are copied alongside `SKILL.md` in the output.
 
 ### Namespace support
 
