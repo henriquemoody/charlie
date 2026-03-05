@@ -53,19 +53,19 @@ def configurator(
     return ClaudeConfigurator(project, tracker, markdown_generator, mcp_server_generator, assets_manager, "claude")
 
 
-def test_should_create_commands_directory_when_it_does_not_exist(
+def test_should_create_skills_directory_when_generating_commands(
     configurator: ClaudeConfigurator, project: Project
 ) -> None:
     commands = [Command(name="test", description="Test command", prompt="Test prompt")]
 
     configurator.commands(commands)
 
-    commands_dir = Path(project.dir) / ".claude/commands"
-    assert commands_dir.exists()
-    assert commands_dir.is_dir()
+    skills_dir = Path(project.dir) / ".claude/skills"
+    assert skills_dir.exists()
+    assert skills_dir.is_dir()
 
 
-def test_should_create_markdown_file_when_processing_each_command(
+def test_should_create_skill_file_when_processing_each_command(
     configurator: ClaudeConfigurator, project: Project
 ) -> None:
     commands = [
@@ -75,8 +75,8 @@ def test_should_create_markdown_file_when_processing_each_command(
 
     configurator.commands(commands)
 
-    fix_file = Path(project.dir) / ".claude/commands/fix-issue.md"
-    review_file = Path(project.dir) / ".claude/commands/review-pr.md"
+    fix_file = Path(project.dir) / ".claude/skills/fix-issue/SKILL.md"
+    review_file = Path(project.dir) / ".claude/skills/review-pr/SKILL.md"
 
     assert fix_file.exists()
     assert review_file.exists()
@@ -89,7 +89,7 @@ def test_should_write_prompt_to_file_body_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".claude/commands/test.md"
+    file = Path(project.dir) / ".claude/skills/test/SKILL.md"
     content = file.read_text()
 
     assert "Fix issue #$ARGUMENTS following our coding standards" in content
@@ -102,7 +102,7 @@ def test_should_include_description_in_frontmatter_when_creating_command(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".claude/commands/test.md"
+    file = Path(project.dir) / ".claude/skills/test/SKILL.md"
     content = file.read_text()
 
     assert "description: Fix a numbered issue" in content
@@ -122,7 +122,7 @@ def test_should_include_allowed_tools_in_frontmatter_when_specified(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".claude/commands/test.md"
+    file = Path(project.dir) / ".claude/skills/test/SKILL.md"
     content = file.read_text()
 
     assert "allowed-tools: Bash(git add:*), Bash(git status:*)" in content
@@ -142,13 +142,13 @@ def test_should_include_argument_hint_in_frontmatter_when_specified(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".claude/commands/test.md"
+    file = Path(project.dir) / ".claude/skills/test/SKILL.md"
     content = file.read_text()
 
     assert "argument-hint: '[pr-number] [priority]'" in content
 
 
-def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
+def test_should_apply_namespace_prefix_to_directory_when_namespace_is_present(
     project_with_namespace: Project,
     tracker: Mock,
     markdown_generator: MarkdownGenerator,
@@ -167,7 +167,7 @@ def test_should_apply_namespace_prefix_to_filename_when_namespace_is_present(
 
     configurator.commands(commands)
 
-    file = Path(project_with_namespace.dir) / ".claude/commands/myapp-test.md"
+    file = Path(project_with_namespace.dir) / ".claude/skills/myapp-test/SKILL.md"
     assert file.exists()
 
 
@@ -183,8 +183,8 @@ def test_should_track_each_file_when_creating_commands(
 
     assert tracker.track.call_count == 2
     tracked_files = [call[0][0] for call in tracker.track.call_args_list]
-    assert any("fix-issue.md" in str(f) for f in tracked_files)
-    assert any("review-pr.md" in str(f) for f in tracked_files)
+    assert any("fix-issue" in str(f) and "SKILL.md" in str(f) for f in tracked_files)
+    assert any("review-pr" in str(f) and "SKILL.md" in str(f) for f in tracked_files)
 
 
 def test_should_filter_custom_metadata_when_not_in_allowed_list(
@@ -201,7 +201,7 @@ def test_should_filter_custom_metadata_when_not_in_allowed_list(
 
     configurator.commands(commands)
 
-    file = Path(project.dir) / ".claude/commands/test.md"
+    file = Path(project.dir) / ".claude/skills/test/SKILL.md"
     content = file.read_text()
 
     assert "forbidden_field" not in content

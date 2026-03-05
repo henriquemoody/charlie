@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Create implementation plan
 ---
 
