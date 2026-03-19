@@ -3,6 +3,7 @@ from charlie.configurators.agent_configurator import AgentConfigurator
 from charlie.configurators.claude_configurator import ClaudeConfigurator
 from charlie.configurators.copilot_configurator import CopilotConfigurator
 from charlie.configurators.cursor_configurator import CursorConfigurator
+from charlie.configurators.opencode_configurator import OpencodeConfigurator
 from charlie.markdown_generator import MarkdownGenerator
 from charlie.mcp_server_generator import MCPServerGenerator
 from charlie.schema import Project
@@ -28,5 +29,10 @@ class AgentConfiguratorFactory:
 
         if agent_name == "copilot":
             return CopilotConfigurator(project, tracker, markdown_generator, assets_manager, agent_name)
+
+        if agent_name == "opencode":
+            return OpencodeConfigurator(
+                project, tracker, markdown_generator, None, assets_manager, agent_name
+            )
 
         raise ValueError(f"Unsupported agent: {agent_name}")

@@ -10,7 +10,7 @@ from charlie.placeholder_transformer import PlaceholderTransformer
 from charlie.tracker import Tracker
 from charlie.variable_collector import VariableCollector
 
-_SUPPORTED_AGENTS = ["claude", "cursor", "copilot"]
+_SUPPORTED_AGENTS = ["claude", "cursor", "copilot", "opencode"]
 
 app = typer.Typer(
     name="charlie",
