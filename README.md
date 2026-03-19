@@ -1,5 +1,7 @@
 # Charlie - Universal Agent Config Generator
 
+<!-- Test commit for Orion's commit message rules -->
+
 **Define once in YAML/Markdown. Generate agent-specific commands, MCP config, and rules.**
 
 Charlie is a universal agent configuration generator that produces agent-specific commands, MCP configurations, and rules from a single YAML/Markdown spec.
