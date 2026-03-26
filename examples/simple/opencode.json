@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "local": {
+      "type": "local",
+      "command": [
+        "node",
+        ".opencode/assets/mcp-server.js"
+      ],
+      "environment": {
+        "PROJECT_ROOT": "${PROJECT_ROOT}",
+        "DEBUG": "false"
+      }
+    },
+    "remote": {
+      "type": "remote",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer 65672965-C141-4A26-A15B-3A0155085F0B",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  "instructions": [
+    ".opencode/instructions/commit-message-standards.md",
+    ".opencode/instructions/coding-standards.md"
+  ]
+}

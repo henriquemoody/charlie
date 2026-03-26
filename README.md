@@ -11,7 +11,7 @@ Charlie is a universal agent configuration generator that produces agent-specifi
 ## Features
 
 - ✨ **Single Definition**: Write settings once in YAML or Markdown
-- 🤖 **Multi-Agent Support**: Generate for different AI agents (Claude, Cursor, and GitHub Copilot supported)
+- 🤖 **Multi-Agent Support**: Generate for different AI agents (Claude, Cursor, GitHub Copilot, and OpenCode supported)
 - ⚙️ **Slash Commands Integration**: Generate slash commands from a single definition.
 - 🔌 **MCP Integration**: Generate MCP server configurations with tool schemas
 - 📋 **Rules Generation**: Create agent-specific rules files with manual preservation
@@ -511,10 +511,11 @@ Charlie currently supports the following AI agents:
 - **Claude Code** (`claude`) - Claude's AI coding assistant
 - **Cursor** (`cursor`) - AI-powered code editor
 - **GitHub Copilot** (`copilot`) - GitHub's AI pair programmer
+- **OpenCode** (`opencode`) - Open-source AI coding agent
 
 Run `charlie list-agents` to see all available agents.
 
-> **Note:** Claude Code has [merged custom commands into skills](https://code.claude.com/docs/en/skills). Charlie generates Claude commands as `.claude/skills/{name}/SKILL.md` (the same format as skills). For Cursor, commands are still generated as `.cursor/commands/{name}.md`.
+> **Note:** Claude Code has [merged custom commands into skills](https://code.claude.com/docs/en/skills). Charlie generates Claude commands as `.claude/skills/{name}/SKILL.md` (the same format as skills). OpenCode also treats commands as skills, generating them as `.opencode/skills/{name}/SKILL.md`. For Cursor, commands are still generated as `.cursor/commands/{name}.md`.
 
 ### Metadata support
 
@@ -579,11 +580,12 @@ subagents:
 
 ### Generated output
 
-| Agent          | Output                     | Supported metadata                                                                                                                      |
-| -------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code    | `.claude/agents/{name}.md` | `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `isolation` |
-| Cursor         | `.cursor/agents/{name}.md` | `model`, `readonly`, `is_background`                                                                                                    |
-| GitHub Copilot | — (skipped)                | —                                                                                                                                       |
+| Agent          | Output                       | Supported metadata                                                                                                                      |
+| -------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code    | `.claude/agents/{name}.md`   | `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `isolation` |
+| Cursor         | `.cursor/agents/{name}.md`   | `model`, `readonly`, `is_background`                                                                                                    |
+| GitHub Copilot | — (skipped)                  | —                                                                                                                                       |
+| OpenCode       | `.opencode/agents/{name}.md` | `description`, `tools`, `model`, `permission`                                                                                           |
 
 See [`AGENT_FIELDS.md`](AGENT_FIELDS.md) for a full metadata field reference.
 
@@ -668,11 +670,12 @@ Both flat and directory-based skills can coexist in the same `.charlie/skills/` 
 
 ### Generated output
 
-| Agent          | Output                           | Supported metadata                                                                                                                  |
-| -------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code    | `.claude/skills/{name}/SKILL.md` | `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `context`, `agent`, `hooks` |
-| Cursor         | `.cursor/skills/{name}/SKILL.md` | `description`, `disable-model-invocation`, `license`, `compatibility`                                                               |
-| GitHub Copilot | — (skipped)                      | —                                                                                                                                   |
+| Agent          | Output                             | Supported metadata                                                                                                                  |
+| -------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code    | `.claude/skills/{name}/SKILL.md`   | `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `context`, `agent`, `hooks` |
+| Cursor         | `.cursor/skills/{name}/SKILL.md`   | `description`, `disable-model-invocation`, `license`, `compatibility`                                                               |
+| GitHub Copilot | — (skipped)                        | —                                                                                                                                   |
+| OpenCode       | `.opencode/skills/{name}/SKILL.md` | `description`, `license`, `compatibility`                                                                                           |
 
 Each skill is output as a directory containing a `SKILL.md` file, following the [Agent Skills](https://agentskills.io) open standard. Companion files from directory-based skills are copied alongside `SKILL.md` in the output.
 

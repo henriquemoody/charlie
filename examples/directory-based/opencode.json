@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "local-tools": {
+      "type": "local",
+      "command": [
+        "node",
+        ".opencode/assets/mcp-server.js"
+      ],
+      "environment": {
+        "DEBUG": "true",
+        "LOG_LEVEL": "info"
+      }
+    }
+  },
+  "instructions": [
+    ".opencode/instructions/dir-code-style.md",
+    ".opencode/instructions/dir-commit-messages.md",
+    ".opencode/instructions/dir-testing.md"
+  ]
+}

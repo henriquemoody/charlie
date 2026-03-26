@@ -11,6 +11,7 @@ Charlie currently supports:
 - **Claude Code** (`claude`)
 - **Cursor** (`cursor`)
 - **GitHub Copilot** (`copilot`)
+- **OpenCode** (`opencode`)
 
 ## Command Fields
 
@@ -88,6 +89,20 @@ metadata:
 **Documentation:** [GitHub Copilot Prompt Files](https://docs.github.com/en/copilot/tutorials/customization-library/prompt-files/your-first-prompt-file)
 
 **Note:** GitHub Copilot doesn't have native slash command support like Claude or Cursor. Instead, Charlie generates prompt files and creates an instructions file that lists available commands for reference.
+
+#### OpenCode
+
+OpenCode supports the following metadata fields:
+
+```yaml
+metadata:
+  # Organization
+  description: "Skill description"
+```
+
+**Output Format:** YAML frontmatter in generated `.opencode/skills/*.md` files.
+
+**Documentation:** OpenCode treats commands as skills, generating them in the same format.
 
 ## Rule Fields (Rules)
 
@@ -172,6 +187,19 @@ metadata:
 
 **Note:** GitHub Copilot scans the repository for files matching the pattern `*instructions.md`. When using separate mode, Charlie creates individual instruction files and a main instruction file that references them.
 
+#### OpenCode
+
+OpenCode uses custom instructions for rules:
+
+**Output Format:**
+
+- **Merged mode**: Single `instructions.md` file in `.opencode/instructions/`
+- **Separate mode**: Individual instruction files in `.opencode/instructions/`
+
+Both modes register instructions in `opencode.json` under the `"instructions"` array.
+
+**Note:** OpenCode does not use metadata fields for rules. Instructions are stored as plain Markdown files.
+
 ## Subagent Fields
 
 ### Core Fields (All Agents)
@@ -255,6 +283,30 @@ subagents:
 
 GitHub Copilot does not have native subagent support. Charlie logs a skip message and generates no output.
 
+#### OpenCode
+
+OpenCode supports the following metadata fields for subagents:
+
+```yaml
+subagents:
+  - name: code-reviewer
+    description: Expert code reviewer. Use proactively after code changes.
+    prompt: You are a senior code reviewer...
+    metadata:
+      # Tool access control
+      tools: "Read, Grep, Glob, Bash"
+
+      # Model selection
+      model: sonnet # Model identifier
+
+      # Permission control
+      permission: default # default | allowed-tools | bypass-permissions
+```
+
+**Output format:** YAML frontmatter in `.opencode/agents/{name}.md`
+
+**Note:** OpenCode subagent files include `name` and `description` in the frontmatter along with any supported metadata fields.
+
 ## MCP Server Fields
 
 ### Core Fields (All Agents)
@@ -288,6 +340,100 @@ mcp_servers:
 **Output Format:** Generated as JSON in `.claude/mcp.json` or `.cursor/mcp.json`
 
 **Note:** Charlie doesn't support custom metadata fields for MCP servers. All fields are part of the MCP specification.
+
+### OpenCode MCP Configuration
+
+OpenCode uses a different MCP configuration format stored in `opencode.json`:
+
+#### stdio Transport (local)
+
+```yaml
+mcp_servers:
+  - name: "my-server"
+    type: "stdio"
+    command: "node"
+    args: ["server.js"]
+    env:
+      API_KEY: "value"
+```
+
+Generates:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "my-server": {
+      "type": "local",
+      "command": ["node", "server.js"],
+      "environment": {
+        "API_KEY": "value"
+      }
+    }
+  }
+}
+```
+
+#### http Transport (remote)
+
+```yaml
+mcp_servers:
+  - name: "remote-server"
+    type: "http"
+    url: "https://example.com/mcp"
+    headers:
+      Authorization: "Bearer token"
+      Content-Type: "application/json"
+```
+
+Generates:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "remote-server": {
+      "type": "remote",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer token",
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
+
+**Key differences from Claude/Cursor:**
+
+- Configuration stored in `opencode.json` (not `mcp.json`)
+- Commands stored as arrays: `"command": ["node", "server.js"]`
+- Environment variables under `"environment"` key
+- Server type is `"local"` (not `"stdio"`)
+
+## Skills
+
+Skills in Charlie are passed through to agents that support them.
+
+### OpenCode
+
+OpenCode treats all skills the same way as commands:
+
+```yaml
+skills:
+  - name: explain-code
+    description: Explains code with visual diagrams and analogies
+    prompt: |
+      When explaining code, always include an analogy, an ASCII diagram, and a step-by-step walkthrough.
+```
+
+**Output format:** YAML frontmatter in `.opencode/skills/{name}/SKILL.md`
+
+**Supported metadata:**
+
+- `description` - Skill description (required)
+- `license` - License information
+- `compatibility` - Compatibility information
 
 ## Field Discovery
 
@@ -381,3 +527,4 @@ Found a new agent-specific metadata field? Please contribute:
 - [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
 - [Cursor Documentation](https://cursor.com/docs)
 - [MCP (Model Context Protocol) Documentation](https://modelcontextprotocol.io/)
+- [OpenCode Documentation](https://opencode.ai)
